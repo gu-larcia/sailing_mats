@@ -723,7 +723,7 @@ def main():
         
         use_double_mould = st.checkbox(
             "Double Ammo Mould",
-            help="Makes 8 cannonballs per bar (requires 2,000 Foundry rep)"
+            help="Makes 8 cannonballs per 2 bars (requires 2,000 Foundry rep)"
         )
         
         ancient_furnace = st.checkbox(
