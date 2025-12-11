@@ -26,7 +26,7 @@ API_BASE = "https://prices.runescape.wiki/api/v1/osrs"
 #  ITEM DATABASE
 # ===============
 
-# ALL LOGS (including new Sailing woods)
+# ALL LOGS
 ALL_LOGS = {
     1511: "Logs",
     1521: "Oak logs",
@@ -47,13 +47,12 @@ ALL_LOGS = {
     32910: "Rosewood logs",
 }
 
-# ALL PLANKS (including Sailing planks)
+# ALL PLANKS
 ALL_PLANKS = {
     960: "Plank",
     8778: "Oak plank",
     8780: "Teak plank",
     8782: "Mahogany plank",
-    19787: "Redwood plank",
     # Sailing planks
     31432: "Camphor plank",
     31435: "Ironwood plank",
@@ -189,7 +188,6 @@ SAWMILL_COSTS = {
     "Oak plank": 250,
     "Teak plank": 500,
     "Mahogany plank": 1500,
-    "Redwood plank": 2000,
     "Camphor plank": 2500,
     "Ironwood plank": 5000,
     "Rosewood plank": 7500,
@@ -200,7 +198,6 @@ PLANK_MAKE_COSTS = {
     "Oak plank": 175,
     "Teak plank": 350,
     "Mahogany plank": 1050,
-    "Redwood plank": 1400,
     "Camphor plank": 1750,
     "Ironwood plank": 3500,
     "Rosewood plank": 5250,
@@ -307,40 +304,65 @@ class ProcessingChain:
         else:
             ratio = 5  # Default ratio for most items
         
-        # Handle double ammo mould for cannonballs
+        # Handle ammo mould behaviour for cannonballs
+        # Regular mould: 1 bar -> 4 cannonballs
+        # Double mould: 2 bars -> 8 cannonballs
         if self.category == "Cannonballs" and len(self.steps) >= 2:
+            input_step = self.steps[0]
+            output_step = self.steps[-1]
+
             if config.get("double_ammo_mould", False):
-                # Double ammo mould makes 8 cannonballs from 1 bar
-                if self.steps[-1].item_name.endswith("cannonball"):
-                    self.steps[-1].quantity = 8
+                # Double mould makes 8 cannonballs from 2 bars
+                if output_step.item_name.endswith("cannonball"):
+                    output_step.quantity = 8
+                    input_step.quantity = 2
             else:
                 # Regular mould makes 4 cannonballs from 1 bar
-                if self.steps[-1].item_name.endswith("cannonball"):
-                    self.steps[-1].quantity = 4
+                if output_step.item_name.endswith("cannonball"):
+                    output_step.quantity = 4
+                    input_step.quantity = 1
         
-        current_multiplier = final_quantity
-        
-        # Process each step
+        # Compute required quantities for each step by walking backwards.
+        # This handles conversions where a step may produce multiple outputs
+        # (e.g., 1 bar -> 4 cannonballs) or require multiple inputs
+        # (e.g., 5 planks -> 1 hull part).
+        num_steps = len(self.steps)
+        needed = [0.0] * num_steps
+
+        # Desired units of the final step is the final_quantity
+        needed[-1] = final_quantity
+
+        # Work backwards to compute needed quantities for each prior step
+        for idx in range(num_steps - 2, -1, -1):
+            prev = self.steps[idx]
+            nxt = self.steps[idx + 1]
+            # Avoid division by zero; if next quantity is zero, fall back to direct multiplication
+            if getattr(nxt, 'quantity', 0) == 0:
+                needed[idx] = needed[idx + 1] * getattr(prev, 'quantity', 1)
+            else:
+                needed[idx] = needed[idx + 1] * (getattr(prev, 'quantity', 1) / getattr(nxt, 'quantity', 1))
+
+        # Now process each step using the computed needed quantities
         for i, step in enumerate(self.steps):
             # Try to resolve item ID if missing
             resolved_id = id_lookup.get_or_find_id(step.item_id, step.item_name)
-            
+
             if not resolved_id:
                 results["missing_prices"].append(step.item_name)
                 continue
-            
+
             price_data = prices.get(str(resolved_id), {})
-            
+
             if not price_data:
                 results["missing_prices"].append(step.item_name)
-            
-            # Calculate quantity needed
-            step_qty = current_multiplier * step.quantity
-            
+
+            # Quantity needed of this step's item
+            step_qty = needed[i]
+
             # Determine step type
             is_output = (i == len(self.steps) - 1)
             is_input = (i == 0)
-            
+
             # Get price
             if is_output:
                 unit_price = price_data.get("low", 0) if price_data else 0
@@ -349,20 +371,20 @@ class ProcessingChain:
             else:
                 unit_price = price_data.get("high", 0) if price_data and not step.is_self_obtained else 0
                 total_value = unit_price * step_qty
-                
+
                 if is_input:
                     results["raw_material_cost"] = total_value
-            
+
             # Calculate processing cost
             processing_cost = 0
             process_notes = ""
-            
+
             if step.processing_method:
                 processing_cost, process_notes = self._calculate_processing_cost(
                     step, step_qty, prices, config, id_lookup
                 )
                 results["processing_costs"] += processing_cost
-            
+
             # Add to breakdown
             results["steps"].append({
                 "name": step.item_name,
@@ -374,10 +396,6 @@ class ProcessingChain:
                 "processing_notes": process_notes,
                 "step_type": "Output" if is_output else ("Input" if is_input else "Intermediate")
             })
-            
-            # Update multiplier
-            if not is_output:
-                current_multiplier = step_qty
         
         # Calculate totals
         results["total_input_cost"] = results["raw_material_cost"] + results["processing_costs"]
@@ -455,7 +473,6 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         (1521, "Oak logs", 8778, "Oak plank"),
         (6333, "Teak logs", 8780, "Teak plank"),
         (6332, "Mahogany logs", 8782, "Mahogany plank"),
-        (19669, "Redwood logs", 19787, "Redwood plank"),
         (32904, "Camphor logs", 31432, "Camphor plank"),
         (32907, "Ironwood logs", 31435, "Ironwood plank"),
         (32910, "Rosewood logs", 31438, "Rosewood plank"),
@@ -607,14 +624,14 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Cannonballs"].append(chain)
         
-        # Double mould version
+        # Double mould version (2 bars -> 8 cannonballs)
         chain_double = ProcessingChain(
             name=f"{ball_name} (Double)",
             category="Cannonballs"
         )
         chain_double.steps = [
-            ChainStep(bar_id, bar_name, 1),
-            ChainStep(ball_id, ball_name, 8)  # 8 per bar with double mould
+            ChainStep(bar_id, bar_name, 2),
+            ChainStep(ball_id, ball_name, 8)
         ]
         chains["Cannonballs"].append(chain_double)
     
