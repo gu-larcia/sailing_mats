@@ -15,7 +15,7 @@ import plotly.graph_objects as go
 # Page config
 st.set_page_config(
     page_title="OSRS Sailing Tracker",
-    page_icon="⚓",
+    page_icon="https://oldschool.runescape.wiki/images/Sailing_icon.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -170,8 +170,30 @@ OSRS_CSS = """
 
 /* Selectbox styling */
 .stSelectbox > div > div {
-    background: var(--parchment-light);
-    border: 2px solid var(--driftwood);
+    background: var(--parchment-light) !important;
+    border: 2px solid var(--driftwood) !important;
+}
+
+.stSelectbox > div > div > div {
+    color: var(--driftwood-dark) !important;
+}
+
+/* Selectbox dropdown menu */
+[data-baseweb="select"] > div,
+[data-baseweb="popover"] > div,
+[role="listbox"],
+[role="option"] {
+    background: var(--parchment-light) !important;
+    color: var(--driftwood-dark) !important;
+}
+
+[role="option"]:hover {
+    background: var(--parchment-dark) !important;
+}
+
+/* Main content selectbox text */
+.stSelectbox label {
+    color: var(--parchment) !important;
 }
 
 /* Toggle styling */
@@ -935,7 +957,7 @@ def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
     ])
     
     fig.update_layout(
-        title="⚓ Top Profitable Chains",
+        title="Top Profitable Chains",
         title_font_color='#ffd700',
         title_font_size=18,
         xaxis_title="Net Profit (GP)",
@@ -963,6 +985,27 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
         profit = max(0, r.get("_profit_raw", 0))
         category_profits[cat] = category_profits.get(cat, 0) + profit
     
+    # Sort by profit and separate small slices
+    sorted_cats = sorted(category_profits.items(), key=lambda x: x[1], reverse=True)
+    total_profit = sum(category_profits.values())
+    
+    # Group categories under 2% into "Other"
+    main_cats = []
+    other_total = 0
+    threshold = total_profit * 0.02
+    
+    for cat, profit in sorted_cats:
+        if profit >= threshold:
+            main_cats.append((cat, profit))
+        else:
+            other_total += profit
+    
+    if other_total > 0:
+        main_cats.append(("Other", other_total))
+    
+    labels = [c[0] for c in main_cats]
+    values = [c[1] for c in main_cats]
+    
     # OSRS-themed color palette
     osrs_colors = [
         '#d4af37',  # Gold
@@ -973,32 +1016,43 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
         '#8e44ad',  # Magic purple
         '#f39c12',  # Orange/copper
         '#1abc9c',  # Teal
+        '#7f8c8d',  # Gray (for Other)
     ]
     
     fig = go.Figure(data=[
         go.Pie(
-            labels=list(category_profits.keys()),
-            values=list(category_profits.values()),
+            labels=labels,
+            values=values,
             hole=0.4,
             textinfo='label+percent',
-            textfont=dict(color='#f4e4bc', size=11),
+            textposition='outside',
+            textfont=dict(color='#f4e4bc', size=12),
             marker=dict(
-                colors=osrs_colors[:len(category_profits)],
+                colors=osrs_colors[:len(labels)],
                 line=dict(color='#5c4d3a', width=2)
-            )
+            ),
+            pull=[0.05 if i == 0 else 0 for i in range(len(labels))]  # Pull out largest slice slightly
         )
     ])
     
     fig.update_layout(
-        title="🪙 Profit by Category",
+        title="Profit by Category",
         title_font_color='#ffd700',
         title_font_size=18,
-        height=350,
+        height=400,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)',
         legend_font_color='#f4e4bc',
         legend_bgcolor='rgba(92,77,58,0.5)',
-        showlegend=True
+        showlegend=True,
+        legend=dict(
+            orientation="v",
+            yanchor="middle",
+            y=0.5,
+            xanchor="left",
+            x=1.02
+        ),
+        margin=dict(l=20, r=120, t=50, b=20)
     )
     
     return fig
@@ -1017,7 +1071,7 @@ def create_profit_histogram(profits: List[float]) -> go.Figure:
     ])
     
     fig.update_layout(
-        title="📊 Profit Distribution",
+        title="Profit Distribution",
         title_font_color='#ffd700',
         title_font_size=18,
         xaxis_title="Net Profit (GP)",
@@ -1072,7 +1126,7 @@ def create_category_comparison(results: List[Dict]) -> go.Figure:
     ))
     
     fig.update_layout(
-        title="⚔️ Category Comparison",
+        title="Category Comparison",
         title_font_color='#ffd700',
         title_font_size=18,
         xaxis_title="",
@@ -1127,7 +1181,7 @@ def create_roi_scatter(results: List[Dict]) -> go.Figure:
     ])
     
     fig.update_layout(
-        title="💰 ROI vs Profit Analysis",
+        title="ROI vs Profit Analysis",
         title_font_color='#ffd700',
         title_font_size=18,
         xaxis_title="Net Profit (GP)",
@@ -1154,11 +1208,11 @@ def main():
     # Header with OSRS styling
     col1, col2 = st.columns([4, 1])
     with col1:
-        st.title("⚓ OSRS Sailing Materials Tracker")
+        st.title("OSRS Sailing Materials Tracker")
         st.caption("*\"For the crafty sailor!\"*")
     with col2:
         st.link_button(
-            "📜 OSRS Wiki",
+            "OSRS Wiki",
             "https://oldschool.runescape.wiki/w/Sailing",
             use_container_width=True
         )
@@ -1178,7 +1232,7 @@ def main():
     
     # Sidebar configuration with form
     with st.sidebar:
-        st.header("⚙️ Configuration")
+        st.header("Configuration")
         
         with st.form("config_form"):
             st.subheader("Processing Options")
@@ -1192,13 +1246,13 @@ def main():
             )
             
             use_double_mould = st.toggle(
-                "🔧 Double Ammo Mould",
+                "Double Ammo Mould",
                 value=params.get("double_mould", "false") == "true",
                 help="Makes 8 cannonballs per 2 bars (requires 2,000 Foundry rep)"
             )
             
             ancient_furnace = st.toggle(
-                "🔥 Ancient Furnace",
+                "Ancient Furnace",
                 value=params.get("ancient_furnace", "false") == "true",
                 help="Halves smithing time (87 Sailing req)"
             )
@@ -1220,13 +1274,13 @@ def main():
                 st.query_params["double_mould"] = str(use_double_mould).lower()
                 st.query_params["ancient_furnace"] = str(ancient_furnace).lower()
                 st.query_params["quantity"] = str(quantity)
-                st.toast("Settings applied!", icon="✅")
+                st.toast("Settings applied!")
         
         st.divider()
         
         # Stats display
         with st.container():
-            st.subheader("📊 Stats")
+            st.subheader("Stats")
             stat_col1, stat_col2 = st.columns(2)
             with stat_col1:
                 st.metric("Items", len(ALL_ITEMS))
@@ -1234,9 +1288,9 @@ def main():
                 st.metric("Prices", len(prices))
         
         # Refresh button
-        if st.button("🔄 Refresh Prices", use_container_width=True):
+        if st.button("Refresh Prices", use_container_width=True):
             st.cache_data.clear()
-            st.toast("Prices refreshed!", icon="🔄")
+            st.toast("Prices refreshed!")
             st.rerun()
         
         # Last update time
@@ -1253,11 +1307,11 @@ def main():
     
     # Main tabs
     tabs = st.tabs([
-        "📊 All Chains", 
-        "🔍 Search Items", 
-        "⚓ Sailing Items",
-        "📈 Best Profits",
-        "📉 Analytics"
+        "All Chains", 
+        "Search Items", 
+        "Sailing Items",
+        "Best Profits",
+        "Analytics"
     ])
     
     # Tab 1: All Processing Chains
@@ -1368,7 +1422,7 @@ def main():
                     st.metric("Total Potential", format_gp(total_profit))
                 
                 # Expandable details
-                with st.expander("📋 View Chain Details", expanded=False):
+                with st.expander("View Chain Details", expanded=False):
                     selected_item = st.selectbox(
                         "Select item for details",
                         [r["Item"] for r in results]
@@ -1383,7 +1437,7 @@ def main():
                             
                             for i, step in enumerate(result["steps"]):
                                 step_type = step["step_type"]
-                                icon = "🟢" if step_type == "Output" else ("🔵" if step_type == "Input" else "⚪")
+                                icon = "[OUT]" if step_type == "Output" else ("[IN]" if step_type == "Input" else "[...]")
                                 
                                 st.markdown(f"""
                                 **{icon} Step {i+1}: {step['name']}**
@@ -1459,7 +1513,7 @@ def main():
                         column_config={
                             "ID": st.column_config.NumberColumn("ID", format="%d"),
                             "Name": st.column_config.TextColumn("Name", width="medium"),
-                            "Sailing": st.column_config.CheckboxColumn("⚓", help="Sailing item"),
+                            "Sailing": st.column_config.CheckboxColumn("Sailing", help="Sailing item"),
                             "Buy": st.column_config.NumberColumn("Buy Price", format="%d gp"),
                             "Sell": st.column_config.NumberColumn("Sell Price", format="%d gp"),
                             "Margin": st.column_config.NumberColumn("Margin", format="%d gp"),
@@ -1476,13 +1530,13 @@ def main():
         st.header("Sailing-Specific Items")
         
         sailing_categories = {
-            "🌲 New Woods": [32902, 32904, 32907, 32910, 31432, 31435, 31438],
-            "🚢 Hull Parts": list(HULL_PARTS.keys()) + list(LARGE_HULL_PARTS.keys()),
-            "🔧 Hull Repair Kits": list(HULL_REPAIR_KITS.keys()),
-            "⚓ Keel Parts": list(KEEL_PARTS.keys()) + list(LARGE_KEEL_PARTS.keys()),
-            "⛏️ New Metals": [31716, 31719, 32889, 32892, 31996],
-            "🐉 Dragon Items": [31406, 32017, 32038, 31916],
-            "💣 Ship Cannonballs": [31906, 31908, 31910, 31912, 31914, 31916],
+            "New Woods": [32902, 32904, 32907, 32910, 31432, 31435, 31438],
+            "Hull Parts": list(HULL_PARTS.keys()) + list(LARGE_HULL_PARTS.keys()),
+            "Hull Repair Kits": list(HULL_REPAIR_KITS.keys()),
+            "Keel Parts": list(KEEL_PARTS.keys()) + list(LARGE_KEEL_PARTS.keys()),
+            "New Metals": [31716, 31719, 32889, 32892, 31996],
+            "Dragon Items": [31406, 32017, 32038, 31916],
+            "Ship Cannonballs": [31906, 31908, 31910, 31912, 31914, 31916],
         }
         
         selected_cat = st.selectbox(
@@ -1613,7 +1667,7 @@ def main():
                 )
                 
                 # Best by category
-                st.subheader("🏆 Best in Each Category")
+                st.subheader("Best in Each Category")
                 
                 category_bests = {}
                 for result in all_results:
@@ -1623,29 +1677,52 @@ def main():
                             category_bests[cat] = result
                 
                 if category_bests:
-                    cols = st.columns(min(4, len(category_bests)))
-                    for i, (cat, best) in enumerate(category_bests.items()):
-                        with cols[i % 4]:
-                            # Truncate intelligently - remove common suffixes for display
-                            display_name = best['Item'].replace(' processing', '').replace(' smithing', '')
-                            if len(display_name) > 20:
-                                display_name = display_name[:18] + "..."
-                            st.metric(
-                                cat,
-                                display_name,
-                                delta=format_gp(best['_profit_raw'])
-                            )
+                    # Use a cleaner table format instead of cramped metrics
+                    best_data = []
+                    for cat, best in category_bests.items():
+                        best_data.append({
+                            "Category": cat,
+                            "Best Item": best['Item'].replace(' processing', '').replace(' smithing', ''),
+                            "Profit": best['_profit_raw']
+                        })
+                    
+                    best_df = pd.DataFrame(best_data)
+                    best_df = best_df.sort_values("Profit", ascending=False)
+                    
+                    st.dataframe(
+                        best_df,
+                        use_container_width=True,
+                        hide_index=True,
+                        column_config={
+                            "Category": st.column_config.TextColumn("Category", width="medium"),
+                            "Best Item": st.column_config.TextColumn("Best Item", width="large"),
+                            "Profit": st.column_config.NumberColumn("Profit", format="%.0f gp")
+                        }
+                    )
             else:
                 st.warning("No profitable chains found with current settings.")
     
     # Tab 5: Analytics
     with tabs[4]:
-        st.header("📉 Profit Analytics")
+        st.header("Profit Analytics")
+        
+        # Filter controls
+        filter_col1, filter_col2 = st.columns(2)
+        with filter_col1:
+            exclude_dragon = st.toggle(
+                "Exclude Dragon Items",
+                value=False,
+                help="Dragon items are outliers with very high profits - exclude them to see other trends more clearly"
+            )
         
         # Calculate all for charts
         all_results_for_charts = []
         for category, chains in all_chains.items():
             for chain in chains:
+                # Skip dragon items if filter is on
+                if exclude_dragon and "dragon" in chain.name.lower():
+                    continue
+                    
                 result = chain.calculate(prices, config, id_lookup)
                 if "error" not in result:
                     all_results_for_charts.append({
@@ -1656,33 +1733,34 @@ def main():
                     })
         
         if all_results_for_charts:
-            # Row 1: Top profits and category pie
+            profitable_results = [r for r in all_results_for_charts if r["_profit_raw"] > 0]
+            
+            # Row 1: Top profits and category comparison (better use of space)
             col1, col2 = st.columns(2)
             
             with col1:
-                profitable_results = [r for r in all_results_for_charts if r["_profit_raw"] > 0]
                 if profitable_results:
                     fig = create_profit_chart(profitable_results, top_n=10)
                     st.plotly_chart(fig, use_container_width=True)
             
             with col2:
-                if profitable_results:
-                    fig = create_category_pie(profitable_results)
-                    st.plotly_chart(fig, use_container_width=True)
-            
-            # Row 2: Category comparison and ROI scatter
-            col1, col2 = st.columns(2)
-            
-            with col1:
                 fig = create_category_comparison(all_results_for_charts)
                 st.plotly_chart(fig, use_container_width=True)
             
-            with col2:
+            # Row 2: ROI scatter and pie chart
+            col1, col2 = st.columns(2)
+            
+            with col1:
                 fig = create_roi_scatter(all_results_for_charts)
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
                 else:
                     st.info("Not enough ROI data for scatter plot")
+            
+            with col2:
+                if profitable_results:
+                    fig = create_category_pie(profitable_results)
+                    st.plotly_chart(fig, use_container_width=True)
             
             # Row 3: Profit distribution histogram
             st.subheader("Distribution Analysis")
@@ -1690,21 +1768,21 @@ def main():
             fig = create_profit_histogram(profits)
             st.plotly_chart(fig, use_container_width=True)
             
-            # Summary stats with OSRS flair
-            st.subheader("📊 Voyage Summary")
+            # Summary stats
+            st.subheader("Voyage Summary")
             col1, col2, col3, col4 = st.columns(4)
             
             with col1:
-                st.metric("🚢 Total Chains", len(all_results_for_charts))
+                st.metric("Total Chains", len(all_results_for_charts))
             with col2:
                 profitable_count = sum(1 for p in profits if p > 0)
-                st.metric("💰 Profitable", f"{profitable_count} ({profitable_count/len(profits)*100:.0f}%)")
+                st.metric("Profitable", f"{profitable_count} ({profitable_count/len(profits)*100:.0f}%)")
             with col3:
                 avg_profit = sum(profits) / len(profits)
-                st.metric("📈 Avg Profit", format_gp(avg_profit))
+                st.metric("Avg Profit", format_gp(avg_profit))
             with col4:
                 max_profit = max(profits)
-                st.metric("🏆 Best Profit", format_gp(max_profit))
+                st.metric("Best Profit", format_gp(max_profit))
 
 
 if __name__ == "__main__":

@@ -31,12 +31,13 @@ This version takes full advantage of Streamlit's built-in modules for a better u
 | `st.metric()` | Summary statistics | At-a-glance insights |
 
 ### New Analytics Tab
-- **Profit Bar Charts**: Visual comparison of top profitable chains (gold bars!)
-- **Category Pie Chart**: Distribution of profits by category
+- **Profit Bar Charts**: Visual comparison of top profitable chains
+- **Category Pie Chart**: Distribution of profits by category (small slices grouped into "Other")
 - **Category Comparison**: Average vs Best profit per category
 - **ROI vs Profit Scatter**: Find high-ROI opportunities
 - **Profit Histogram**: Overall profit distribution
-- **Voyage Summary**: Comprehensive overview with OSRS flair
+- **Dragon Filter**: Toggle to exclude dragon items and see non-outlier trends
+- **Voyage Summary**: Comprehensive overview
 
 ### Improved Data Tables
 - Number formatting with GP units
@@ -174,7 +175,9 @@ streamlit run app_improved.py
 - **Custom fonts**: Cinzel (headers) and Crimson Text (body)
 - **New charts**: Category comparison bars, ROI vs Profit scatter plot
 - **OSRS-themed chart colors**: Gold, bronze, rune blue, dragon red
-- Added `st.status()` for data loading feedback
+- **Dragon Filter**: Toggle to exclude dragon item outliers from analytics
+- **Improved Pie Chart**: Small slices grouped into "Other" for clarity
+- **No Emojis**: Clean professional look using OSRS Wiki icon for page
 - Added `st.toast()` for notifications
 - Added `st.form()` for grouped inputs
 - Added `st.toggle()` for modern switches
@@ -186,7 +189,8 @@ streamlit run app_improved.py
 - Added Analytics tab with visualizations
 - Improved table formatting with `st.column_config`
 - Added progress bars for ROI display
-- Fixed "Best in Category" display names (no more truncation)
+- Fixed "Best in Category" display - now uses table format instead of cramped metrics
+- Fixed dropdown contrast issues (dark text on light background)
 
 ### v3.1 (Original)
 - Basic Streamlit implementation
