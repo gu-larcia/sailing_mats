@@ -1712,7 +1712,7 @@ def main():
             exclude_dragon = st.toggle(
                 "Exclude Dragon Items",
                 value=False,
-                help="Dragon items are outliers with very high profits - exclude them to see other trends more clearly"
+                help="Dragon items are outliers with volatile prices - you can exclude them to see other trends more clearly"
             )
         
         # Calculate all for charts
