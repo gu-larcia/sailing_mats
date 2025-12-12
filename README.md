@@ -1,6 +1,45 @@
-# OSRS Sailing Materials Tracker - Final Version
+# OSRS Sailing Materials Tracker v4.0 - Enhanced Streamlit Edition
 
 A comprehensive Streamlit application for tracking Old School RuneScape Sailing skill materials with real-time Grand Exchange prices and complete processing chain calculations.
+
+## 🆕 What's New in v4.0
+
+This version takes full advantage of Streamlit's built-in modules for a better user experience:
+
+### Streamlit Features Now Utilized
+
+| Feature | Usage | Benefit |
+|---------|-------|---------|
+| `st.status()` | Data loading feedback | Clear progress indication |
+| `st.toast()` | Settings/refresh notifications | Non-intrusive alerts |
+| `st.form()` | Grouped sidebar inputs | Prevents constant reruns |
+| `st.toggle()` | Modern boolean switches | Cleaner UI than checkboxes |
+| `st.query_params` | URL state persistence | Shareable configurations |
+| `st.cache_resource` | Singleton class caching | Better memory efficiency |
+| `st.link_button()` | External Wiki links | Easy navigation |
+| `st.expander()` | Collapsible chain details | Cleaner interface |
+| `st.column_config` | Enhanced table formatting | Progress bars, number formatting |
+| `st.plotly_chart()` | Interactive visualizations | Profit analysis charts |
+| `st.spinner()` | Search loading states | Better UX feedback |
+| `st.metric()` | Summary statistics | At-a-glance insights |
+
+### New Analytics Tab
+- **Profit Bar Charts**: Visual comparison of top profitable chains
+- **Category Pie Chart**: Distribution of profits by category
+- **Profit Histogram**: Overall profit distribution
+- **Summary Statistics**: Comprehensive overview
+
+### Improved Data Tables
+- Number formatting with GP units
+- Progress bars for ROI percentages
+- Checkbox columns for status indicators
+- Sortable columns with proper data types
+
+### URL-Shareable Settings
+Share your configuration with others via URL parameters:
+```
+https://your-app.streamlit.app/?plank_method=Sawmill&double_mould=true&quantity=1000
+```
 
 ## 🎯 Features
 
@@ -20,43 +59,11 @@ A comprehensive Streamlit application for tracking Old School RuneScape Sailing 
 - **Ancient Furnace**: 4x production speed
 - **Multiple plank methods**: Sawmill, Plank Make, Earth Staff variants
 
-### Dynamic Item ID Lookup
-- Automatically discovers missing item IDs from API
-- Self-populates database when new items are found
-- Fallback to name-based searching
-
 ### Real-time Price Analysis
 - Live GE prices (60-second cache)
 - Profit/loss calculations with 2% GE tax
-- ROI percentages
+- ROI percentages with visual progress bars
 - Best profit finder across all categories
-
-## 📋 Complete Item Database
-
-### Hull Parts Processing
-```
-5 Planks → 1 Hull Part
-5 Hull Parts → 1 Large Hull Part
-Total: 25 planks per Large Hull Part
-```
-
-### Keel Parts Processing
-```
-5 Bars → 1 Keel Part (standard metals)
-1 Dragon Metal Sheet → 1 Dragon Keel Part
-5 Keel Parts → 1 Large Keel Part
-2 Dragon Keel Parts → 1 Large Dragon Keel Part (special!)
-```
-
-### Sawmill Costs (New Woods)
-- Camphor: 2,500 gp
-- Ironwood: 5,000 gp
-- Rosewood: 7,500 gp
-
-### Cannonball Production
-- Regular mould: 1 bar → 4 cannonballs
-- Double mould: 2 bars → 8 cannonballs (2x speed)
-- Ancient Furnace: Halves production time
 
 ## 🚀 Installation
 
@@ -67,44 +74,55 @@ git clone https://github.com/yourusername/osrs-sailing-tracker.git
 cd osrs-sailing-tracker
 
 # Install dependencies
-pip install -r requirements_final.txt
+pip install -r requirements.txt
 
 # Run the app
-streamlit run app_final.py
+streamlit run app_improved.py
 ```
 
 ### Deploy to Streamlit Cloud
 1. Push code to GitHub
 2. Go to [share.streamlit.io](https://share.streamlit.io)
 3. Connect your repository
-4. Set main file to `app_final.py`
+4. Set main file to `app_improved.py`
 5. Deploy!
 
-## 📊 Usage Examples
+## 📊 Usage
 
-### Finding Profitable Chains
-1. Go to "Best Profits" tab
-2. Set your quantity (e.g., 1000)
-3. Configure processing options:
-   - Sawmill vs Plank Make
-   - Double ammo mould (yes/no)
-   - Ancient Furnace access
-4. View top 20 most profitable items
+### Configuration (Sidebar)
+1. **Plank Method**: Choose between Sawmill, Plank Make, or Plank Make with Earth Staff
+2. **Double Ammo Mould**: Toggle for 2x cannonball production
+3. **Ancient Furnace**: Toggle for faster smithing
+4. **Quantity**: Set batch size for calculations
+5. Click "Apply Settings" to update calculations
 
-### Sailing-Specific Items
-1. Go to "Sailing Items" tab
-2. Browse categories:
-   - New Woods (Camphor, Ironwood, Rosewood)
-   - Hull Parts (Regular and Large)
-   - Dragon Items (Nails, Keel parts)
-3. Check current prices and availability
+### Tabs Overview
 
-### Custom Comparisons
-1. Select any processing chain
-2. Toggle different methods:
-   - Self-obtained materials (infinite ROI)
-   - Different processing methods
-3. Compare profit margins
+#### 📊 All Chains
+- Browse processing chains by category
+- View detailed cost breakdowns
+- Expand for step-by-step chain analysis
+
+#### 🔍 Search Items
+- Search any item by name
+- See buy/sell prices and margins
+- Identify Sailing-specific items (⚓ marker)
+
+#### ⚓ Sailing Items
+- Browse Sailing-specific categories
+- Quick access to new content items
+- Monitor item availability
+
+#### 📈 Best Profits
+- Top 20 most profitable chains
+- Filter by profitable only
+- Best item per category highlights
+
+#### 📉 Analytics
+- Visual profit comparisons
+- Category profit distribution
+- Profit histogram
+- Summary statistics
 
 ## 🔧 Technical Details
 
@@ -113,19 +131,18 @@ streamlit run app_final.py
 - Endpoints: `/mapping` (items), `/latest` (prices)
 - Cache: 60 seconds for prices, 5 minutes for mappings
 
-### Item ID Ranges
-- Hull Parts: 32041-32080
-- Keel Parts: 31999-32038
-- Repair Kits: 31964-31982
-- New Planks: 31432-31438
-- New Logs: 32902-32910
-- Ship Cannonballs: 31906-31916
+### Caching Strategy
+```python
+@st.cache_resource  # For singleton instances (API connection, ID lookup)
+@st.cache_data(ttl=60)  # For price data (60s refresh)
+@st.cache_data(ttl=300)  # For item mappings (5min refresh)
+@st.cache_data(ttl=3600)  # For chain generation (1hr, static data)
+```
 
-### Special Mechanics
-- Dragon keel parts: 2:1 ratio (not 5:1 like others)
-- Jatoba logs: Quest-only, cannot be planked
-- Dragon items: Require Dragon Forge (Ancient Cavern)
-- Double ammo mould: 2,000 Foundry Reputation required
+### State Management
+- `st.query_params` for URL-shareable configuration
+- `st.form()` for batched input handling
+- Efficient reruns with targeted caching
 
 ## 📈 Profit Optimization Tips
 
@@ -135,13 +152,34 @@ streamlit run app_final.py
 4. **Self-Obtained**: Cutting your own logs = infinite ROI
 5. **Bulk Processing**: Higher quantities reduce per-item costs
 
-## 🐛 Known Issues
+## 🛠 Known Issues
 
 - Some Sailing items may not have stable prices yet
 - Dragon cannonballs are drop-only (cannot be smithed)
 - Jatoba logs cannot be processed into planks
 
-## 📝 License
+## 📝 Changelog
+
+### v4.0 (Enhanced Streamlit Edition)
+- Added `st.status()` for data loading feedback
+- Added `st.toast()` for notifications
+- Added `st.form()` for grouped inputs
+- Added `st.toggle()` for modern switches
+- Added `st.query_params` for URL sharing
+- Added `st.cache_resource` for class instances
+- Added `st.link_button()` for Wiki links
+- Added `st.expander()` for chain details
+- Added Plotly charts for analytics
+- Added Analytics tab with visualizations
+- Improved table formatting with `st.column_config`
+- Added progress bars for ROI display
+
+### v3.1 (Original)
+- Basic Streamlit implementation
+- Core processing chain calculations
+- Real-time GE price fetching
+
+## 📄 License
 
 MIT License - Free for all OSRS players
 
@@ -149,7 +187,7 @@ MIT License - Free for all OSRS players
 
 - OSRS Wiki for item data and API
 - Jagex for creating the Sailing skill
-- Anthropic for development assistance
+- Streamlit for the amazing framework
 
 ---
 

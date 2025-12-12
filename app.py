@@ -1,6 +1,6 @@
 """
 OSRS Sailing Materials Tracker
-Version 3.1
+Version 4.0 - Enhanced Streamlit Edition
 """
 
 import streamlit as st
@@ -8,15 +8,16 @@ import pandas as pd
 import requests
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Any
-import json
 from dataclasses import dataclass, field
-import time
+import plotly.express as px
+import plotly.graph_objects as go
 
 # Page config
 st.set_page_config(
     page_title="OSRS Sailing Tracker",
     page_icon="⚓",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 # Constants
@@ -41,7 +42,7 @@ ALL_LOGS = {
     10810: "Arctic pine logs",
     3239: "Bark",
     # Sailing-specific woods
-    32902: "Jatoba logs",  # Quest item only, cannot be planked
+    32902: "Jatoba logs",
     32904: "Camphor logs",
     32907: "Ironwood logs",
     32910: "Rosewood logs",
@@ -57,7 +58,6 @@ ALL_PLANKS = {
     31432: "Camphor plank",
     31435: "Ironwood plank",
     31438: "Rosewood plank",
-    # Note: No Jatoba plank exists
 }
 
 # HULL PARTS (Regular - 5 planks each)
@@ -137,7 +137,7 @@ KEEL_PARTS = {
     32008: "Mithril keel parts",
     32011: "Adamant keel parts",
     32014: "Rune keel parts",
-    32017: "Dragon keel parts",  # Drop only
+    32017: "Dragon keel parts",
 }
 
 # LARGE KEEL PARTS (5 regular each, except dragon which is 2:1)
@@ -148,19 +148,19 @@ LARGE_KEEL_PARTS = {
     32029: "Large mithril keel parts",
     32032: "Large adamant keel parts",
     32035: "Large rune keel parts",
-    32038: "Large dragon keel parts",  # Only needs 2 regular dragon keel parts
+    32038: "Large dragon keel parts",
 }
 
 # ALL NAILS (15 per bar via Smithing)
 ALL_NAILS = {
     4819: "Bronze nails",
     4820: "Iron nails",
-    4821: "Black nails",  # Drop only
+    4821: "Black nails",
     1539: "Steel nails",
     4822: "Mithril nails",
     4823: "Adamantite nails",
     4824: "Rune nails",
-    31406: "Dragon nails",  # 92 Smithing, Dragon Forge only
+    31406: "Dragon nails",
 }
 
 # ALL CANNONBALLS
@@ -173,13 +173,13 @@ ALL_CANNONBALLS = {
     31910: "Mithril cannonball",
     31912: "Adamant cannonball",
     31914: "Rune cannonball",
-    31916: "Dragon cannonball",  # Drop only
+    31916: "Dragon cannonball",
 }
 
 # Ammo moulds
 AMMO_MOULDS = {
-    4: "Ammo mould",  # 1 bar → 4 cannonballs
-    27012: "Double ammo mould",  # 2 bars → 8 cannonballs (2x speed)
+    4: "Ammo mould",
+    27012: "Double ammo mould",
 }
 
 # Processing costs by wood type
@@ -217,6 +217,63 @@ ALL_ITEMS = {
     **LARGE_KEEL_PARTS, **ALL_NAILS, **ALL_CANNONBALLS, **AMMO_MOULDS
 }
 
+
+# ===============
+#  API CONNECTION
+# ===============
+
+class OSRSWikiConnection:
+    """Custom connection class for OSRS Wiki API"""
+    
+    def __init__(self, base_url: str = API_BASE):
+        self.base_url = base_url
+        self._session = requests.Session()
+        self._session.headers.update({
+            'User-Agent': 'OSRS-Sailing-Tracker/4.0 (Streamlit App)'
+        })
+    
+    def fetch_mapping(self) -> Dict:
+        """Fetch item mappings"""
+        response = self._session.get(f"{self.base_url}/mapping")
+        response.raise_for_status()
+        items = response.json()
+        return {item['id']: item for item in items}
+    
+    def fetch_prices(self) -> Dict:
+        """Fetch latest prices"""
+        response = self._session.get(f"{self.base_url}/latest")
+        response.raise_for_status()
+        return response.json().get('data', {})
+
+
+@st.cache_resource
+def get_api_connection() -> OSRSWikiConnection:
+    """Get cached API connection instance"""
+    return OSRSWikiConnection()
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def fetch_item_mapping(_conn: OSRSWikiConnection) -> Dict:
+    """Fetch all item mappings with caching"""
+    return _conn.fetch_mapping()
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def fetch_latest_prices(_conn: OSRSWikiConnection) -> Dict:
+    """Fetch latest prices with caching"""
+    return _conn.fetch_prices()
+
+
+# ===============
+#  ITEM LOOKUP
+# ===============
+
+@st.cache_resource
+def get_id_lookup(_item_mapping_hash: str, item_mapping: Dict) -> 'ItemIDLookup':
+    """Get cached ItemIDLookup instance"""
+    return ItemIDLookup(item_mapping)
+
+
 class ItemIDLookup:
     """Dynamic item ID lookup system"""
     
@@ -224,7 +281,6 @@ class ItemIDLookup:
         self.item_mapping = item_mapping
         self.name_to_id_cache = {}
         
-        # Reverse lookup
         for item_id, item_data in item_mapping.items():
             if isinstance(item_data, dict) and 'name' in item_data:
                 self.name_to_id_cache[item_data['name'].lower()] = item_id
@@ -233,11 +289,9 @@ class ItemIDLookup:
         """Find item ID by searching for name"""
         search_name = item_name.lower()
         
-        # Direct match
         if search_name in self.name_to_id_cache:
             return self.name_to_id_cache[search_name]
         
-        # Partial match
         for name, item_id in self.name_to_id_cache.items():
             if search_name in name or name in search_name:
                 return item_id
@@ -251,10 +305,13 @@ class ItemIDLookup:
         
         found_id = self.find_id_by_name(item_name)
         if found_id:
-            st.info(f"Auto-discovered ID for '{item_name}': {found_id}")
-            # Update our database
             ALL_ITEMS[found_id] = item_name
         return found_id
+
+
+# ===============
+#  PROCESSING CHAINS
+# ===============
 
 @dataclass
 class ChainStep:
@@ -266,13 +323,14 @@ class ChainStep:
     processing_method: Optional[str] = None
     custom_cost: Optional[float] = None
 
+
 @dataclass
 class ProcessingChain:
     """Complete processing chain"""
     name: str
     category: str
     steps: List[ChainStep] = field(default_factory=list)
-    special_ratio: Optional[Dict] = field(default_factory=dict)  # For dragon keel 2:1 ratio etc
+    special_ratio: Optional[Dict] = field(default_factory=dict)
     
     def calculate(self, prices: Dict, config: Dict, id_lookup: ItemIDLookup) -> Dict:
         """Calculate chain profitability"""
@@ -298,53 +356,37 @@ class ProcessingChain:
         
         final_quantity = config.get("quantity", 1)
         
-        # Handle special ratios (e.g., dragon keel parts 2:1 instead of 5:1)
         if self.special_ratio and "dragon" in self.name.lower():
             ratio = self.special_ratio.get("conversion_ratio", 5)
         else:
-            ratio = 5  # Default ratio for most items
+            ratio = 5
         
-        # Handle ammo mould behaviour for cannonballs
-        # Regular mould: 1 bar -> 4 cannonballs
-        # Double mould: 2 bars -> 8 cannonballs
         if self.category == "Cannonballs" and len(self.steps) >= 2:
             input_step = self.steps[0]
             output_step = self.steps[-1]
 
             if config.get("double_ammo_mould", False):
-                # Double mould makes 8 cannonballs from 2 bars
                 if output_step.item_name.endswith("cannonball"):
                     output_step.quantity = 8
                     input_step.quantity = 2
             else:
-                # Regular mould makes 4 cannonballs from 1 bar
                 if output_step.item_name.endswith("cannonball"):
                     output_step.quantity = 4
                     input_step.quantity = 1
         
-        # Compute required quantities for each step by walking backwards.
-        # This handles conversions where a step may produce multiple outputs
-        # (e.g., 1 bar -> 4 cannonballs) or require multiple inputs
-        # (e.g., 5 planks -> 1 hull part).
         num_steps = len(self.steps)
         needed = [0.0] * num_steps
-
-        # Desired units of the final step is the final_quantity
         needed[-1] = final_quantity
 
-        # Work backwards to compute needed quantities for each prior step
         for idx in range(num_steps - 2, -1, -1):
             prev = self.steps[idx]
             nxt = self.steps[idx + 1]
-            # Avoid division by zero; if next quantity is zero, fall back to direct multiplication
             if getattr(nxt, 'quantity', 0) == 0:
                 needed[idx] = needed[idx + 1] * getattr(prev, 'quantity', 1)
             else:
                 needed[idx] = needed[idx + 1] * (getattr(prev, 'quantity', 1) / getattr(nxt, 'quantity', 1))
 
-        # Now process each step using the computed needed quantities
         for i, step in enumerate(self.steps):
-            # Try to resolve item ID if missing
             resolved_id = id_lookup.get_or_find_id(step.item_id, step.item_name)
 
             if not resolved_id:
@@ -356,14 +398,10 @@ class ProcessingChain:
             if not price_data:
                 results["missing_prices"].append(step.item_name)
 
-            # Quantity needed of this step's item
             step_qty = needed[i]
-
-            # Determine step type
             is_output = (i == len(self.steps) - 1)
             is_input = (i == 0)
 
-            # Get price
             if is_output:
                 unit_price = price_data.get("low", 0) if price_data else 0
                 total_value = unit_price * step_qty
@@ -375,7 +413,6 @@ class ProcessingChain:
                 if is_input:
                     results["raw_material_cost"] = total_value
 
-            # Calculate processing cost
             processing_cost = 0
             process_notes = ""
 
@@ -385,7 +422,6 @@ class ProcessingChain:
                 )
                 results["processing_costs"] += processing_cost
 
-            # Add to breakdown
             results["steps"].append({
                 "name": step.item_name,
                 "quantity": step_qty,
@@ -397,17 +433,14 @@ class ProcessingChain:
                 "step_type": "Output" if is_output else ("Input" if is_input else "Intermediate")
             })
         
-        # Calculate totals
         results["total_input_cost"] = results["raw_material_cost"] + results["processing_costs"]
         
-        # GE Tax (2%, max 5M)
         if results["output_value"] >= 50:
             results["ge_tax"] = min(results["output_value"] * 0.02, 5_000_000)
         
         results["net_profit"] = results["output_value"] - results["total_input_cost"] - results["ge_tax"]
         results["profit_per_item"] = results["net_profit"] / final_quantity if final_quantity > 0 else 0
         
-        # ROI
         if results["total_input_cost"] > 0:
             results["roi"] = (results["net_profit"] / results["total_input_cost"]) * 100
         elif results["raw_material_cost"] == 0:
@@ -431,7 +464,6 @@ class ProcessingChain:
             if step.item_name in PLANK_MAKE_COSTS:
                 base_cost = PLANK_MAKE_COSTS[step.item_name] * quantity
                 
-                # Add rune costs
                 astral_price = prices.get(str(RUNE_IDS["Astral rune"]), {}).get("high", 0)
                 nature_price = prices.get(str(RUNE_IDS["Nature rune"]), {}).get("high", 0)
                 
@@ -454,6 +486,8 @@ class ProcessingChain:
         
         return 0, ""
 
+
+@st.cache_data(ttl=3600)
 def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
     """Generate all systematic processing chains"""
     chains = {
@@ -467,7 +501,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         "Cannonballs": [],
     }
     
-    # PLANK CHAINS (Log → Plank)
+    # PLANK CHAINS
     plank_mappings = [
         (1511, "Logs", 960, "Plank"),
         (1521, "Oak logs", 8778, "Oak plank"),
@@ -489,7 +523,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Planks"].append(chain)
     
-    # HULL PARTS CHAINS (5 Planks → 1 Hull Part)
+    # HULL PARTS CHAINS
     hull_mappings = [
         (960, "Plank", 32041, "Wooden hull parts"),
         (8778, "Oak plank", 32044, "Oak hull parts"),
@@ -511,7 +545,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Hull Parts"].append(chain)
     
-    # LARGE HULL PARTS (5 Hull Parts → 1 Large)
+    # LARGE HULL PARTS
     large_hull_mappings = [
         (32041, "Wooden hull parts", 32062, "Large wooden hull parts"),
         (32044, "Oak hull parts", 32065, "Large oak hull parts"),
@@ -528,12 +562,12 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
             category="Large Hull Parts"
         )
         chain.steps = [
-            ChainStep(hull_id, hull_name, 5),  # 5 regular per large
+            ChainStep(hull_id, hull_name, 5),
             ChainStep(large_id, large_name, 1)
         ]
         chains["Large Hull Parts"].append(chain)
     
-    # KEEL PARTS (5 Bars → 1 Keel Part, except dragon)
+    # KEEL PARTS
     keel_mappings = [
         (2349, "Bronze bar", 31999, "Bronze keel parts", 5),
         (2351, "Iron bar", 32002, "Iron keel parts", 5),
@@ -541,7 +575,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         (2359, "Mithril bar", 32008, "Mithril keel parts", 5),
         (2361, "Adamantite bar", 32011, "Adamant keel parts", 5),
         (2363, "Runite bar", 32014, "Rune keel parts", 5),
-        (31996, "Dragon metal sheet", 32017, "Dragon keel parts", 1),  # Special case
+        (31996, "Dragon metal sheet", 32017, "Dragon keel parts", 1),
     ]
     
     for bar_id, bar_name, keel_id, keel_name, qty in keel_mappings:
@@ -555,7 +589,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Keel Parts"].append(chain)
     
-    # LARGE KEEL PARTS (5 Regular → 1 Large, except dragon 2:1)
+    # LARGE KEEL PARTS
     large_keel_mappings = [
         (31999, "Bronze keel parts", 32020, "Large bronze keel parts", 5),
         (32002, "Iron keel parts", 32023, "Large iron keel parts", 5),
@@ -563,7 +597,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         (32008, "Mithril keel parts", 32029, "Large mithril keel parts", 5),
         (32011, "Adamant keel parts", 32032, "Large adamant keel parts", 5),
         (32014, "Rune keel parts", 32035, "Large rune keel parts", 5),
-        (32017, "Dragon keel parts", 32038, "Large dragon keel parts", 2),  # Special 2:1 ratio
+        (32017, "Dragon keel parts", 32038, "Large dragon keel parts", 2),
     ]
     
     for keel_id, keel_name, large_id, large_name, qty in large_keel_mappings:
@@ -579,7 +613,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
             chain.special_ratio = {"conversion_ratio": 2}
         chains["Large Keel Parts"].append(chain)
     
-    # NAIL CHAINS (1 Bar → 15 Nails)
+    # NAIL CHAINS
     nail_mappings = [
         (2349, "Bronze bar", 4819, "Bronze nails"),
         (2351, "Iron bar", 4820, "Iron nails"),
@@ -587,7 +621,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         (2359, "Mithril bar", 4822, "Mithril nails"),
         (2361, "Adamantite bar", 4823, "Adamantite nails"),
         (2363, "Runite bar", 4824, "Rune nails"),
-        (31996, "Dragon metal sheet", 31406, "Dragon nails"),  # Dragon Forge only
+        (31996, "Dragon metal sheet", 31406, "Dragon nails"),
     ]
     
     for bar_id, bar_name, nail_id, nail_name in nail_mappings:
@@ -613,18 +647,16 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
     ]
     
     for bar_id, bar_name, ball_id, ball_name in cannonball_mappings:
-        # Regular mould version
         chain = ProcessingChain(
             name=f"{ball_name} (Regular)",
             category="Cannonballs"
         )
         chain.steps = [
             ChainStep(bar_id, bar_name, 1),
-            ChainStep(ball_id, ball_name, 4)  # 4 per bar with regular mould
+            ChainStep(ball_id, ball_name, 4)
         ]
         chains["Cannonballs"].append(chain)
         
-        # Double mould version (2 bars -> 8 cannonballs)
         chain_double = ProcessingChain(
             name=f"{ball_name} (Double)",
             category="Cannonballs"
@@ -635,7 +667,6 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Cannonballs"].append(chain_double)
     
-    # Granite cannonballs (special case)
     granite_chain = ProcessingChain(
         name="Granite cannonballs",
         category="Cannonballs"
@@ -649,34 +680,10 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
     
     return chains
 
-class OSRSApiClient:
-    """Client for OSRS Wiki API"""
-    
-    @staticmethod
-    @st.cache_data(ttl=300)
-    def fetch_item_mapping():
-        """Fetch all item mappings"""
-        try:
-            response = requests.get(f"{API_BASE}/mapping")
-            response.raise_for_status()
-            items = response.json()
-            return {item['id']: item for item in items}
-        except Exception as e:
-            st.error(f"Failed to fetch items: {e}")
-            return {}
-    
-    @staticmethod
-    @st.cache_data(ttl=60)
-    def fetch_latest_prices():
-        """Fetch latest prices"""
-        try:
-            response = requests.get(f"{API_BASE}/latest")
-            response.raise_for_status()
-            data = response.json()
-            return data.get('data', {})
-        except Exception as e:
-            st.error(f"Failed to fetch prices: {e}")
-            return {}
+
+# ===============
+#  UTILITIES
+# ===============
 
 def format_gp(value: float) -> str:
     """Format GP values"""
@@ -695,210 +702,420 @@ def format_gp(value: float) -> str:
     
     return f"-{formatted}" if is_negative else formatted
 
+
+def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
+    """Create a bar chart of top profits"""
+    sorted_results = sorted(results, key=lambda x: x.get("_profit_raw", 0), reverse=True)[:top_n]
+    
+    items = [r["Item"] for r in sorted_results]
+    profits = [r["_profit_raw"] for r in sorted_results]
+    colors = ['#22c55e' if p > 0 else '#ef4444' for p in profits]
+    
+    fig = go.Figure(data=[
+        go.Bar(
+            x=profits,
+            y=items,
+            orientation='h',
+            marker_color=colors,
+            text=[format_gp(p) for p in profits],
+            textposition='outside'
+        )
+    ])
+    
+    fig.update_layout(
+        title="Top Profitable Chains",
+        xaxis_title="Net Profit (GP)",
+        yaxis_title="",
+        height=400,
+        margin=dict(l=200, r=50, t=50, b=50),
+        yaxis=dict(autorange="reversed"),
+        showlegend=False
+    )
+    
+    return fig
+
+
+def create_category_pie(results: List[Dict]) -> go.Figure:
+    """Create a pie chart of profits by category"""
+    category_profits = {}
+    for r in results:
+        cat = r.get("Category", "Unknown")
+        profit = max(0, r.get("_profit_raw", 0))
+        category_profits[cat] = category_profits.get(cat, 0) + profit
+    
+    fig = go.Figure(data=[
+        go.Pie(
+            labels=list(category_profits.keys()),
+            values=list(category_profits.values()),
+            hole=0.4,
+            textinfo='label+percent',
+            marker=dict(colors=px.colors.qualitative.Set3)
+        )
+    ])
+    
+    fig.update_layout(
+        title="Profit Distribution by Category",
+        height=350,
+        showlegend=True
+    )
+    
+    return fig
+
+
+# ===============
+#  MAIN APP
+# ===============
+
 def main():
-    st.title("⚓ OSRS Sailing Materials Tracker")
-    st.caption("For the crafty sailor!")
+    # Header
+    col1, col2 = st.columns([4, 1])
+    with col1:
+        st.title("⚓ OSRS Sailing Materials Tracker")
+        st.caption("Real-time profit calculations for the crafty sailor!")
+    with col2:
+        st.link_button(
+            "📖 OSRS Wiki",
+            "https://oldschool.runescape.wiki/w/Sailing",
+            use_container_width=True
+        )
     
-    # Initialize session state
-    if 'all_chains' not in st.session_state:
-        st.session_state.all_chains = generate_all_chains()
+    # Initialize connection and load data
+    conn = get_api_connection()
     
-    # Load data
-    with st.spinner("Loading prices..."):
-        item_mapping = OSRSApiClient.fetch_item_mapping()
-        prices = OSRSApiClient.fetch_latest_prices()
-        id_lookup = ItemIDLookup(item_mapping)
+    # Load data with status indicator
+    with st.status("Loading market data...", expanded=False) as status:
+        st.write("Fetching item mappings...")
+        item_mapping = fetch_item_mapping(conn)
+        
+        st.write("Fetching latest prices...")
+        prices = fetch_latest_prices(conn)
+        
+        st.write("Initializing lookup tables...")
+        mapping_hash = str(hash(frozenset(item_mapping.keys())))
+        id_lookup = get_id_lookup(mapping_hash, item_mapping)
+        
+        st.write("Generating processing chains...")
+        all_chains = generate_all_chains()
+        
+        status.update(label="Data loaded!", state="complete", expanded=False)
     
-    # Sidebar configuration
+    # Sync with URL parameters
+    params = st.query_params
+    
+    # Sidebar configuration with form
     with st.sidebar:
         st.header("⚙️ Configuration")
         
-        st.subheader("Processing Options")
-        
-        plank_method = st.selectbox(
-            "Plank Method",
-            ["Sawmill", "Plank Make", "Plank Make (Earth Staff)"]
-        )
-        use_earth_staff = "Earth Staff" in plank_method
-        
-        use_double_mould = st.checkbox(
-            "Double Ammo Mould",
-            help="Makes 8 cannonballs per 2 bars (requires 2,000 Foundry rep)"
-        )
-        
-        ancient_furnace = st.checkbox(
-            "Ancient Furnace",
-            help="Halves smithing time (87 Sailing req)"
-        )
+        with st.form("config_form"):
+            st.subheader("Processing Options")
+            
+            plank_method = st.selectbox(
+                "Plank Method",
+                ["Sawmill", "Plank Make", "Plank Make (Earth Staff)"],
+                index=["Sawmill", "Plank Make", "Plank Make (Earth Staff)"].index(
+                    params.get("plank_method", "Sawmill")
+                ) if params.get("plank_method") in ["Sawmill", "Plank Make", "Plank Make (Earth Staff)"] else 0
+            )
+            
+            use_double_mould = st.toggle(
+                "🔧 Double Ammo Mould",
+                value=params.get("double_mould", "false") == "true",
+                help="Makes 8 cannonballs per 2 bars (requires 2,000 Foundry rep)"
+            )
+            
+            ancient_furnace = st.toggle(
+                "🔥 Ancient Furnace",
+                value=params.get("ancient_furnace", "false") == "true",
+                help="Halves smithing time (87 Sailing req)"
+            )
+            
+            st.divider()
+            
+            quantity = st.number_input(
+                "Calculate for quantity:",
+                min_value=1,
+                max_value=100000,
+                value=int(params.get("quantity", 100)),
+                step=10
+            )
+            
+            submitted = st.form_submit_button("Apply Settings", use_container_width=True)
+            
+            if submitted:
+                st.query_params["plank_method"] = plank_method
+                st.query_params["double_mould"] = str(use_double_mould).lower()
+                st.query_params["ancient_furnace"] = str(ancient_furnace).lower()
+                st.query_params["quantity"] = str(quantity)
+                st.toast("Settings applied!", icon="✅")
         
         st.divider()
         
-        quantity = st.number_input(
-            "Calculate for quantity:",
-            min_value=1,
-            value=100,
-            step=10
-        )
+        # Stats display
+        with st.container():
+            st.subheader("📊 Stats")
+            stat_col1, stat_col2 = st.columns(2)
+            with stat_col1:
+                st.metric("Items", len(ALL_ITEMS))
+            with stat_col2:
+                st.metric("Prices", len(prices))
         
-        st.divider()
-        
-        # Show stats
-        st.metric("Items in Database", len(ALL_ITEMS))
-        st.metric("Items with Prices", len(prices))
-        
-        if st.button("🔄 Refresh Prices"):
+        # Refresh button
+        if st.button("🔄 Refresh Prices", use_container_width=True):
             st.cache_data.clear()
+            st.toast("Prices refreshed!", icon="🔄")
             st.rerun()
+        
+        # Last update time
+        st.caption(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
+    
+    # Prepare config
+    use_earth_staff = "Earth Staff" in plank_method
+    config = {
+        "quantity": quantity,
+        "use_earth_staff": use_earth_staff,
+        "double_ammo_mould": use_double_mould,
+        "ancient_furnace": ancient_furnace
+    }
     
     # Main tabs
     tabs = st.tabs([
         "📊 All Chains", 
         "🔍 Search Items", 
         "⚓ Sailing Items",
-        "📈 Best Profits"
+        "📈 Best Profits",
+        "📉 Analytics"
     ])
     
     # Tab 1: All Processing Chains
     with tabs[0]:
         st.header("All Processing Chains")
         
-        # Category selector
         category = st.selectbox(
             "Select Category",
-            list(st.session_state.all_chains.keys())
+            list(all_chains.keys()),
+            key="chain_category"
         )
         
-        chains = st.session_state.all_chains[category]
+        chains = all_chains[category]
         
         if chains:
-            # Calculate all chains
-            config = {
-                "quantity": quantity,
-                "use_earth_staff": use_earth_staff,
-                "double_ammo_mould": use_double_mould,
-                "ancient_furnace": ancient_furnace
-            }
-            
             results = []
             for chain in chains:
                 result = chain.calculate(prices, config, id_lookup)
                 if "error" not in result:
+                    profit = result["net_profit"]
                     results.append({
                         "Item": chain.name,
-                        "Input Cost": format_gp(result["raw_material_cost"]),
-                        "Process Cost": format_gp(result["processing_costs"]),
-                        "Total Cost": format_gp(result["total_input_cost"]),
-                        "Output": format_gp(result["output_value"]),
-                        "Tax": format_gp(result["ge_tax"]),
-                        "Net Profit": format_gp(result["net_profit"]),
-                        "Per Item": format_gp(result["profit_per_item"]),
-                        "ROI %": f"{result['roi']:.1f}%" if result['roi'] != float('inf') else "∞",
-                        "_profit_raw": result["net_profit"]  # Hidden column for sorting
+                        "Input Cost": result["raw_material_cost"],
+                        "Process Cost": result["processing_costs"],
+                        "Total Cost": result["total_input_cost"],
+                        "Output": result["output_value"],
+                        "Tax": result["ge_tax"],
+                        "Net Profit": profit,
+                        "Per Item": result["profit_per_item"],
+                        "ROI %": result['roi'] if result['roi'] != float('inf') else None,
+                        "_profit_raw": profit,
+                        "_profitable": profit > 0
                     })
             
             if results:
                 df = pd.DataFrame(results)
-                
-                # Sort by profit
                 df = df.sort_values("_profit_raw", ascending=False)
-                display_df = df.drop(columns=["_profit_raw"])
                 
+                # Display with enhanced column config
                 st.dataframe(
-                    display_df,
+                    df,
                     use_container_width=True,
                     hide_index=True,
                     column_config={
-                        "Net Profit": st.column_config.TextColumn(
+                        "Item": st.column_config.TextColumn("Item", width="medium"),
+                        "Input Cost": st.column_config.NumberColumn(
+                            "Input Cost",
+                            format="%.0f gp"
+                        ),
+                        "Process Cost": st.column_config.NumberColumn(
+                            "Process Cost",
+                            format="%.0f gp"
+                        ),
+                        "Total Cost": st.column_config.NumberColumn(
+                            "Total Cost",
+                            format="%.0f gp"
+                        ),
+                        "Output": st.column_config.NumberColumn(
+                            "Output Value",
+                            format="%.0f gp"
+                        ),
+                        "Tax": st.column_config.NumberColumn(
+                            "GE Tax",
+                            format="%.0f gp"
+                        ),
+                        "Net Profit": st.column_config.NumberColumn(
+                            "Net Profit",
+                            format="%.0f gp",
                             help="Profit after all costs and GE tax"
                         ),
-                        "ROI %": st.column_config.TextColumn(
+                        "Per Item": st.column_config.NumberColumn(
+                            "Per Item",
+                            format="%.1f gp"
+                        ),
+                        "ROI %": st.column_config.ProgressColumn(
+                            "ROI %",
+                            format="%.1f%%",
+                            min_value=-100,
+                            max_value=100,
                             help="Return on Investment percentage"
-                        )
+                        ),
+                        "_profit_raw": None,
+                        "_profitable": None
                     }
                 )
                 
                 # Summary metrics
                 profitable = sum(1 for r in results if r["_profit_raw"] > 0)
                 best_profit = max(results, key=lambda x: x["_profit_raw"])
+                total_profit = sum(r["_profit_raw"] for r in results if r["_profit_raw"] > 0)
                 
-                col1, col2, col3 = st.columns(3)
+                col1, col2, col3, col4 = st.columns(4)
                 with col1:
-                    st.metric("Profitable", f"{profitable}/{len(results)}")
+                    st.metric(
+                        "Profitable Chains",
+                        f"{profitable}/{len(results)}",
+                        delta=f"{(profitable/len(results)*100):.0f}%"
+                    )
                 with col2:
                     st.metric("Best Item", best_profit["Item"])
                 with col3:
-                    st.metric("Best Profit", best_profit["Net Profit"])
+                    st.metric(
+                        "Best Profit",
+                        format_gp(best_profit["Net Profit"]),
+                        delta="per batch"
+                    )
+                with col4:
+                    st.metric("Total Potential", format_gp(total_profit))
+                
+                # Expandable details
+                with st.expander("📋 View Chain Details", expanded=False):
+                    selected_item = st.selectbox(
+                        "Select item for details",
+                        [r["Item"] for r in results]
+                    )
+                    
+                    # Find the chain
+                    for chain in chains:
+                        if chain.name == selected_item:
+                            result = chain.calculate(prices, config, id_lookup)
+                            
+                            st.subheader(f"Chain: {chain.name}")
+                            
+                            for i, step in enumerate(result["steps"]):
+                                step_type = step["step_type"]
+                                icon = "🟢" if step_type == "Output" else ("🔵" if step_type == "Input" else "⚪")
+                                
+                                st.markdown(f"""
+                                **{icon} Step {i+1}: {step['name']}**
+                                - Quantity: {step['quantity']:,.0f}
+                                - Unit Price: {format_gp(step['unit_price'])}
+                                - Total Value: {format_gp(step['total_value'])}
+                                - Processing: {step['processing_notes'] or 'None'}
+                                """)
+                            
+                            if result["missing_prices"]:
+                                st.warning(f"Missing prices for: {', '.join(result['missing_prices'])}")
+                            break
     
     # Tab 2: Item Search
     with tabs[1]:
         st.header("Item Database Search")
         
-        search = st.text_input("Search items by name:")
+        search = st.text_input(
+            "Search items by name:",
+            placeholder="Try 'rosewood', 'dragon', or 'hull'...",
+            key="item_search"
+        )
         
         if search:
-            # Search in our database first
-            local_matches = [
-                (id, name) for id, name in ALL_ITEMS.items()
-                if search.lower() in name.lower()
-            ]
-            
-            # Also search API
-            api_matches = [
-                (id, item['name']) for id, item in item_mapping.items()
-                if search.lower() in item['name'].lower()
-            ][:50]
-            
-            if local_matches or api_matches:
-                data = []
+            with st.spinner("Searching..."):
+                local_matches = [
+                    (id, name) for id, name in ALL_ITEMS.items()
+                    if search.lower() in name.lower()
+                ]
                 
-                # Combine results
-                all_matches = {id: name for id, name in local_matches + api_matches}
+                api_matches = [
+                    (id, item['name']) for id, item in item_mapping.items()
+                    if search.lower() in item['name'].lower()
+                ][:50]
                 
-                for item_id, item_name in list(all_matches.items())[:100]:
-                    price = prices.get(str(item_id))
+                if local_matches or api_matches:
+                    data = []
+                    all_matches = {id: name for id, name in local_matches + api_matches}
                     
-                    is_sailing = item_id in ALL_ITEMS
+                    for item_id, item_name in list(all_matches.items())[:100]:
+                        price = prices.get(str(item_id))
+                        is_sailing = item_id in ALL_ITEMS
+                        
+                        if price:
+                            margin = price['low'] - price['high']
+                            roi = (margin/price['high']*100) if price['high'] > 0 else 0
+                            data.append({
+                                'ID': item_id,
+                                'Name': item_name,
+                                'Sailing': is_sailing,
+                                'Buy': price['high'],
+                                'Sell': price['low'],
+                                'Margin': margin,
+                                'ROI %': roi
+                            })
+                        else:
+                            data.append({
+                                'ID': item_id,
+                                'Name': item_name,
+                                'Sailing': is_sailing,
+                                'Buy': None,
+                                'Sell': None,
+                                'Margin': None,
+                                'ROI %': None
+                            })
                     
-                    if price:
-                        margin = price['low'] - price['high']
-                        data.append({
-                            'ID': item_id,
-                            'Name': item_name,
-                            'Sailing': '⚓' if is_sailing else '',
-                            'Buy': format_gp(price['high']),
-                            'Sell': format_gp(price['low']),
-                            'Margin': format_gp(margin),
-                            'ROI %': f"{(margin/price['high']*100):.1f}%" if price['high'] > 0 else "0%"
-                        })
-                    else:
-                        data.append({
-                            'ID': item_id,
-                            'Name': item_name,
-                            'Sailing': '⚓' if is_sailing else '',
-                            'Buy': 'No data',
-                            'Sell': 'No data',
-                            'Margin': '-',
-                            'ROI %': '-'
-                        })
-                
-                df = pd.DataFrame(data)
-                st.dataframe(df, use_container_width=True, hide_index=True)
+                    df = pd.DataFrame(data)
+                    
+                    st.dataframe(
+                        df,
+                        use_container_width=True,
+                        hide_index=True,
+                        column_config={
+                            "ID": st.column_config.NumberColumn("ID", format="%d"),
+                            "Name": st.column_config.TextColumn("Name", width="medium"),
+                            "Sailing": st.column_config.CheckboxColumn("⚓", help="Sailing item"),
+                            "Buy": st.column_config.NumberColumn("Buy Price", format="%d gp"),
+                            "Sell": st.column_config.NumberColumn("Sell Price", format="%d gp"),
+                            "Margin": st.column_config.NumberColumn("Margin", format="%d gp"),
+                            "ROI %": st.column_config.NumberColumn("ROI", format="%.1f%%")
+                        }
+                    )
+                    
+                    st.caption(f"Found {len(data)} items matching '{search}'")
+                else:
+                    st.info(f"No items found matching '{search}'")
     
     # Tab 3: Sailing-specific items
     with tabs[2]:
         st.header("Sailing-Specific Items")
         
         sailing_categories = {
-            "New Woods": [32902, 32904, 32907, 32910, 31432, 31435, 31438],
-            "Hull Parts": list(HULL_PARTS.keys()) + list(LARGE_HULL_PARTS.keys()),
-            "Hull Repair Kits": list(HULL_REPAIR_KITS.keys()),
-            "Keel Parts": list(KEEL_PARTS.keys()) + list(LARGE_KEEL_PARTS.keys()),
-            "New Metals": [31716, 31719, 32889, 32892, 31996],
-            "Dragon Items": [31406, 32017, 32038, 31916],
-            "Ship Cannonballs": [31906, 31908, 31910, 31912, 31914, 31916],
+            "🌲 New Woods": [32902, 32904, 32907, 32910, 31432, 31435, 31438],
+            "🚢 Hull Parts": list(HULL_PARTS.keys()) + list(LARGE_HULL_PARTS.keys()),
+            "🔧 Hull Repair Kits": list(HULL_REPAIR_KITS.keys()),
+            "⚓ Keel Parts": list(KEEL_PARTS.keys()) + list(LARGE_KEEL_PARTS.keys()),
+            "⛏️ New Metals": [31716, 31719, 32889, 32892, 31996],
+            "🐉 Dragon Items": [31406, 32017, 32038, 31916],
+            "💣 Ship Cannonballs": [31906, 31908, 31910, 31912, 31914, 31916],
         }
         
-        selected_cat = st.selectbox("Category", list(sailing_categories.keys()))
+        selected_cat = st.selectbox(
+            "Category",
+            list(sailing_categories.keys()),
+            key="sailing_category"
+        )
         
         item_ids = sailing_categories[selected_cat]
         
@@ -912,77 +1129,203 @@ def main():
                 data.append({
                     'ID': item_id,
                     'Name': item_name,
-                    'Buy': format_gp(price['high']),
-                    'Sell': format_gp(price['low']),
-                    'Margin': format_gp(margin),
-                    'ROI %': f"{(margin/price['high']*100):.1f}%" if price['high'] > 0 else "0%",
-                    'Status': '✅ Active'
+                    'Buy': price['high'],
+                    'Sell': price['low'],
+                    'Margin': margin,
+                    'ROI %': (margin/price['high']*100) if price['high'] > 0 else 0,
+                    'Status': True
                 })
             else:
                 data.append({
                     'ID': item_id,
                     'Name': item_name,
-                    'Buy': 'No data',
-                    'Sell': 'No data',
-                    'Margin': '-',
-                    'ROI %': '-',
-                    'Status': '❌ No prices'
+                    'Buy': None,
+                    'Sell': None,
+                    'Margin': None,
+                    'ROI %': None,
+                    'Status': False
                 })
         
         if data:
             df = pd.DataFrame(data)
-            st.dataframe(df, use_container_width=True, hide_index=True)
+            
+            st.dataframe(
+                df,
+                use_container_width=True,
+                hide_index=True,
+                column_config={
+                    "ID": st.column_config.NumberColumn("ID", format="%d"),
+                    "Name": st.column_config.TextColumn("Name", width="medium"),
+                    "Buy": st.column_config.NumberColumn("Buy Price", format="%d gp"),
+                    "Sell": st.column_config.NumberColumn("Sell Price", format="%d gp"),
+                    "Margin": st.column_config.NumberColumn("Margin", format="%d gp"),
+                    "ROI %": st.column_config.NumberColumn("ROI", format="%.1f%%"),
+                    "Status": st.column_config.CheckboxColumn("Active", help="Has GE prices")
+                }
+            )
+            
+            # Category stats
+            active = sum(1 for d in data if d['Status'])
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Items with Prices", f"{active}/{len(data)}")
+            with col2:
+                if active > 0:
+                    avg_margin = sum(d['Margin'] for d in data if d['Margin']) / active
+                    st.metric("Avg Margin", format_gp(avg_margin))
     
     # Tab 4: Best Profits
     with tabs[3]:
         st.header("Most Profitable Chains")
         
-        # Calculate all chains
-        config = {
-            "quantity": quantity,
-            "use_earth_staff": use_earth_staff,
-            "double_ammo_mould": use_double_mould,
-            "ancient_furnace": ancient_furnace
-        }
-        
         all_results = []
         
-        for category, chains in st.session_state.all_chains.items():
+        with st.spinner("Calculating all chains..."):
+            for category, chains in all_chains.items():
+                for chain in chains:
+                    result = chain.calculate(prices, config, id_lookup)
+                    if "error" not in result:
+                        all_results.append({
+                            "Category": category,
+                            "Item": chain.name,
+                            "Profit": result["net_profit"],
+                            "Per Item": result["profit_per_item"],
+                            "ROI %": result['roi'] if result['roi'] != float('inf') else None,
+                            "_profit_raw": result["net_profit"]
+                        })
+        
+        if all_results:
+            # Filter controls
+            col1, col2 = st.columns(2)
+            with col1:
+                show_profitable_only = st.toggle("Show profitable only", value=True)
+            with col2:
+                top_n = st.slider("Show top N", 5, 50, 20)
+            
+            filtered_results = all_results
+            if show_profitable_only:
+                filtered_results = [r for r in all_results if r["_profit_raw"] > 0]
+            
+            # Sort and limit
+            filtered_results.sort(key=lambda x: x["_profit_raw"], reverse=True)
+            top_results = filtered_results[:top_n]
+            
+            if top_results:
+                df = pd.DataFrame(top_results)
+                
+                st.dataframe(
+                    df,
+                    use_container_width=True,
+                    hide_index=True,
+                    column_config={
+                        "Category": st.column_config.TextColumn("Category"),
+                        "Item": st.column_config.TextColumn("Item", width="medium"),
+                        "Profit": st.column_config.NumberColumn(
+                            "Net Profit",
+                            format="%.0f gp"
+                        ),
+                        "Per Item": st.column_config.NumberColumn(
+                            "Per Item",
+                            format="%.1f gp"
+                        ),
+                        "ROI %": st.column_config.ProgressColumn(
+                            "ROI %",
+                            format="%.1f%%",
+                            min_value=-100,
+                            max_value=100
+                        ),
+                        "_profit_raw": None
+                    }
+                )
+                
+                # Best by category
+                st.subheader("🏆 Best in Each Category")
+                
+                category_bests = {}
+                for result in all_results:
+                    cat = result["Category"]
+                    if result["_profit_raw"] > 0:
+                        if cat not in category_bests or result["_profit_raw"] > category_bests[cat]["_profit_raw"]:
+                            category_bests[cat] = result
+                
+                if category_bests:
+                    cols = st.columns(min(4, len(category_bests)))
+                    for i, (cat, best) in enumerate(category_bests.items()):
+                        with cols[i % 4]:
+                            st.metric(
+                                cat,
+                                best['Item'].split()[0],  # First word
+                                delta=format_gp(best['_profit_raw'])
+                            )
+            else:
+                st.warning("No profitable chains found with current settings.")
+    
+    # Tab 5: Analytics
+    with tabs[4]:
+        st.header("📉 Profit Analytics")
+        
+        # Calculate all for charts
+        all_results_for_charts = []
+        for category, chains in all_chains.items():
             for chain in chains:
                 result = chain.calculate(prices, config, id_lookup)
-                if "error" not in result and result["net_profit"] > 0:
-                    all_results.append({
+                if "error" not in result:
+                    all_results_for_charts.append({
                         "Category": category,
                         "Item": chain.name,
-                        "Profit": format_gp(result["net_profit"]),
-                        "Per Item": format_gp(result["profit_per_item"]),
-                        "ROI %": f"{result['roi']:.1f}%" if result['roi'] != float('inf') else "∞",
                         "_profit_raw": result["net_profit"]
                     })
         
-        if all_results:
-            # Sort by profit
-            all_results.sort(key=lambda x: x["_profit_raw"], reverse=True)
+        if all_results_for_charts:
+            col1, col2 = st.columns(2)
             
-            # Show top 20
-            top_results = all_results[:20]
+            with col1:
+                # Top profits bar chart
+                profitable_results = [r for r in all_results_for_charts if r["_profit_raw"] > 0]
+                if profitable_results:
+                    fig = create_profit_chart(profitable_results, top_n=10)
+                    st.plotly_chart(fig, use_container_width=True)
             
-            df = pd.DataFrame(top_results)
-            display_df = df.drop(columns=["_profit_raw"])
+            with col2:
+                # Category pie chart
+                if profitable_results:
+                    fig = create_category_pie(profitable_results)
+                    st.plotly_chart(fig, use_container_width=True)
             
-            st.dataframe(display_df, use_container_width=True, hide_index=True)
+            # Profit distribution histogram
+            st.subheader("Profit Distribution")
+            profits = [r["_profit_raw"] for r in all_results_for_charts]
             
-            # Best by category
-            st.subheader("Best in Each Category")
+            fig = go.Figure(data=[
+                go.Histogram(
+                    x=profits,
+                    nbinsx=30,
+                    marker_color='#6366f1'
+                )
+            ])
+            fig.update_layout(
+                xaxis_title="Net Profit (GP)",
+                yaxis_title="Number of Chains",
+                height=300
+            )
+            st.plotly_chart(fig, use_container_width=True)
             
-            category_bests = {}
-            for result in all_results:
-                cat = result["Category"]
-                if cat not in category_bests or result["_profit_raw"] > category_bests[cat]["_profit_raw"]:
-                    category_bests[cat] = result
+            # Summary stats
+            st.subheader("📊 Summary Statistics")
+            col1, col2, col3, col4 = st.columns(4)
             
-            for cat, best in category_bests.items():
-                st.write(f"**{cat}:** {best['Item']} - {best['Profit']} profit")
+            with col1:
+                st.metric("Total Chains", len(all_results_for_charts))
+            with col2:
+                profitable_count = sum(1 for p in profits if p > 0)
+                st.metric("Profitable", f"{profitable_count} ({profitable_count/len(profits)*100:.0f}%)")
+            with col3:
+                avg_profit = sum(profits) / len(profits)
+                st.metric("Avg Profit", format_gp(avg_profit))
+            with col4:
+                max_profit = max(profits)
+                st.metric("Max Profit", format_gp(max_profit))
+
 
 if __name__ == "__main__":
     main()
