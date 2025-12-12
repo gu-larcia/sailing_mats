@@ -1,22 +1,41 @@
-# OSRS Sailing Materials Tracker v4.0 - Enhanced Streamlit Edition
+# OSRS Sailing Materials Tracker v4.1 - Item Thumbnails Edition
 
 A comprehensive Streamlit application for tracking Old School RuneScape Sailing skill materials with real-time Grand Exchange prices and complete processing chain calculations.
 
-## What's New in v4.0
+## What's New in v4.1
 
-This version takes full advantage of Streamlit's built-in modules for a better user experience, plus a complete **OSRS-themed visual overhaul**!
+This version adds **item thumbnails** throughout the application and fixes several visual polish issues based on user feedback.
 
-### OSRS Visual Theme
+### Item Thumbnails
+- **Data tables**: All item tables now show OSRS Wiki icons in the first column
+- **Best item cards**: Custom HTML cards display item icons alongside names and profits
+- **Chain details**: Each step in a processing chain shows the relevant item icon
+- **Category tables**: Icons appear in Best Profits, Sailing Items, and Search results
+
+### Visual Fixes
+- **Fixed truncated text**: "Best Item" display now uses a custom card layout that wraps long names properly instead of cutting them off
+- **Fixed pie chart labels**: Category labels now appear outside the chart to prevent overlap with the legend
+- **Cleaner chart layouts**: Removed redundant legends where labels are already visible
+- **Better hover states**: All charts show item names and values on hover
+
+### Technical Improvements
+- New `get_item_icon_url()` function with common naming fixes
+- New `render_best_item_card()` for custom HTML item displays
+- `ProcessingChain.get_output_item_name()` method for better icon matching
+- Icon column uses `st.column_config.ImageColumn` with graceful fallback
+
+## OSRS Visual Theme (from v4.0)
 - **Parchment sidebar** with driftwood borders
 - **Ocean-dark main background** evoking the high seas
 - **Gold accents** on headers, buttons, and metrics
 - **Cinzel & Crimson Text fonts** for that medieval RPG feel
 - **OSRS-colored charts**: Gold for profits, Dragon red for losses, Rune blue for comparisons
 
-### Streamlit Features Now Utilized
+## Streamlit Features Utilized
 
 | Feature | Usage | Benefit |
 |---------|-------|---------|
+| `st.column_config.ImageColumn` | Item icons in tables | Visual item identification |
 | `st.status()` | Data loading feedback | Clear progress indication |
 | `st.toast()` | Settings/refresh notifications | Non-intrusive alerts |
 | `st.form()` | Grouped sidebar inputs | Prevents constant reruns |
@@ -25,31 +44,9 @@ This version takes full advantage of Streamlit's built-in modules for a better u
 | `st.cache_resource` | Singleton class caching | Better memory efficiency |
 | `st.link_button()` | External Wiki links | Easy navigation |
 | `st.expander()` | Collapsible chain details | Cleaner interface |
-| `st.column_config` | Enhanced table formatting | Progress bars, number formatting |
 | `st.plotly_chart()` | Interactive visualizations | Profit analysis charts |
 | `st.spinner()` | Search loading states | Better UX feedback |
 | `st.metric()` | Summary statistics | At-a-glance insights |
-
-### New Analytics Tab
-- **Profit Bar Charts**: Visual comparison of top profitable chains
-- **Category Pie Chart**: Distribution of profits by category (small slices grouped into "Other")
-- **Category Comparison**: Average vs Best profit per category
-- **ROI vs Profit Scatter**: Find high-ROI opportunities
-- **Profit Histogram**: Overall profit distribution
-- **Dragon Filter**: Toggle to exclude dragon items and see non-outlier trends
-- **Voyage Summary**: Comprehensive overview
-
-### Improved Data Tables
-- Number formatting with GP units
-- Progress bars for ROI percentages
-- Checkbox columns for status indicators
-- Sortable columns with proper data types
-
-### URL-Shareable Settings
-Share your configuration with others via URL parameters:
-```
-https://your-app.streamlit.app/?plank_method=Sawmill&double_mould=true&quantity=1000
-```
 
 ## Features
 
@@ -87,14 +84,14 @@ cd osrs-sailing-tracker
 pip install -r requirements.txt
 
 # Run the app
-streamlit run app_improved.py
+streamlit run app.py
 ```
 
 ### Deploy to Streamlit Cloud
 1. Push code to GitHub
 2. Go to [share.streamlit.io](https://share.streamlit.io)
 3. Connect your repository
-4. Set main file to `app_improved.py`
+4. Set main file to `app.py`
 5. Deploy!
 
 ## Usage
@@ -111,26 +108,30 @@ streamlit run app_improved.py
 
 #### All Chains
 - Browse processing chains by category
-- View detailed cost breakdowns
+- **NEW**: Item icons in table rows
+- View detailed cost breakdowns with step icons
 - Expand for step-by-step chain analysis
 
 #### Search Items
 - Search any item by name
+- **NEW**: Item thumbnails in search results
 - See buy/sell prices and margins
 - Identify Sailing-specific items
 
 #### Sailing Items
 - Browse Sailing-specific categories
+- **NEW**: Visual item icons
 - Quick access to sailing content
 - Monitor item availability
 
 #### Best Profits
-- Top 20 most profitable chains
+- Top 20 most profitable chains with icons
 - Filter by profitable only
-- Best item per category highlights
+- Best item per category with visual thumbnails
 
 #### Analytics
 - Visual profit comparisons
+- **FIXED**: Category pie chart with outside labels
 - Category profit distribution
 - Profit histogram
 - Summary statistics
@@ -142,6 +143,14 @@ streamlit run app_improved.py
 - Endpoints: `/mapping` (items), `/latest` (prices)
 - Cache: 60 seconds for prices, 5 minutes for mappings
 
+### Item Icons
+Icons are fetched from the OSRS Wiki using the pattern:
+```
+https://oldschool.runescape.wiki/images/{Item_Name}.png
+```
+
+The app includes fallback handling for items with different image names than their in-game names.
+
 ### Caching Strategy
 ```python
 @st.cache_resource  # For singleton instances (API connection, ID lookup)
@@ -150,10 +159,11 @@ streamlit run app_improved.py
 @st.cache_data(ttl=3600)  # For chain generation (1hr, static data)
 ```
 
-### State Management
-- `st.query_params` for URL-shareable configuration
-- `st.form()` for batched input handling
-- Efficient reruns with targeted caching
+### URL-Shareable Settings
+Share your configuration with others via URL parameters:
+```
+https://your-app.streamlit.app/?plank_method=Sawmill&double_mould=true&quantity=1000
+```
 
 ## Profit Optimization Tips
 
@@ -168,8 +178,19 @@ streamlit run app_improved.py
 - Some Sailing items may not have stable prices yet
 - Dragon cannonballs are drop-only (cannot be smithed)
 - Jatoba logs cannot be processed into planks
+- Some item icons may not load if the Wiki image name differs from the item name
 
 ## Changelog
+
+### v4.1 (Item Thumbnails Edition)
+- **Item icons**: Added OSRS Wiki thumbnails throughout all data tables
+- **Fixed truncated text**: Best Item display now uses custom HTML cards that wrap text properly
+- **Fixed pie chart**: Labels moved outside chart, removed redundant legend
+- **Chain details icons**: Each processing step shows its item icon
+- **Better icon matching**: `get_output_item_name()` method for accurate icon URLs
+- **Graceful fallbacks**: Icons that fail to load are hidden cleanly
+- **Custom HTML cards**: `render_best_item_card()` for rich item displays
+- **Improved hover info**: Charts show clean item names without suffixes
 
 ### v4.0 (Enhanced Streamlit Edition)
 - **OSRS Visual Theme**: Parchment sidebar, ocean background, gold accents
@@ -178,7 +199,6 @@ streamlit run app_improved.py
 - **OSRS-themed chart colors**: Gold, bronze, rune blue, dragon red
 - **Dragon Filter**: Toggle to exclude dragon item outliers from analytics
 - **Improved Pie Chart**: Small slices grouped into "Other" for clarity
-- **No Emojis**: Clean professional look using OSRS Wiki icon for page
 - Added `st.toast()` for notifications
 - Added `st.form()` for grouped inputs
 - Added `st.toggle()` for modern switches
@@ -190,8 +210,6 @@ streamlit run app_improved.py
 - Added Analytics tab with visualizations
 - Improved table formatting with `st.column_config`
 - Added progress bars for ROI display
-- Fixed "Best in Category" display - now uses table format instead of cramped metrics
-- Fixed dropdown contrast issues (dark text on light background)
 
 ### v3.1 (Original)
 - Basic Streamlit implementation
@@ -204,9 +222,10 @@ MIT License - Free for all OSRS players
 
 ## Credits
 
-- OSRS Wiki for item data and API
+- OSRS Wiki for item data, API, and item icons
 - Jagex for creating the Sailing skill
 - Streamlit for the amazing framework
+- Clan feedback for v4.1 improvements
 
 ---
 

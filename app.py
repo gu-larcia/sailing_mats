@@ -1,6 +1,6 @@
 """
 OSRS Sailing Materials Tracker
-Version 4.0 - Enhanced Streamlit Edition
+Version 4.1 - Enhanced with Item Thumbnails
 """
 
 import streamlit as st
@@ -129,6 +129,7 @@ OSRS_CSS = """
 [data-testid="stMetric"] [data-testid="stMetricValue"] {
     font-family: 'Crimson Text', serif !important;
     color: var(--parchment) !important;
+    font-size: 1.1rem !important;
 }
 
 [data-testid="stMetric"] [data-testid="stMetricDelta"] {
@@ -270,6 +271,65 @@ hr {
 .stAlert {
     font-family: 'Crimson Text', serif;
     border-radius: 6px;
+}
+
+/* Custom item card styling */
+.item-card {
+    background: linear-gradient(145deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
+    border: 2px solid var(--gold-dark);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.item-card img {
+    width: 36px;
+    height: 36px;
+    image-rendering: pixelated;
+}
+
+.item-card .item-name {
+    color: var(--parchment);
+    font-family: 'Cinzel', serif;
+    font-size: 0.95rem;
+}
+
+.item-card .item-profit {
+    color: var(--gold);
+    font-family: 'Crimson Text', serif;
+    font-weight: 600;
+}
+
+/* Best item display with icon */
+.best-item-display {
+    background: linear-gradient(145deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
+    border: 2px solid var(--gold-dark);
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+}
+
+.best-item-display img {
+    width: 48px;
+    height: 48px;
+    image-rendering: pixelated;
+    margin-bottom: 8px;
+}
+
+.best-item-display .label {
+    color: var(--gold);
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+}
+
+.best-item-display .value {
+    color: var(--parchment);
+    font-family: 'Crimson Text', serif;
+    font-size: 1rem;
+    word-wrap: break-word;
 }
 </style>
 <script>
@@ -491,6 +551,44 @@ ALL_ITEMS = {
 
 
 # ===============
+#  ITEM ICONS
+# ===============
+
+def get_wiki_image_url(item_name: str) -> str:
+    """Generate OSRS Wiki image URL for an item"""
+    # Convert item name to wiki format: spaces to underscores, handle special chars
+    formatted_name = item_name.replace(" ", "_").replace("'", "%27")
+    return f"https://oldschool.runescape.wiki/images/{formatted_name}.png"
+
+
+def get_item_icon_url(item_name: str) -> str:
+    """Get item icon URL with common naming fixes"""
+    # Some items have different image names than their item names
+    name_fixes = {
+        "Plank": "Plank",
+        "Logs": "Logs",
+        "Steel cannonball": "Cannonball",  # Regular cannonball has different name
+    }
+    
+    fixed_name = name_fixes.get(item_name, item_name)
+    return get_wiki_image_url(fixed_name)
+
+
+def get_clean_item_name(chain_name: str) -> str:
+    """Extract clean item name from chain name for icon lookup"""
+    # Remove common suffixes
+    clean = chain_name.replace(" processing", "").replace(" smithing", "")
+    clean = clean.replace(" (Regular)", "").replace(" (Double)", "")
+    return clean
+
+
+def get_output_item_name(chain_name: str) -> str:
+    """Get the output item name from a chain name for better icon matching"""
+    clean = get_clean_item_name(chain_name)
+    return clean
+
+
+# ===============
 #  API CONNECTION
 # ===============
 
@@ -501,7 +599,7 @@ class OSRSWikiConnection:
         self.base_url = base_url
         self._session = requests.Session()
         self._session.headers.update({
-            'User-Agent': 'OSRS-Sailing-Tracker/4.0 (Streamlit App)'
+            'User-Agent': 'OSRS-Sailing-Tracker/4.1 (Streamlit App)'
         })
     
     def fetch_mapping(self) -> Dict:
@@ -604,6 +702,12 @@ class ProcessingChain:
     steps: List[ChainStep] = field(default_factory=list)
     special_ratio: Optional[Dict] = field(default_factory=dict)
     
+    def get_output_item_name(self) -> str:
+        """Get the final output item name"""
+        if self.steps:
+            return self.steps[-1].item_name
+        return get_clean_item_name(self.name)
+    
     def calculate(self, prices: Dict, config: Dict, id_lookup: ItemIDLookup) -> Dict:
         """Calculate chain profitability"""
         
@@ -619,7 +723,8 @@ class ProcessingChain:
             "net_profit": 0,
             "roi": 0,
             "profit_per_item": 0,
-            "missing_prices": []
+            "missing_prices": [],
+            "output_item_name": self.get_output_item_name()
         }
         
         if not self.steps:
@@ -966,31 +1071,61 @@ def format_gp(value: float) -> str:
     return f"-{formatted}" if is_negative else formatted
 
 
-def get_wiki_image_url(item_name: str) -> str:
-    """Generate OSRS Wiki image URL for an item"""
-    # Convert item name to wiki format: spaces to underscores, handle special chars
-    formatted_name = item_name.replace(" ", "_").replace("'", "%27")
-    return f"https://oldschool.runescape.wiki/images/{formatted_name}.png"
-
-
-def get_item_icon(item_name: str) -> str:
-    """Get item icon URL, with fallback for common naming variations"""
-    # Some items have different image names than their item names
-    name_fixes = {
-        "Plank": "Plank",
-        "Logs": "Logs",
-    }
+def render_item_with_icon(item_name: str, profit: Optional[float] = None, show_profit: bool = True) -> str:
+    """Render an item display with icon using HTML"""
+    icon_url = get_item_icon_url(item_name)
+    profit_html = ""
+    if show_profit and profit is not None:
+        profit_color = "#d4af37" if profit >= 0 else "#c0392b"
+        profit_html = f'<span style="color: {profit_color}; font-weight: 600;">{format_gp(profit)}</span>'
     
-    fixed_name = name_fixes.get(item_name, item_name)
-    return get_wiki_image_url(fixed_name)
+    return f"""
+    <div style="display: flex; align-items: center; gap: 10px; padding: 8px; 
+                background: linear-gradient(145deg, #8b7355 0%, #5c4d3a 100%);
+                border: 2px solid #d4af37; border-radius: 8px; margin: 4px 0;">
+        <img src="{icon_url}" style="width: 32px; height: 32px; image-rendering: pixelated;" 
+             onerror="this.style.display='none'">
+        <div style="flex: 1;">
+            <div style="color: #f4e4bc; font-family: 'Cinzel', serif; font-size: 0.9rem;">{item_name}</div>
+            {profit_html}
+        </div>
+    </div>
+    """
+
+
+def render_best_item_card(label: str, item_name: str, value: str) -> str:
+    """Render a best item card with icon that handles long names"""
+    icon_url = get_item_icon_url(get_clean_item_name(item_name))
+    return f"""
+    <div style="background: linear-gradient(145deg, #8b7355 0%, #5c4d3a 100%);
+                border: 2px solid #d4af37; border-radius: 10px; padding: 15px;
+                text-align: center; height: 100%;">
+        <div style="color: #ffd700; font-family: 'Cinzel', serif; font-size: 0.85rem; margin-bottom: 8px;">
+            {label}
+        </div>
+        <img src="{icon_url}" style="width: 40px; height: 40px; image-rendering: pixelated; margin-bottom: 8px;"
+             onerror="this.style.display='none'">
+        <div style="color: #f4e4bc; font-family: 'Crimson Text', serif; font-size: 0.95rem; 
+                    word-wrap: break-word; line-height: 1.3;">
+            {item_name}
+        </div>
+        <div style="color: #d4af37; font-family: 'Crimson Text', serif; font-size: 1rem; 
+                    font-weight: 600; margin-top: 4px;">
+            {value}
+        </div>
+    </div>
+    """
 
 
 def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
-    """Create a bar chart of top profits with OSRS theming"""
+    """Create a bar chart of top profits with OSRS theming and item icons"""
     sorted_results = sorted(results, key=lambda x: x.get("_profit_raw", 0), reverse=True)[:top_n]
     
     items = [r["Item"] for r in sorted_results]
     profits = [r["_profit_raw"] for r in sorted_results]
+    
+    # Get clean item names for display
+    display_names = [get_clean_item_name(name) for name in items]
     
     # OSRS-themed colors: gold for profit, dragon red for loss
     colors = ['#d4af37' if p > 0 else '#c0392b' for p in profits]
@@ -998,7 +1133,7 @@ def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
     fig = go.Figure(data=[
         go.Bar(
             x=profits,
-            y=items,
+            y=display_names,
             orientation='h',
             marker_color=colors,
             marker_line_color='#5c4d3a',
@@ -1006,39 +1141,40 @@ def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
             text=[format_gp(p) for p in profits],
             textposition='outside',
             textfont=dict(color='#f4e4bc', size=11),
-            name='Profit'
+            name='Profit',
+            hovertemplate='<b>%{y}</b><br>Profit: %{x:,.0f} GP<extra></extra>'
         )
     ])
     
     fig.update_layout(
-        title="Top Profitable Chains",
-        title_font_color='#ffd700',
-        title_font_size=18,
-        xaxis_title="Net Profit (GP)",
-        xaxis_title_font_color='#f4e4bc',
-        xaxis_tickfont_color='#f4e4bc',
-        xaxis_gridcolor='rgba(139,115,85,0.3)',
-        xaxis_tickformat=',.0f',
-        yaxis_title="",
-        yaxis_tickfont_color='#f4e4bc',
-        yaxis_autorange="reversed",
-        height=400,
-        margin=dict(l=180, r=100, t=50, b=50),
+        title=dict(
+            text="Top Profitable Chains",
+            font=dict(color='#ffd700', size=18)
+        ),
+        xaxis=dict(
+            title="Net Profit (GP)",
+            title_font=dict(color='#f4e4bc'),
+            tickfont=dict(color='#f4e4bc'),
+            gridcolor='rgba(139,115,85,0.3)',
+            tickformat=',.0f'
+        ),
+        yaxis=dict(
+            title="",
+            tickfont=dict(color='#f4e4bc', size=11),
+            autorange="reversed"
+        ),
+        height=max(400, top_n * 40),
+        margin=dict(l=160, r=100, t=50, b=50),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)',
         showlegend=False
-    )
-    
-    # Configure for better export
-    fig.update_layout(
-        modebar=dict(bgcolor='rgba(0,0,0,0)'),
     )
     
     return fig
 
 
 def create_category_pie(results: List[Dict]) -> go.Figure:
-    """Create a pie chart of profits by category with OSRS theming"""
+    """Create a pie chart of profits by category with OSRS theming - fixed layout"""
     category_profits = {}
     for r in results:
         cat = r.get("Category", "Unknown")
@@ -1084,38 +1220,30 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
             labels=labels,
             values=values,
             hole=0.4,
-            textinfo='percent',
-            textposition='inside',
-            textfont=dict(color='#ffffff', size=12),
+            textinfo='label+percent',
+            textposition='outside',
+            textfont=dict(color='#f4e4bc', size=12),
             hovertemplate='<b>%{label}</b><br>Profit: %{value:,.0f} GP<br>Share: %{percent}<extra></extra>',
             marker=dict(
                 colors=osrs_colors[:len(labels)],
                 line=dict(color='#5c4d3a', width=2)
             ),
-            pull=[0.03 if i == 0 else 0 for i in range(len(labels))]
+            pull=[0.03 if i == 0 else 0 for i in range(len(labels))],
+            insidetextorientation='horizontal'
         )
     ])
     
     fig.update_layout(
-        title="Profit by Category",
-        title_font_color='#ffd700',
-        title_font_size=18,
-        height=400,
+        title=dict(
+            text="Profit by Category",
+            font=dict(color='#ffd700', size=18)
+        ),
+        height=450,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)',
-        showlegend=True,
-        legend=dict(
-            font=dict(color='#f4e4bc', size=11),
-            bgcolor='rgba(92,77,58,0.7)',
-            bordercolor='#5c4d3a',
-            borderwidth=1,
-            orientation='v',
-            yanchor='middle',
-            y=0.5,
-            xanchor='left',
-            x=1.02
-        ),
-        margin=dict(l=20, r=150, t=50, b=20)
+        showlegend=False,  # Disabled legend since labels are outside
+        margin=dict(l=80, r=80, t=60, b=60),
+        uniformtext=dict(minsize=10, mode='hide')
     )
     
     return fig
@@ -1136,18 +1264,23 @@ def create_profit_histogram(profits: List[float]) -> go.Figure:
     ])
     
     fig.update_layout(
-        title="Profit Distribution",
-        title_font_color='#ffd700',
-        title_font_size=18,
-        xaxis_title="Net Profit (GP)",
-        xaxis_title_font_color='#f4e4bc',
-        xaxis_tickfont_color='#f4e4bc',
-        xaxis_gridcolor='rgba(139,115,85,0.3)',
-        xaxis_tickformat=',.0f',
-        yaxis_title="Number of Chains",
-        yaxis_title_font_color='#f4e4bc',
-        yaxis_tickfont_color='#f4e4bc',
-        yaxis_gridcolor='rgba(139,115,85,0.3)',
+        title=dict(
+            text="Profit Distribution",
+            font=dict(color='#ffd700', size=18)
+        ),
+        xaxis=dict(
+            title="Net Profit (GP)",
+            title_font=dict(color='#f4e4bc'),
+            tickfont=dict(color='#f4e4bc'),
+            gridcolor='rgba(139,115,85,0.3)',
+            tickformat=',.0f'
+        ),
+        yaxis=dict(
+            title="Number of Chains",
+            title_font=dict(color='#f4e4bc'),
+            tickfont=dict(color='#f4e4bc'),
+            gridcolor='rgba(139,115,85,0.3)'
+        ),
         height=300,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)',
@@ -1195,18 +1328,22 @@ def create_category_comparison(results: List[Dict]) -> go.Figure:
     ))
     
     fig.update_layout(
-        title="Category Comparison",
-        title_font_color='#ffd700',
-        title_font_size=18,
-        xaxis_title="",
-        xaxis_tickfont_color='#f4e4bc',
-        xaxis_tickfont_size=10,
-        xaxis_tickangle=45,
-        yaxis_title="Profit (GP)",
-        yaxis_title_font_color='#f4e4bc',
-        yaxis_tickfont_color='#f4e4bc',
-        yaxis_gridcolor='rgba(139,115,85,0.3)',
-        yaxis_tickformat=',.0f',
+        title=dict(
+            text="Category Comparison",
+            font=dict(color='#ffd700', size=18)
+        ),
+        xaxis=dict(
+            title="",
+            tickfont=dict(color='#f4e4bc', size=10),
+            tickangle=45
+        ),
+        yaxis=dict(
+            title="Profit (GP)",
+            title_font=dict(color='#f4e4bc'),
+            tickfont=dict(color='#f4e4bc'),
+            gridcolor='rgba(139,115,85,0.3)',
+            tickformat=',.0f'
+        ),
         barmode='group',
         height=400,
         paper_bgcolor='rgba(0,0,0,0)',
@@ -1237,7 +1374,7 @@ def create_roi_scatter(results: List[Dict]) -> go.Figure:
     
     profits = [r["_profit_raw"] for r in data]
     rois = [r["ROI %"] for r in data]
-    names = [r["Item"] for r in data]
+    names = [get_clean_item_name(r["Item"]) for r in data]
     categories = [r.get("Category", "Unknown") for r in data]
     
     # Color by category
@@ -1262,17 +1399,22 @@ def create_roi_scatter(results: List[Dict]) -> go.Figure:
     ])
     
     fig.update_layout(
-        title="ROI vs Profit Analysis",
-        title_font_color='#ffd700',
-        title_font_size=18,
-        xaxis_title="Net Profit (GP)",
-        xaxis_title_font_color='#f4e4bc',
-        xaxis_tickfont_color='#f4e4bc',
-        xaxis_gridcolor='rgba(139,115,85,0.3)',
-        yaxis_title="ROI (%)",
-        yaxis_title_font_color='#f4e4bc',
-        yaxis_tickfont_color='#f4e4bc',
-        yaxis_gridcolor='rgba(139,115,85,0.3)',
+        title=dict(
+            text="ROI vs Profit Analysis",
+            font=dict(color='#ffd700', size=18)
+        ),
+        xaxis=dict(
+            title="Net Profit (GP)",
+            title_font=dict(color='#f4e4bc'),
+            tickfont=dict(color='#f4e4bc'),
+            gridcolor='rgba(139,115,85,0.3)'
+        ),
+        yaxis=dict(
+            title="ROI (%)",
+            title_font=dict(color='#f4e4bc'),
+            tickfont=dict(color='#f4e4bc'),
+            gridcolor='rgba(139,115,85,0.3)'
+        ),
         height=400,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)'
@@ -1421,7 +1563,9 @@ def main():
                 result = chain.calculate(prices, config, id_lookup)
                 if "error" not in result:
                     profit = result["net_profit"]
+                    output_name = result.get("output_item_name", chain.name)
                     results.append({
+                        "Icon": get_item_icon_url(output_name),
                         "Item": chain.name,
                         "Input Cost": result["raw_material_cost"],
                         "Process Cost": result["processing_costs"],
@@ -1432,19 +1576,25 @@ def main():
                         "Per Item": result["profit_per_item"],
                         "ROI %": result['roi'] if result['roi'] != float('inf') else None,
                         "_profit_raw": profit,
-                        "_profitable": profit > 0
+                        "_profitable": profit > 0,
+                        "_output_name": output_name
                     })
             
             if results:
                 df = pd.DataFrame(results)
                 df = df.sort_values("_profit_raw", ascending=False)
                 
-                # Display with enhanced column config
+                # Display with enhanced column config including icons
                 st.dataframe(
                     df,
                     use_container_width=True,
                     hide_index=True,
                     column_config={
+                        "Icon": st.column_config.ImageColumn(
+                            "Icon",
+                            width="small",
+                            help="Item icon from OSRS Wiki"
+                        ),
                         "Item": st.column_config.TextColumn("Item", width="medium"),
                         "Input Cost": st.column_config.NumberColumn(
                             "Input Cost",
@@ -1483,11 +1633,12 @@ def main():
                             help="Return on Investment percentage"
                         ),
                         "_profit_raw": None,
-                        "_profitable": None
+                        "_profitable": None,
+                        "_output_name": None
                     }
                 )
                 
-                # Summary metrics
+                # Summary metrics with improved best item display
                 profitable = sum(1 for r in results if r["_profit_raw"] > 0)
                 best_profit = max(results, key=lambda x: x["_profit_raw"])
                 total_profit = sum(r["_profit_raw"] for r in results if r["_profit_raw"] > 0)
@@ -1500,7 +1651,15 @@ def main():
                         delta=f"{(profitable/len(results)*100):.0f}%"
                     )
                 with col2:
-                    st.metric("Best Item", best_profit["Item"])
+                    # Custom HTML card for best item with icon
+                    st.markdown(
+                        render_best_item_card(
+                            "Best Item",
+                            get_clean_item_name(best_profit["Item"]),
+                            format_gp(best_profit["Net Profit"])
+                        ),
+                        unsafe_allow_html=True
+                    )
                 with col3:
                     st.metric(
                         "Best Profit",
@@ -1522,24 +1681,55 @@ def main():
                         if chain.name == selected_item:
                             result = chain.calculate(prices, config, id_lookup)
                             
-                            st.subheader(f"Chain: {chain.name}")
+                            # Show item icon alongside title
+                            output_name = result.get("output_item_name", chain.name)
+                            icon_url = get_item_icon_url(output_name)
+                            st.markdown(f"""
+                            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                                <img src="{icon_url}" style="width: 48px; height: 48px; image-rendering: pixelated;"
+                                     onerror="this.style.display='none'">
+                                <h3 style="margin: 0; color: #ffd700;">Chain: {chain.name}</h3>
+                            </div>
+                            """, unsafe_allow_html=True)
                             
                             if config.get("self_collected", False):
                                 st.info("Materials marked as self-collected (0 GP cost)")
                             
                             for i, step in enumerate(result["steps"]):
                                 step_type = step["step_type"]
-                                icon = "[OUT]" if step_type == "Output" else ("[IN]" if step_type == "Input" else "[...]")
+                                step_icon_url = get_item_icon_url(step['name'])
+                                
+                                if step_type == "Output":
+                                    icon = "🎯"
+                                    bg_color = "rgba(212,175,55,0.2)"
+                                elif step_type == "Input":
+                                    icon = "📥"
+                                    bg_color = "rgba(93,173,226,0.2)"
+                                else:
+                                    icon = "⚙️"
+                                    bg_color = "rgba(139,115,85,0.2)"
                                 
                                 self_note = " (self-collected)" if step.get("is_self_obtained") and step_type != "Output" else ""
                                 
                                 st.markdown(f"""
-                                **{icon} Step {i+1}: {step['name']}{self_note}**
-                                - Quantity: {step['quantity']:,.0f}
-                                - Unit Price: {format_gp(step['unit_price'])}
-                                - Total Value: {format_gp(step['total_value'])}
-                                - Processing: {step['processing_notes'] or 'None'}
-                                """)
+                                <div style="display: flex; align-items: center; gap: 12px; padding: 12px;
+                                            background: {bg_color}; border-radius: 8px; margin: 8px 0;
+                                            border: 1px solid #5c4d3a;">
+                                    <img src="{step_icon_url}" style="width: 36px; height: 36px; image-rendering: pixelated;"
+                                         onerror="this.style.display='none'">
+                                    <div style="flex: 1;">
+                                        <div style="color: #ffd700; font-weight: 600;">
+                                            {icon} Step {i+1}: {step['name']}{self_note}
+                                        </div>
+                                        <div style="color: #f4e4bc; font-size: 0.9rem;">
+                                            Qty: {step['quantity']:,.0f} | 
+                                            Unit: {format_gp(step['unit_price'])} | 
+                                            Total: {format_gp(step['total_value'])}
+                                            {f" | {step['processing_notes']}" if step['processing_notes'] else ""}
+                                        </div>
+                                    </div>
+                                </div>
+                                """, unsafe_allow_html=True)
                             
                             if result["missing_prices"]:
                                 st.warning(f"Missing prices for: {', '.join(result['missing_prices'])}")
@@ -1579,6 +1769,7 @@ def main():
                             margin = price['low'] - price['high']
                             roi = (margin/price['high']*100) if price['high'] > 0 else 0
                             data.append({
+                                'Icon': get_item_icon_url(item_name),
                                 'ID': item_id,
                                 'Name': item_name,
                                 'Sailing': is_sailing,
@@ -1589,6 +1780,7 @@ def main():
                             })
                         else:
                             data.append({
+                                'Icon': get_item_icon_url(item_name),
                                 'ID': item_id,
                                 'Name': item_name,
                                 'Sailing': is_sailing,
@@ -1605,6 +1797,7 @@ def main():
                         use_container_width=True,
                         hide_index=True,
                         column_config={
+                            "Icon": st.column_config.ImageColumn("Icon", width="small"),
                             "ID": st.column_config.NumberColumn("ID", format="%d"),
                             "Name": st.column_config.TextColumn("Name", width="medium"),
                             "Sailing": st.column_config.CheckboxColumn("Sailing", help="Sailing item"),
@@ -1649,6 +1842,7 @@ def main():
             if price:
                 margin = price['low'] - price['high']
                 data.append({
+                    'Icon': get_item_icon_url(item_name),
                     'ID': item_id,
                     'Name': item_name,
                     'Buy': price['high'],
@@ -1659,6 +1853,7 @@ def main():
                 })
             else:
                 data.append({
+                    'Icon': get_item_icon_url(item_name),
                     'ID': item_id,
                     'Name': item_name,
                     'Buy': None,
@@ -1676,6 +1871,7 @@ def main():
                 use_container_width=True,
                 hide_index=True,
                 column_config={
+                    "Icon": st.column_config.ImageColumn("Icon", width="small"),
                     "ID": st.column_config.NumberColumn("ID", format="%d"),
                     "Name": st.column_config.TextColumn("Name", width="medium"),
                     "Buy": st.column_config.NumberColumn("Buy Price", format="%d gp"),
@@ -1707,13 +1903,16 @@ def main():
                 for chain in chains:
                     result = chain.calculate(prices, config, id_lookup)
                     if "error" not in result:
+                        output_name = result.get("output_item_name", chain.name)
                         all_results.append({
+                            "Icon": get_item_icon_url(output_name),
                             "Category": category,
                             "Item": chain.name,
                             "Profit": result["net_profit"],
                             "Per Item": result["profit_per_item"],
                             "ROI %": result['roi'] if result['roi'] != float('inf') else None,
-                            "_profit_raw": result["net_profit"]
+                            "_profit_raw": result["net_profit"],
+                            "_output_name": output_name
                         })
         
         if all_results:
@@ -1740,6 +1939,7 @@ def main():
                     use_container_width=True,
                     hide_index=True,
                     column_config={
+                        "Icon": st.column_config.ImageColumn("Icon", width="small"),
                         "Category": st.column_config.TextColumn("Category"),
                         "Item": st.column_config.TextColumn("Item", width="medium"),
                         "Profit": st.column_config.NumberColumn(
@@ -1756,11 +1956,12 @@ def main():
                             min_value=-100,
                             max_value=100
                         ),
-                        "_profit_raw": None
+                        "_profit_raw": None,
+                        "_output_name": None
                     }
                 )
                 
-                # Best by category
+                # Best by category with icons
                 st.subheader("Best in Each Category")
                 
                 category_bests = {}
@@ -1771,12 +1972,13 @@ def main():
                             category_bests[cat] = result
                 
                 if category_bests:
-                    # Use a cleaner table format instead of cramped metrics
+                    # Use a table with icons
                     best_data = []
                     for cat, best in category_bests.items():
                         best_data.append({
+                            "Icon": best["Icon"],
                             "Category": cat,
-                            "Best Item": best['Item'].replace(' processing', '').replace(' smithing', ''),
+                            "Best Item": get_clean_item_name(best['Item']),
                             "Profit": best['_profit_raw']
                         })
                     
@@ -1788,6 +1990,7 @@ def main():
                         use_container_width=True,
                         hide_index=True,
                         column_config={
+                            "Icon": st.column_config.ImageColumn("Icon", width="small"),
                             "Category": st.column_config.TextColumn("Category", width="medium"),
                             "Best Item": st.column_config.TextColumn("Best Item", width="large"),
                             "Profit": st.column_config.NumberColumn("Profit", format="%.0f gp")
