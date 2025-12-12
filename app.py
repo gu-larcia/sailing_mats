@@ -935,21 +935,16 @@ def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
     ])
     
     fig.update_layout(
-        title=dict(
-            text="⚓ Top Profitable Chains",
-            font=dict(color='#ffd700', size=18)
-        ),
-        xaxis=dict(
-            title="Net Profit (GP)",
-            titlefont=dict(color='#f4e4bc'),
-            tickfont=dict(color='#f4e4bc'),
-            gridcolor='rgba(139,115,85,0.3)'
-        ),
-        yaxis=dict(
-            title="",
-            tickfont=dict(color='#f4e4bc'),
-            autorange="reversed"
-        ),
+        title="⚓ Top Profitable Chains",
+        title_font_color='#ffd700',
+        title_font_size=18,
+        xaxis_title="Net Profit (GP)",
+        xaxis_title_font_color='#f4e4bc',
+        xaxis_tickfont_color='#f4e4bc',
+        xaxis_gridcolor='rgba(139,115,85,0.3)',
+        yaxis_title="",
+        yaxis_tickfont_color='#f4e4bc',
+        yaxis_autorange="reversed",
         height=400,
         margin=dict(l=200, r=80, t=50, b=50),
         paper_bgcolor='rgba(0,0,0,0)',
@@ -995,17 +990,14 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
     ])
     
     fig.update_layout(
-        title=dict(
-            text="🪙 Profit by Category",
-            font=dict(color='#ffd700', size=18)
-        ),
+        title="🪙 Profit by Category",
+        title_font_color='#ffd700',
+        title_font_size=18,
         height=350,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)',
-        legend=dict(
-            font=dict(color='#f4e4bc'),
-            bgcolor='rgba(92,77,58,0.5)'
-        ),
+        legend_font_color='#f4e4bc',
+        legend_bgcolor='rgba(92,77,58,0.5)',
         showlegend=True
     )
     
@@ -1025,22 +1017,17 @@ def create_profit_histogram(profits: List[float]) -> go.Figure:
     ])
     
     fig.update_layout(
-        title=dict(
-            text="📊 Profit Distribution",
-            font=dict(color='#ffd700', size=18)
-        ),
-        xaxis=dict(
-            title="Net Profit (GP)",
-            titlefont=dict(color='#f4e4bc'),
-            tickfont=dict(color='#f4e4bc'),
-            gridcolor='rgba(139,115,85,0.3)'
-        ),
-        yaxis=dict(
-            title="Number of Chains",
-            titlefont=dict(color='#f4e4bc'),
-            tickfont=dict(color='#f4e4bc'),
-            gridcolor='rgba(139,115,85,0.3)'
-        ),
+        title="📊 Profit Distribution",
+        title_font_color='#ffd700',
+        title_font_size=18,
+        xaxis_title="Net Profit (GP)",
+        xaxis_title_font_color='#f4e4bc',
+        xaxis_tickfont_color='#f4e4bc',
+        xaxis_gridcolor='rgba(139,115,85,0.3)',
+        yaxis_title="Number of Chains",
+        yaxis_title_font_color='#f4e4bc',
+        yaxis_tickfont_color='#f4e4bc',
+        yaxis_gridcolor='rgba(139,115,85,0.3)',
         height=300,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)'
@@ -1085,29 +1072,22 @@ def create_category_comparison(results: List[Dict]) -> go.Figure:
     ))
     
     fig.update_layout(
-        title=dict(
-            text="⚔️ Category Comparison",
-            font=dict(color='#ffd700', size=18)
-        ),
-        xaxis=dict(
-            title="",
-            tickfont=dict(color='#f4e4bc'),
-            tickangle=45
-        ),
-        yaxis=dict(
-            title="Profit (GP)",
-            titlefont=dict(color='#f4e4bc'),
-            tickfont=dict(color='#f4e4bc'),
-            gridcolor='rgba(139,115,85,0.3)'
-        ),
+        title="⚔️ Category Comparison",
+        title_font_color='#ffd700',
+        title_font_size=18,
+        xaxis_title="",
+        xaxis_tickfont_color='#f4e4bc',
+        xaxis_tickangle=45,
+        yaxis_title="Profit (GP)",
+        yaxis_title_font_color='#f4e4bc',
+        yaxis_tickfont_color='#f4e4bc',
+        yaxis_gridcolor='rgba(139,115,85,0.3)',
         barmode='group',
         height=400,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)',
-        legend=dict(
-            font=dict(color='#f4e4bc'),
-            bgcolor='rgba(92,77,58,0.5)'
-        )
+        legend_font_color='#f4e4bc',
+        legend_bgcolor='rgba(92,77,58,0.5)'
     )
     
     return fig
@@ -1147,22 +1127,17 @@ def create_roi_scatter(results: List[Dict]) -> go.Figure:
     ])
     
     fig.update_layout(
-        title=dict(
-            text="💰 ROI vs Profit Analysis",
-            font=dict(color='#ffd700', size=18)
-        ),
-        xaxis=dict(
-            title="Net Profit (GP)",
-            titlefont=dict(color='#f4e4bc'),
-            tickfont=dict(color='#f4e4bc'),
-            gridcolor='rgba(139,115,85,0.3)'
-        ),
-        yaxis=dict(
-            title="ROI (%)",
-            titlefont=dict(color='#f4e4bc'),
-            tickfont=dict(color='#f4e4bc'),
-            gridcolor='rgba(139,115,85,0.3)'
-        ),
+        title="💰 ROI vs Profit Analysis",
+        title_font_color='#ffd700',
+        title_font_size=18,
+        xaxis_title="Net Profit (GP)",
+        xaxis_title_font_color='#f4e4bc',
+        xaxis_tickfont_color='#f4e4bc',
+        xaxis_gridcolor='rgba(139,115,85,0.3)',
+        yaxis_title="ROI (%)",
+        yaxis_title_font_color='#f4e4bc',
+        yaxis_tickfont_color='#f4e4bc',
+        yaxis_gridcolor='rgba(139,115,85,0.3)',
         height=400,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)'
@@ -1180,7 +1155,7 @@ def main():
     col1, col2 = st.columns([4, 1])
     with col1:
         st.title("⚓ OSRS Sailing Materials Tracker")
-        st.caption("*\"A captain is only as rich as their cargo...\"*")
+        st.caption("*\"A captain is only as rich as their cargo...\"* — Real-time profit calculations for the crafty sailor!")
     with col2:
         st.link_button(
             "📜 OSRS Wiki",
