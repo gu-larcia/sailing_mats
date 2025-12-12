@@ -20,6 +20,225 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# ===============
+#  OSRS THEME CSS
+# ===============
+
+OSRS_CSS = """
+<style>
+/* Import OSRS-style fonts */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
+/* Root variables for OSRS theme */
+:root {
+    --parchment: #f4e4bc;
+    --parchment-dark: #e8d5a3;
+    --parchment-light: #faf3e0;
+    --driftwood: #8b7355;
+    --driftwood-dark: #5c4d3a;
+    --driftwood-light: #a08b6d;
+    --gold: #ffd700;
+    --gold-dark: #d4af37;
+    --gold-light: #ffec80;
+    --ocean-dark: #1a3a4a;
+    --ocean: #2d5a6b;
+    --ocean-light: #3d7a8c;
+    --copper: #b87333;
+    --bronze: #cd7f32;
+    --rune-blue: #5dade2;
+    --dragon-red: #c0392b;
+}
+
+/* Main app background - dark ocean theme */
+.stApp {
+    background: linear-gradient(180deg, #1a2a3a 0%, #0d1a24 50%, #1a2a3a 100%);
+}
+
+/* Sidebar styling - parchment look */
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, var(--parchment) 0%, var(--parchment-dark) 100%);
+    border-right: 4px solid var(--driftwood);
+}
+
+[data-testid="stSidebar"] * {
+    color: var(--driftwood-dark) !important;
+}
+
+[data-testid="stSidebar"] .stMarkdown h1,
+[data-testid="stSidebar"] .stMarkdown h2,
+[data-testid="stSidebar"] .stMarkdown h3 {
+    font-family: 'Cinzel', serif !important;
+    color: var(--driftwood-dark) !important;
+}
+
+/* Main content headers */
+.stApp h1, .stApp h2, .stApp h3 {
+    font-family: 'Cinzel', serif !important;
+    color: var(--gold) !important;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.stApp h1 {
+    border-bottom: 3px solid var(--gold-dark);
+    padding-bottom: 10px;
+}
+
+/* Tabs styling */
+.stTabs [data-baseweb="tab-list"] {
+    background: linear-gradient(180deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
+    border-radius: 8px 8px 0 0;
+    padding: 5px;
+    gap: 4px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    font-family: 'Cinzel', serif !important;
+    color: var(--parchment) !important;
+    background: transparent;
+    border-radius: 6px 6px 0 0;
+    padding: 10px 20px;
+}
+
+.stTabs [aria-selected="true"] {
+    background: linear-gradient(180deg, var(--gold-dark) 0%, var(--copper) 100%) !important;
+    color: var(--driftwood-dark) !important;
+}
+
+.stTabs [data-baseweb="tab-panel"] {
+    background: linear-gradient(180deg, rgba(244,228,188,0.1) 0%, rgba(244,228,188,0.05) 100%);
+    border: 2px solid var(--driftwood);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    padding: 20px;
+}
+
+/* Metrics styling - gold coin look */
+[data-testid="stMetric"] {
+    background: linear-gradient(145deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
+    border: 2px solid var(--gold-dark);
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+[data-testid="stMetric"] label {
+    font-family: 'Cinzel', serif !important;
+    color: var(--gold) !important;
+}
+
+[data-testid="stMetric"] [data-testid="stMetricValue"] {
+    font-family: 'Crimson Text', serif !important;
+    color: var(--parchment) !important;
+}
+
+[data-testid="stMetric"] [data-testid="stMetricDelta"] {
+    font-family: 'Crimson Text', serif !important;
+}
+
+/* Dataframe styling */
+[data-testid="stDataFrame"] {
+    border: 3px solid var(--driftwood);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+/* Buttons - wooden/gold style */
+.stButton > button {
+    font-family: 'Cinzel', serif !important;
+    background: linear-gradient(180deg, var(--gold) 0%, var(--gold-dark) 100%);
+    color: var(--driftwood-dark) !important;
+    border: 2px solid var(--copper);
+    border-radius: 6px;
+    font-weight: 600;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+}
+
+.stButton > button:hover {
+    background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+}
+
+/* Form styling */
+[data-testid="stForm"] {
+    background: linear-gradient(180deg, rgba(139,115,85,0.2) 0%, rgba(92,77,58,0.2) 100%);
+    border: 2px solid var(--driftwood);
+    border-radius: 8px;
+    padding: 15px;
+}
+
+/* Selectbox styling */
+.stSelectbox > div > div {
+    background: var(--parchment-light);
+    border: 2px solid var(--driftwood);
+}
+
+/* Toggle styling */
+.stCheckbox label, .stToggle label {
+    font-family: 'Crimson Text', serif !important;
+}
+
+/* Expander styling */
+.streamlit-expanderHeader {
+    font-family: 'Cinzel', serif !important;
+    background: linear-gradient(180deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
+    border: 2px solid var(--gold-dark);
+    border-radius: 6px;
+    color: var(--gold) !important;
+}
+
+/* Link button */
+.stLinkButton > a {
+    font-family: 'Cinzel', serif !important;
+    background: linear-gradient(180deg, var(--ocean) 0%, var(--ocean-dark) 100%);
+    color: var(--parchment) !important;
+    border: 2px solid var(--ocean-light);
+}
+
+/* Caption text */
+.stCaption {
+    font-family: 'Crimson Text', serif !important;
+    color: var(--parchment-dark) !important;
+    font-style: italic;
+}
+
+/* Spinner */
+.stSpinner > div {
+    border-color: var(--gold) !important;
+}
+
+/* Toast notifications */
+[data-testid="stToast"] {
+    background: linear-gradient(180deg, var(--parchment) 0%, var(--parchment-dark) 100%);
+    border: 2px solid var(--gold-dark);
+    color: var(--driftwood-dark);
+    font-family: 'Crimson Text', serif;
+}
+
+/* Divider */
+hr {
+    border-color: var(--driftwood) !important;
+}
+
+/* Number input in sidebar */
+[data-testid="stSidebar"] input {
+    background: var(--parchment-light) !important;
+    border: 2px solid var(--driftwood) !important;
+    color: var(--driftwood-dark) !important;
+}
+
+/* Warning/Info boxes */
+.stAlert {
+    font-family: 'Crimson Text', serif;
+    border-radius: 6px;
+}
+</style>
+"""
+
+# Apply OSRS theme
+st.markdown(OSRS_CSS, unsafe_allow_html=True)
+
 # Constants
 API_BASE = "https://prices.runescape.wiki/api/v1/osrs"
 
@@ -166,7 +385,6 @@ ALL_NAILS = {
 # ALL CANNONBALLS
 ALL_CANNONBALLS = {
     2: "Steel cannonball",
-    21728: "Granite cannonball",
     # Sailing cannonballs
     31906: "Bronze cannonball",
     31908: "Iron cannonball",
@@ -667,17 +885,6 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Cannonballs"].append(chain_double)
     
-    granite_chain = ProcessingChain(
-        name="Granite cannonballs",
-        category="Cannonballs"
-    )
-    granite_chain.steps = [
-        ChainStep(2, "Steel cannonball", 1),
-        ChainStep(21952, "Granite dust", 1),
-        ChainStep(21728, "Granite cannonball", 1)
-    ]
-    chains["Cannonballs"].append(granite_chain)
-    
     return chains
 
 
@@ -704,12 +911,14 @@ def format_gp(value: float) -> str:
 
 
 def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
-    """Create a bar chart of top profits"""
+    """Create a bar chart of top profits with OSRS theming"""
     sorted_results = sorted(results, key=lambda x: x.get("_profit_raw", 0), reverse=True)[:top_n]
     
     items = [r["Item"] for r in sorted_results]
     profits = [r["_profit_raw"] for r in sorted_results]
-    colors = ['#22c55e' if p > 0 else '#ef4444' for p in profits]
+    
+    # OSRS-themed colors: gold for profit, dragon red for loss
+    colors = ['#d4af37' if p > 0 else '#c0392b' for p in profits]
     
     fig = go.Figure(data=[
         go.Bar(
@@ -717,18 +926,34 @@ def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
             y=items,
             orientation='h',
             marker_color=colors,
+            marker_line_color='#5c4d3a',
+            marker_line_width=2,
             text=[format_gp(p) for p in profits],
-            textposition='outside'
+            textposition='outside',
+            textfont=dict(color='#f4e4bc', size=12)
         )
     ])
     
     fig.update_layout(
-        title="Top Profitable Chains",
-        xaxis_title="Net Profit (GP)",
-        yaxis_title="",
+        title=dict(
+            text="⚓ Top Profitable Chains",
+            font=dict(color='#ffd700', size=18)
+        ),
+        xaxis=dict(
+            title="Net Profit (GP)",
+            titlefont=dict(color='#f4e4bc'),
+            tickfont=dict(color='#f4e4bc'),
+            gridcolor='rgba(139,115,85,0.3)'
+        ),
+        yaxis=dict(
+            title="",
+            tickfont=dict(color='#f4e4bc'),
+            autorange="reversed"
+        ),
         height=400,
-        margin=dict(l=200, r=50, t=50, b=50),
-        yaxis=dict(autorange="reversed"),
+        margin=dict(l=200, r=80, t=50, b=50),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(26,42,58,0.8)',
         showlegend=False
     )
     
@@ -736,12 +961,24 @@ def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
 
 
 def create_category_pie(results: List[Dict]) -> go.Figure:
-    """Create a pie chart of profits by category"""
+    """Create a pie chart of profits by category with OSRS theming"""
     category_profits = {}
     for r in results:
         cat = r.get("Category", "Unknown")
         profit = max(0, r.get("_profit_raw", 0))
         category_profits[cat] = category_profits.get(cat, 0) + profit
+    
+    # OSRS-themed color palette
+    osrs_colors = [
+        '#d4af37',  # Gold
+        '#cd7f32',  # Bronze
+        '#5dade2',  # Rune blue
+        '#c0392b',  # Dragon red
+        '#27ae60',  # Nature green
+        '#8e44ad',  # Magic purple
+        '#f39c12',  # Orange/copper
+        '#1abc9c',  # Teal
+    ]
     
     fig = go.Figure(data=[
         go.Pie(
@@ -749,14 +986,186 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
             values=list(category_profits.values()),
             hole=0.4,
             textinfo='label+percent',
-            marker=dict(colors=px.colors.qualitative.Set3)
+            textfont=dict(color='#f4e4bc', size=11),
+            marker=dict(
+                colors=osrs_colors[:len(category_profits)],
+                line=dict(color='#5c4d3a', width=2)
+            )
         )
     ])
     
     fig.update_layout(
-        title="Profit Distribution by Category",
+        title=dict(
+            text="🪙 Profit by Category",
+            font=dict(color='#ffd700', size=18)
+        ),
         height=350,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(26,42,58,0.8)',
+        legend=dict(
+            font=dict(color='#f4e4bc'),
+            bgcolor='rgba(92,77,58,0.5)'
+        ),
         showlegend=True
+    )
+    
+    return fig
+
+
+def create_profit_histogram(profits: List[float]) -> go.Figure:
+    """Create a histogram of profit distribution"""
+    fig = go.Figure(data=[
+        go.Histogram(
+            x=profits,
+            nbinsx=30,
+            marker_color='#d4af37',
+            marker_line_color='#5c4d3a',
+            marker_line_width=1
+        )
+    ])
+    
+    fig.update_layout(
+        title=dict(
+            text="📊 Profit Distribution",
+            font=dict(color='#ffd700', size=18)
+        ),
+        xaxis=dict(
+            title="Net Profit (GP)",
+            titlefont=dict(color='#f4e4bc'),
+            tickfont=dict(color='#f4e4bc'),
+            gridcolor='rgba(139,115,85,0.3)'
+        ),
+        yaxis=dict(
+            title="Number of Chains",
+            titlefont=dict(color='#f4e4bc'),
+            tickfont=dict(color='#f4e4bc'),
+            gridcolor='rgba(139,115,85,0.3)'
+        ),
+        height=300,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(26,42,58,0.8)'
+    )
+    
+    return fig
+
+
+def create_category_comparison(results: List[Dict]) -> go.Figure:
+    """Create a grouped bar chart comparing categories"""
+    category_stats = {}
+    for r in results:
+        cat = r.get("Category", "Unknown")
+        profit = r.get("_profit_raw", 0)
+        if cat not in category_stats:
+            category_stats[cat] = {"profits": [], "count": 0}
+        category_stats[cat]["profits"].append(profit)
+        category_stats[cat]["count"] += 1
+    
+    categories = list(category_stats.keys())
+    avg_profits = [sum(category_stats[c]["profits"]) / len(category_stats[c]["profits"]) for c in categories]
+    max_profits = [max(category_stats[c]["profits"]) for c in categories]
+    
+    fig = go.Figure()
+    
+    fig.add_trace(go.Bar(
+        name='Average Profit',
+        x=categories,
+        y=avg_profits,
+        marker_color='#5dade2',
+        marker_line_color='#5c4d3a',
+        marker_line_width=2
+    ))
+    
+    fig.add_trace(go.Bar(
+        name='Best Profit',
+        x=categories,
+        y=max_profits,
+        marker_color='#d4af37',
+        marker_line_color='#5c4d3a',
+        marker_line_width=2
+    ))
+    
+    fig.update_layout(
+        title=dict(
+            text="⚔️ Category Comparison",
+            font=dict(color='#ffd700', size=18)
+        ),
+        xaxis=dict(
+            title="",
+            tickfont=dict(color='#f4e4bc'),
+            tickangle=45
+        ),
+        yaxis=dict(
+            title="Profit (GP)",
+            titlefont=dict(color='#f4e4bc'),
+            tickfont=dict(color='#f4e4bc'),
+            gridcolor='rgba(139,115,85,0.3)'
+        ),
+        barmode='group',
+        height=400,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(26,42,58,0.8)',
+        legend=dict(
+            font=dict(color='#f4e4bc'),
+            bgcolor='rgba(92,77,58,0.5)'
+        )
+    )
+    
+    return fig
+
+
+def create_roi_scatter(results: List[Dict]) -> go.Figure:
+    """Create a scatter plot of ROI vs Profit"""
+    data = [r for r in results if r.get("ROI %") is not None and r.get("ROI %") != float('inf')]
+    
+    if not data:
+        return None
+    
+    profits = [r["_profit_raw"] for r in data]
+    rois = [r["ROI %"] for r in data]
+    names = [r["Item"] for r in data]
+    categories = [r.get("Category", "Unknown") for r in data]
+    
+    # Color by category
+    unique_cats = list(set(categories))
+    osrs_colors = ['#d4af37', '#cd7f32', '#5dade2', '#c0392b', '#27ae60', '#8e44ad', '#f39c12', '#1abc9c']
+    cat_colors = {cat: osrs_colors[i % len(osrs_colors)] for i, cat in enumerate(unique_cats)}
+    colors = [cat_colors[c] for c in categories]
+    
+    fig = go.Figure(data=[
+        go.Scatter(
+            x=profits,
+            y=rois,
+            mode='markers',
+            marker=dict(
+                size=12,
+                color=colors,
+                line=dict(color='#5c4d3a', width=1)
+            ),
+            text=names,
+            hovertemplate='<b>%{text}</b><br>Profit: %{x:,.0f} GP<br>ROI: %{y:.1f}%<extra></extra>'
+        )
+    ])
+    
+    fig.update_layout(
+        title=dict(
+            text="💰 ROI vs Profit Analysis",
+            font=dict(color='#ffd700', size=18)
+        ),
+        xaxis=dict(
+            title="Net Profit (GP)",
+            titlefont=dict(color='#f4e4bc'),
+            tickfont=dict(color='#f4e4bc'),
+            gridcolor='rgba(139,115,85,0.3)'
+        ),
+        yaxis=dict(
+            title="ROI (%)",
+            titlefont=dict(color='#f4e4bc'),
+            tickfont=dict(color='#f4e4bc'),
+            gridcolor='rgba(139,115,85,0.3)'
+        ),
+        height=400,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(26,42,58,0.8)'
     )
     
     return fig
@@ -767,14 +1176,14 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
 # ===============
 
 def main():
-    # Header
+    # Header with OSRS styling
     col1, col2 = st.columns([4, 1])
     with col1:
         st.title("⚓ OSRS Sailing Materials Tracker")
-        st.caption("Real-time profit calculations for the crafty sailor!")
+        st.caption("*\"A captain is only as rich as their cargo...\"* — Real-time profit calculations for the crafty sailor!")
     with col2:
         st.link_button(
-            "📖 OSRS Wiki",
+            "📜 OSRS Wiki",
             "https://oldschool.runescape.wiki/w/Sailing",
             use_container_width=True
         )
@@ -782,22 +1191,12 @@ def main():
     # Initialize connection and load data
     conn = get_api_connection()
     
-    # Load data with status indicator
-    with st.status("Loading market data...", expanded=False) as status:
-        st.write("Fetching item mappings...")
+    with st.spinner("Loading market data..."):
         item_mapping = fetch_item_mapping(conn)
-        
-        st.write("Fetching latest prices...")
         prices = fetch_latest_prices(conn)
-        
-        st.write("Initializing lookup tables...")
         mapping_hash = str(hash(frozenset(item_mapping.keys())))
         id_lookup = get_id_lookup(mapping_hash, item_mapping)
-        
-        st.write("Generating processing chains...")
         all_chains = generate_all_chains()
-        
-        status.update(label="Data loaded!", state="complete", expanded=False)
     
     # Sync with URL parameters
     params = st.query_params
@@ -1252,9 +1651,13 @@ def main():
                     cols = st.columns(min(4, len(category_bests)))
                     for i, (cat, best) in enumerate(category_bests.items()):
                         with cols[i % 4]:
+                            # Truncate intelligently - remove common suffixes for display
+                            display_name = best['Item'].replace(' processing', '').replace(' smithing', '')
+                            if len(display_name) > 20:
+                                display_name = display_name[:18] + "..."
                             st.metric(
                                 cat,
-                                best['Item'].split()[0],  # First word
+                                display_name,
                                 delta=format_gp(best['_profit_raw'])
                             )
             else:
@@ -1273,58 +1676,60 @@ def main():
                     all_results_for_charts.append({
                         "Category": category,
                         "Item": chain.name,
+                        "ROI %": result['roi'] if result['roi'] != float('inf') else None,
                         "_profit_raw": result["net_profit"]
                     })
         
         if all_results_for_charts:
+            # Row 1: Top profits and category pie
             col1, col2 = st.columns(2)
             
             with col1:
-                # Top profits bar chart
                 profitable_results = [r for r in all_results_for_charts if r["_profit_raw"] > 0]
                 if profitable_results:
                     fig = create_profit_chart(profitable_results, top_n=10)
                     st.plotly_chart(fig, use_container_width=True)
             
             with col2:
-                # Category pie chart
                 if profitable_results:
                     fig = create_category_pie(profitable_results)
                     st.plotly_chart(fig, use_container_width=True)
             
-            # Profit distribution histogram
-            st.subheader("Profit Distribution")
-            profits = [r["_profit_raw"] for r in all_results_for_charts]
+            # Row 2: Category comparison and ROI scatter
+            col1, col2 = st.columns(2)
             
-            fig = go.Figure(data=[
-                go.Histogram(
-                    x=profits,
-                    nbinsx=30,
-                    marker_color='#6366f1'
-                )
-            ])
-            fig.update_layout(
-                xaxis_title="Net Profit (GP)",
-                yaxis_title="Number of Chains",
-                height=300
-            )
+            with col1:
+                fig = create_category_comparison(all_results_for_charts)
+                st.plotly_chart(fig, use_container_width=True)
+            
+            with col2:
+                fig = create_roi_scatter(all_results_for_charts)
+                if fig:
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.info("Not enough ROI data for scatter plot")
+            
+            # Row 3: Profit distribution histogram
+            st.subheader("Distribution Analysis")
+            profits = [r["_profit_raw"] for r in all_results_for_charts]
+            fig = create_profit_histogram(profits)
             st.plotly_chart(fig, use_container_width=True)
             
-            # Summary stats
-            st.subheader("📊 Summary Statistics")
+            # Summary stats with OSRS flair
+            st.subheader("📊 Voyage Summary")
             col1, col2, col3, col4 = st.columns(4)
             
             with col1:
-                st.metric("Total Chains", len(all_results_for_charts))
+                st.metric("🚢 Total Chains", len(all_results_for_charts))
             with col2:
                 profitable_count = sum(1 for p in profits if p > 0)
-                st.metric("Profitable", f"{profitable_count} ({profitable_count/len(profits)*100:.0f}%)")
+                st.metric("💰 Profitable", f"{profitable_count} ({profitable_count/len(profits)*100:.0f}%)")
             with col3:
                 avg_profit = sum(profits) / len(profits)
-                st.metric("Avg Profit", format_gp(avg_profit))
+                st.metric("📈 Avg Profit", format_gp(avg_profit))
             with col4:
                 max_profit = max(profits)
-                st.metric("Max Profit", format_gp(max_profit))
+                st.metric("🏆 Best Profit", format_gp(max_profit))
 
 
 if __name__ == "__main__":

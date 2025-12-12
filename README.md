@@ -4,7 +4,14 @@ A comprehensive Streamlit application for tracking Old School RuneScape Sailing 
 
 ## 🆕 What's New in v4.0
 
-This version takes full advantage of Streamlit's built-in modules for a better user experience:
+This version takes full advantage of Streamlit's built-in modules for a better user experience, plus a complete **OSRS-themed visual overhaul**!
+
+### 🎨 OSRS Visual Theme
+- **Parchment sidebar** with driftwood borders
+- **Ocean-dark main background** evoking the high seas
+- **Gold accents** on headers, buttons, and metrics
+- **Cinzel & Crimson Text fonts** for that medieval RPG feel
+- **OSRS-colored charts**: Gold for profits, Dragon red for losses, Rune blue for comparisons
 
 ### Streamlit Features Now Utilized
 
@@ -24,10 +31,12 @@ This version takes full advantage of Streamlit's built-in modules for a better u
 | `st.metric()` | Summary statistics | At-a-glance insights |
 
 ### New Analytics Tab
-- **Profit Bar Charts**: Visual comparison of top profitable chains
+- **Profit Bar Charts**: Visual comparison of top profitable chains (gold bars!)
 - **Category Pie Chart**: Distribution of profits by category
+- **Category Comparison**: Average vs Best profit per category
+- **ROI vs Profit Scatter**: Find high-ROI opportunities
 - **Profit Histogram**: Overall profit distribution
-- **Summary Statistics**: Comprehensive overview
+- **Voyage Summary**: Comprehensive overview with OSRS flair
 
 ### Improved Data Tables
 - Number formatting with GP units
@@ -161,6 +170,10 @@ streamlit run app_improved.py
 ## 📝 Changelog
 
 ### v4.0 (Enhanced Streamlit Edition)
+- **OSRS Visual Theme**: Parchment sidebar, ocean background, gold accents
+- **Custom fonts**: Cinzel (headers) and Crimson Text (body)
+- **New charts**: Category comparison bars, ROI vs Profit scatter plot
+- **OSRS-themed chart colors**: Gold, bronze, rune blue, dragon red
 - Added `st.status()` for data loading feedback
 - Added `st.toast()` for notifications
 - Added `st.form()` for grouped inputs
@@ -173,6 +186,7 @@ streamlit run app_improved.py
 - Added Analytics tab with visualizations
 - Improved table formatting with `st.column_config`
 - Added progress bars for ROI display
+- Fixed "Best in Category" display names (no more truncation)
 
 ### v3.1 (Original)
 - Basic Streamlit implementation
