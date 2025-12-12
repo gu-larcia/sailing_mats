@@ -1155,7 +1155,7 @@ def main():
     col1, col2 = st.columns([4, 1])
     with col1:
         st.title("⚓ OSRS Sailing Materials Tracker")
-        st.caption("*\"A captain is only as rich as their cargo...\"*")
+        st.caption("*\"For the crafty sailor!\"*")
     with col2:
         st.link_button(
             "📜 OSRS Wiki",
