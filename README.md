@@ -2,11 +2,11 @@
 
 A comprehensive Streamlit application for tracking Old School RuneScape Sailing skill materials with real-time Grand Exchange prices and complete processing chain calculations.
 
-## 🆕 What's New in v4.0
+## What's New in v4.0
 
 This version takes full advantage of Streamlit's built-in modules for a better user experience, plus a complete **OSRS-themed visual overhaul**!
 
-### 🎨 OSRS Visual Theme
+### OSRS Visual Theme
 - **Parchment sidebar** with driftwood borders
 - **Ocean-dark main background** evoking the high seas
 - **Gold accents** on headers, buttons, and metrics
@@ -51,7 +51,7 @@ Share your configuration with others via URL parameters:
 https://your-app.streamlit.app/?plank_method=Sawmill&double_mould=true&quantity=1000
 ```
 
-## 🎯 Features
+## Features
 
 ### Complete Item Coverage (Released November 19, 2025)
 - **All 7 wood tiers**: Regular through Rosewood
@@ -75,7 +75,7 @@ https://your-app.streamlit.app/?plank_method=Sawmill&double_mould=true&quantity=
 - ROI percentages with visual progress bars
 - Best profit finder across all categories
 
-## 🚀 Installation
+## Installation
 
 ### Local Setup
 ```bash
@@ -97,44 +97,45 @@ streamlit run app_improved.py
 4. Set main file to `app_improved.py`
 5. Deploy!
 
-## 📊 Usage
+## Usage
 
 ### Configuration (Sidebar)
 1. **Plank Method**: Choose between Sawmill, Plank Make, or Plank Make with Earth Staff
-2. **Double Ammo Mould**: Toggle for 2x cannonball production
-3. **Ancient Furnace**: Toggle for faster smithing
-4. **Quantity**: Set batch size for calculations
-5. Click "Apply Settings" to update calculations
+2. **Self-Collected Materials**: Toggle to set raw material costs to 0 (for ironmen or self-gatherers)
+3. **Double Ammo Mould**: Toggle for 2x cannonball production
+4. **Ancient Furnace**: Toggle for faster smithing
+5. **Quantity**: Set batch size for calculations
+6. Click "Apply Settings" to update calculations
 
 ### Tabs Overview
 
-#### 📊 All Chains
+#### All Chains
 - Browse processing chains by category
 - View detailed cost breakdowns
 - Expand for step-by-step chain analysis
 
-#### 🔍 Search Items
+#### Search Items
 - Search any item by name
 - See buy/sell prices and margins
-- Identify Sailing-specific items (⚓ marker)
+- Identify Sailing-specific items
 
-#### ⚓ Sailing Items
+#### Sailing Items
 - Browse Sailing-specific categories
-- Quick access to new content items
+- Quick access to sailing content
 - Monitor item availability
 
-#### 📈 Best Profits
+#### Best Profits
 - Top 20 most profitable chains
 - Filter by profitable only
 - Best item per category highlights
 
-#### 📉 Analytics
+#### Analytics
 - Visual profit comparisons
 - Category profit distribution
 - Profit histogram
 - Summary statistics
 
-## 🔧 Technical Details
+## Technical Details
 
 ### API Integration
 - Base URL: `https://prices.runescape.wiki/api/v1/osrs`
@@ -154,7 +155,7 @@ streamlit run app_improved.py
 - `st.form()` for batched input handling
 - Efficient reruns with targeted caching
 
-## 📈 Profit Optimization Tips
+## Profit Optimization Tips
 
 1. **Rosewood Processing**: Highest tier = highest margins
 2. **Dragon Items**: Limited supply = premium prices
@@ -162,13 +163,13 @@ streamlit run app_improved.py
 4. **Self-Obtained**: Cutting your own logs = infinite ROI
 5. **Bulk Processing**: Higher quantities reduce per-item costs
 
-## 🛠 Known Issues
+## Known Issues
 
 - Some Sailing items may not have stable prices yet
 - Dragon cannonballs are drop-only (cannot be smithed)
 - Jatoba logs cannot be processed into planks
 
-## 📝 Changelog
+## Changelog
 
 ### v4.0 (Enhanced Streamlit Edition)
 - **OSRS Visual Theme**: Parchment sidebar, ocean background, gold accents
@@ -197,11 +198,11 @@ streamlit run app_improved.py
 - Core processing chain calculations
 - Real-time GE price fetching
 
-## 📄 License
+## License
 
 MIT License - Free for all OSRS players
 
-## 🙏 Credits
+## Credits
 
 - OSRS Wiki for item data and API
 - Jagex for creating the Sailing skill

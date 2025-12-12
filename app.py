@@ -168,7 +168,7 @@ OSRS_CSS = """
     padding: 15px;
 }
 
-/* Selectbox styling */
+/* Selectbox styling - disable text input */
 .stSelectbox > div > div {
     background: var(--parchment-light) !important;
     border: 2px solid var(--driftwood) !important;
@@ -176,6 +176,17 @@ OSRS_CSS = """
 
 .stSelectbox > div > div > div {
     color: var(--driftwood-dark) !important;
+}
+
+/* Make selectbox input read-only appearance */
+.stSelectbox input {
+    caret-color: transparent !important;
+    pointer-events: none !important;
+}
+
+/* Ensure the dropdown arrow is clickable */
+.stSelectbox > div > div {
+    cursor: pointer !important;
 }
 
 /* Selectbox dropdown menu */
@@ -194,6 +205,11 @@ OSRS_CSS = """
 /* Main content selectbox text */
 .stSelectbox label {
     color: var(--parchment) !important;
+}
+
+/* Sidebar selectbox text */
+[data-testid="stSidebar"] .stSelectbox label {
+    color: var(--driftwood-dark) !important;
 }
 
 /* Toggle styling */
@@ -256,6 +272,23 @@ hr {
     border-radius: 6px;
 }
 </style>
+<script>
+// Disable autocomplete on all inputs
+document.addEventListener('DOMContentLoaded', function() {
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => {
+        input.setAttribute('autocomplete', 'off');
+    });
+});
+// Also run on mutations for dynamic content
+const observer = new MutationObserver(function(mutations) {
+    const inputs = document.querySelectorAll('input');
+    inputs.forEach(input => {
+        input.setAttribute('autocomplete', 'off');
+    });
+});
+observer.observe(document.body, { childList: true, subtree: true });
+</script>
 """
 
 # Apply OSRS theme
@@ -282,8 +315,7 @@ ALL_LOGS = {
     2862: "Achey tree logs",
     10810: "Arctic pine logs",
     3239: "Bark",
-    # Sailing-specific woods
-    32902: "Jatoba logs",
+    # Sailing woods
     32904: "Camphor logs",
     32907: "Ironwood logs",
     32910: "Rosewood logs",
@@ -647,7 +679,9 @@ class ProcessingChain:
                 total_value = unit_price * step_qty
                 results["output_value"] = total_value
             else:
-                unit_price = price_data.get("high", 0) if price_data and not step.is_self_obtained else 0
+                # Check both per-step self_obtained and global self_collected config
+                is_free = step.is_self_obtained or config.get("self_collected", False)
+                unit_price = price_data.get("high", 0) if price_data and not is_free else 0
                 total_value = unit_price * step_qty
 
                 if is_input:
@@ -667,7 +701,7 @@ class ProcessingChain:
                 "quantity": step_qty,
                 "unit_price": unit_price,
                 "total_value": total_value,
-                "is_self_obtained": step.is_self_obtained,
+                "is_self_obtained": step.is_self_obtained or config.get("self_collected", False),
                 "processing_cost": processing_cost,
                 "processing_notes": process_notes,
                 "step_type": "Output" if is_output else ("Input" if is_input else "Intermediate")
@@ -1245,6 +1279,12 @@ def main():
                 ) if params.get("plank_method") in ["Sawmill", "Plank Make", "Plank Make (Earth Staff)"] else 0
             )
             
+            self_collected = st.toggle(
+                "Self-Collected Materials",
+                value=params.get("self_collected", "false") == "true",
+                help="Check if you gathered/mined the raw materials yourself (sets material cost to 0)"
+            )
+            
             use_double_mould = st.toggle(
                 "Double Ammo Mould",
                 value=params.get("double_mould", "false") == "true",
@@ -1271,6 +1311,7 @@ def main():
             
             if submitted:
                 st.query_params["plank_method"] = plank_method
+                st.query_params["self_collected"] = str(self_collected).lower()
                 st.query_params["double_mould"] = str(use_double_mould).lower()
                 st.query_params["ancient_furnace"] = str(ancient_furnace).lower()
                 st.query_params["quantity"] = str(quantity)
@@ -1301,6 +1342,7 @@ def main():
     config = {
         "quantity": quantity,
         "use_earth_staff": use_earth_staff,
+        "self_collected": self_collected,
         "double_ammo_mould": use_double_mould,
         "ancient_furnace": ancient_furnace
     }
@@ -1435,12 +1477,17 @@ def main():
                             
                             st.subheader(f"Chain: {chain.name}")
                             
+                            if config.get("self_collected", False):
+                                st.info("Materials marked as self-collected (0 GP cost)")
+                            
                             for i, step in enumerate(result["steps"]):
                                 step_type = step["step_type"]
                                 icon = "[OUT]" if step_type == "Output" else ("[IN]" if step_type == "Input" else "[...]")
                                 
+                                self_note = " (self-collected)" if step.get("is_self_obtained") and step_type != "Output" else ""
+                                
                                 st.markdown(f"""
-                                **{icon} Step {i+1}: {step['name']}**
+                                **{icon} Step {i+1}: {step['name']}{self_note}**
                                 - Quantity: {step['quantity']:,.0f}
                                 - Unit Price: {format_gp(step['unit_price'])}
                                 - Total Value: {format_gp(step['total_value'])}
@@ -1530,11 +1577,11 @@ def main():
         st.header("Sailing-Specific Items")
         
         sailing_categories = {
-            "New Woods": [32902, 32904, 32907, 32910, 31432, 31435, 31438],
+            "Woods": [32904, 32907, 32910, 31432, 31435, 31438],
             "Hull Parts": list(HULL_PARTS.keys()) + list(LARGE_HULL_PARTS.keys()),
             "Hull Repair Kits": list(HULL_REPAIR_KITS.keys()),
             "Keel Parts": list(KEEL_PARTS.keys()) + list(LARGE_KEEL_PARTS.keys()),
-            "New Metals": [31716, 31719, 32889, 32892, 31996],
+            "Metals": [31716, 31719, 32889, 32892, 31996],
             "Dragon Items": [31406, 32017, 32038, 31916],
             "Ship Cannonballs": [31906, 31908, 31910, 31912, 31914, 31916],
         }
@@ -1712,7 +1759,7 @@ def main():
             exclude_dragon = st.toggle(
                 "Exclude Dragon Items",
                 value=False,
-                help="Dragon items are outliers with volatile prices - you can exclude them to see other trends more clearly"
+                help="Dragon items are outliers with very high profits - exclude them to see other trends more clearly"
             )
         
         # Calculate all for charts
