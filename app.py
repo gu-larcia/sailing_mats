@@ -966,6 +966,25 @@ def format_gp(value: float) -> str:
     return f"-{formatted}" if is_negative else formatted
 
 
+def get_wiki_image_url(item_name: str) -> str:
+    """Generate OSRS Wiki image URL for an item"""
+    # Convert item name to wiki format: spaces to underscores, handle special chars
+    formatted_name = item_name.replace(" ", "_").replace("'", "%27")
+    return f"https://oldschool.runescape.wiki/images/{formatted_name}.png"
+
+
+def get_item_icon(item_name: str) -> str:
+    """Get item icon URL, with fallback for common naming variations"""
+    # Some items have different image names than their item names
+    name_fixes = {
+        "Plank": "Plank",
+        "Logs": "Logs",
+    }
+    
+    fixed_name = name_fixes.get(item_name, item_name)
+    return get_wiki_image_url(fixed_name)
+
+
 def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
     """Create a bar chart of top profits with OSRS theming"""
     sorted_results = sorted(results, key=lambda x: x.get("_profit_raw", 0), reverse=True)[:top_n]
@@ -986,7 +1005,8 @@ def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
             marker_line_width=2,
             text=[format_gp(p) for p in profits],
             textposition='outside',
-            textfont=dict(color='#f4e4bc', size=12)
+            textfont=dict(color='#f4e4bc', size=11),
+            name='Profit'
         )
     ])
     
@@ -998,14 +1018,20 @@ def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
         xaxis_title_font_color='#f4e4bc',
         xaxis_tickfont_color='#f4e4bc',
         xaxis_gridcolor='rgba(139,115,85,0.3)',
+        xaxis_tickformat=',.0f',
         yaxis_title="",
         yaxis_tickfont_color='#f4e4bc',
         yaxis_autorange="reversed",
         height=400,
-        margin=dict(l=200, r=80, t=50, b=50),
+        margin=dict(l=180, r=100, t=50, b=50),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)',
         showlegend=False
+    )
+    
+    # Configure for better export
+    fig.update_layout(
+        modebar=dict(bgcolor='rgba(0,0,0,0)'),
     )
     
     return fig
@@ -1058,14 +1084,15 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
             labels=labels,
             values=values,
             hole=0.4,
-            textinfo='label+percent',
-            textposition='outside',
-            textfont=dict(color='#f4e4bc', size=12),
+            textinfo='percent',
+            textposition='inside',
+            textfont=dict(color='#ffffff', size=12),
+            hovertemplate='<b>%{label}</b><br>Profit: %{value:,.0f} GP<br>Share: %{percent}<extra></extra>',
             marker=dict(
                 colors=osrs_colors[:len(labels)],
                 line=dict(color='#5c4d3a', width=2)
             ),
-            pull=[0.05 if i == 0 else 0 for i in range(len(labels))]  # Pull out largest slice slightly
+            pull=[0.03 if i == 0 else 0 for i in range(len(labels))]
         )
     ])
     
@@ -1076,17 +1103,19 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
         height=400,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)',
-        legend_font_color='#f4e4bc',
-        legend_bgcolor='rgba(92,77,58,0.5)',
         showlegend=True,
         legend=dict(
-            orientation="v",
-            yanchor="middle",
+            font=dict(color='#f4e4bc', size=11),
+            bgcolor='rgba(92,77,58,0.7)',
+            bordercolor='#5c4d3a',
+            borderwidth=1,
+            orientation='v',
+            yanchor='middle',
             y=0.5,
-            xanchor="left",
+            xanchor='left',
             x=1.02
         ),
-        margin=dict(l=20, r=120, t=50, b=20)
+        margin=dict(l=20, r=150, t=50, b=20)
     )
     
     return fig
@@ -1100,7 +1129,9 @@ def create_profit_histogram(profits: List[float]) -> go.Figure:
             nbinsx=30,
             marker_color='#d4af37',
             marker_line_color='#5c4d3a',
-            marker_line_width=1
+            marker_line_width=1,
+            name='Chains',
+            hovertemplate='Profit Range: %{x}<br>Count: %{y}<extra></extra>'
         )
     ])
     
@@ -1112,13 +1143,15 @@ def create_profit_histogram(profits: List[float]) -> go.Figure:
         xaxis_title_font_color='#f4e4bc',
         xaxis_tickfont_color='#f4e4bc',
         xaxis_gridcolor='rgba(139,115,85,0.3)',
+        xaxis_tickformat=',.0f',
         yaxis_title="Number of Chains",
         yaxis_title_font_color='#f4e4bc',
         yaxis_tickfont_color='#f4e4bc',
         yaxis_gridcolor='rgba(139,115,85,0.3)',
         height=300,
         paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(26,42,58,0.8)'
+        plot_bgcolor='rgba(26,42,58,0.8)',
+        bargap=0.05
     )
     
     return fig
@@ -1147,7 +1180,8 @@ def create_category_comparison(results: List[Dict]) -> go.Figure:
         y=avg_profits,
         marker_color='#5dade2',
         marker_line_color='#5c4d3a',
-        marker_line_width=2
+        marker_line_width=2,
+        hovertemplate='<b>%{x}</b><br>Avg: %{y:,.0f} GP<extra></extra>'
     ))
     
     fig.add_trace(go.Bar(
@@ -1156,7 +1190,8 @@ def create_category_comparison(results: List[Dict]) -> go.Figure:
         y=max_profits,
         marker_color='#d4af37',
         marker_line_color='#5c4d3a',
-        marker_line_width=2
+        marker_line_width=2,
+        hovertemplate='<b>%{x}</b><br>Best: %{y:,.0f} GP<extra></extra>'
     ))
     
     fig.update_layout(
@@ -1165,17 +1200,29 @@ def create_category_comparison(results: List[Dict]) -> go.Figure:
         title_font_size=18,
         xaxis_title="",
         xaxis_tickfont_color='#f4e4bc',
+        xaxis_tickfont_size=10,
         xaxis_tickangle=45,
         yaxis_title="Profit (GP)",
         yaxis_title_font_color='#f4e4bc',
         yaxis_tickfont_color='#f4e4bc',
         yaxis_gridcolor='rgba(139,115,85,0.3)',
+        yaxis_tickformat=',.0f',
         barmode='group',
         height=400,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)',
-        legend_font_color='#f4e4bc',
-        legend_bgcolor='rgba(92,77,58,0.5)'
+        legend=dict(
+            font=dict(color='#f4e4bc', size=11),
+            bgcolor='rgba(92,77,58,0.7)',
+            bordercolor='#5c4d3a',
+            borderwidth=1,
+            orientation='h',
+            yanchor='bottom',
+            y=1.02,
+            xanchor='center',
+            x=0.5
+        ),
+        margin=dict(l=60, r=20, t=80, b=100)
     )
     
     return fig
