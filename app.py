@@ -807,7 +807,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Large Hull Parts"].append(chain)
     
-    # KEEL PARTS
+    # KEEL PARTS (5 bars each, except dragon which needs 2 sheets)
     keel_mappings = [
         (2349, "Bronze bar", 31999, "Bronze keel parts", 5),
         (2351, "Iron bar", 32002, "Iron keel parts", 5),
@@ -815,7 +815,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         (2359, "Mithril bar", 32008, "Mithril keel parts", 5),
         (2361, "Adamantite bar", 32011, "Adamant keel parts", 5),
         (2363, "Runite bar", 32014, "Rune keel parts", 5),
-        (31996, "Dragon metal sheet", 32017, "Dragon keel parts", 1),
+        (31996, "Dragon metal sheet", 32017, "Dragon keel parts", 2),  # 2 sheets per 1 keel part
     ]
     
     for bar_id, bar_name, keel_id, keel_name, qty in keel_mappings:
