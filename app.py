@@ -1,6 +1,6 @@
 """
 OSRS Sailing Materials Tracker
-Version 4.2 - GP/hr with Equipped Tools
+Version 4.2
 """
 
 import streamlit as st
