@@ -20,9 +20,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ===============
-#  OSRS THEME CSS
-# ===============
+# ==============
+# OSRS THEME CSS
+# ==============
 
 OSRS_CSS = """
 <style>
@@ -351,15 +351,15 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 """
 
-# Apply OSRS theme
+# Applying OSRS theme
 st.markdown(OSRS_CSS, unsafe_allow_html=True)
 
 # Constants
 API_BASE = "https://prices.runescape.wiki/api/v1/osrs"
 
-# ===============
-#  ITEM DATABASE
-# ===============
+# =============
+# ITEM DATABASE
+# =============
 
 # ALL LOGS
 ALL_LOGS = {
@@ -441,7 +441,7 @@ ALL_ORES = {
     # Sailing ores
     31716: "Lead ore",
     31719: "Nickel ore",
-    # Additional ores
+    # Essence
     1436: "Rune essence",
     1440: "Pure essence",
 }
@@ -542,9 +542,9 @@ RUNE_IDS = {
     "Earth rune": 557,
 }
 
-# ===============
-#  GP/HR TIMING DATA
-# ===============
+# =================
+# GP/HR TIMING DATA
+# =================
 
 @dataclass
 class ActivityTiming:
@@ -555,10 +555,10 @@ class ActivityTiming:
     needs_hammer: bool          # Whether activity needs a hammer
     needs_saw: bool             # Whether activity needs a saw
     other_tool_slots: int       # Other non-equippable tool slots (e.g., ammo mould)
-    activity_name: str          # Display name for the activity
+    activity_name: str          # Name for the activity
     notes: str = ""             # Any special notes
 
-# Bank presets (seconds for full bank cycle: open, deposit, withdraw, close, travel)
+# Bank presets (in seconds)
 BANK_PRESETS = {
     "Fast": 8.0,      # Optimal setup (e.g., max house, bank chest nearby)
     "Medium": 15.0,   # Typical efficient banking
@@ -572,7 +572,7 @@ ACTIVITY_TIMINGS = {
     # 9 ticks (5.4s) per bar, but done as batch
     "Cannonballs": ActivityTiming(
         ticks_per_action=9,
-        items_per_action=4,  # 4 cannonballs per bar (8 with double mould handled separately)
+        items_per_action=4,  # 4 cannonballs per bar (double mould handled elsewhere)
         materials_per_action=1,
         needs_hammer=False,
         needs_saw=False,
@@ -750,7 +750,7 @@ def calculate_gp_per_hour(
     has_crystal_saw = config.get("has_crystal_saw", False)
     
     # Calculate tool slots used based on which equipped tools the player has
-    tool_slots_used = timing.other_tool_slots  # Start with non-equippable slots
+    tool_slots_used = timing.other_tool_slots # None is default
     
     # Add hammer slot if needed and not equipped
     if timing.needs_hammer:
@@ -850,9 +850,9 @@ ALL_ITEMS = {
 }
 
 
-# ===============
-#  ITEM ICONS
-# ===============
+# ==========
+# ITEM ICONS
+# ==========
 
 def get_wiki_image_url(item_name: str) -> str:
     """Generate OSRS Wiki image URL for an item"""
@@ -888,9 +888,9 @@ def get_output_item_name(chain_name: str) -> str:
     return clean
 
 
-# ===============
-#  API CONNECTION
-# ===============
+# ==============
+# API CONNECTION
+# ==============
 
 class OSRSWikiConnection:
     """Custom connection class for OSRS Wiki API"""
@@ -899,7 +899,7 @@ class OSRSWikiConnection:
         self.base_url = base_url
         self._session = requests.Session()
         self._session.headers.update({
-            'User-Agent': 'OSRS-Sailing-Tracker/4.1 (Streamlit App)'
+            'User-Agent': 'OSRS-Sailing-Tracker/4.2 (Streamlit App)'
         })
     
     def fetch_mapping(self) -> Dict:
@@ -934,9 +934,9 @@ def fetch_latest_prices(_conn: OSRSWikiConnection) -> Dict:
     return _conn.fetch_prices()
 
 
-# ===============
-#  ITEM LOOKUP
-# ===============
+# ===========
+# ITEM LOOKUP
+# ===========
 
 @st.cache_resource
 def get_id_lookup(_item_mapping_hash: str, item_mapping: Dict) -> 'ItemIDLookup':
@@ -979,9 +979,9 @@ class ItemIDLookup:
         return found_id
 
 
-# ===============
-#  PROCESSING CHAINS
-# ===============
+# =================
+# PROCESSING CHAINS
+# =================
 
 @dataclass
 class ChainStep:
@@ -1349,9 +1349,9 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
     return chains
 
 
-# ===============
-#  UTILITIES
-# ===============
+# =========
+# UTILITIES
+# =========
 
 def format_gp(value: float) -> str:
     """Format GP values"""
@@ -1723,9 +1723,9 @@ def create_roi_scatter(results: List[Dict]) -> go.Figure:
     return fig
 
 
-# ===============
-#  MAIN APP
-# ===============
+# ========
+# MAIN APP
+# ========
 
 def main():
     # Header with OSRS styling
