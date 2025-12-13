@@ -3234,7 +3234,7 @@ def main():
             
             # Row 3: Profit distribution histogram
             profit_label = "Per-Item Profit" if use_per_item else f"Batch Profit (qty: {quantity})"
-            st.subheader(f"Distribution Analysis as” {profit_label}")
+            st.subheader(f"Distribution Analysis as {profit_label}")
             profits = [r["_profit_raw"] for r in all_results_for_charts]
             fig = create_profit_histogram(profits, per_item=use_per_item)
             st.plotly_chart(fig, use_container_width=True)
