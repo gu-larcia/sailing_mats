@@ -1,6 +1,6 @@
 """
 OSRS Sailing Materials Tracker
-Version 4.1 - Enhanced with Item Thumbnails
+Version 4.2 - GP/hr with Equipped Tools
 """
 
 import streamlit as st
@@ -541,6 +541,306 @@ RUNE_IDS = {
     "Nature rune": 561,
     "Earth rune": 557,
 }
+
+# ===============
+#  GP/HR TIMING DATA
+# ===============
+
+@dataclass
+class ActivityTiming:
+    """Timing parameters for a crafting activity"""
+    ticks_per_action: int       # Game ticks to perform one craft action
+    items_per_action: int       # Items produced per action
+    materials_per_action: int   # Materials consumed per action
+    needs_hammer: bool          # Whether activity needs a hammer
+    needs_saw: bool             # Whether activity needs a saw
+    other_tool_slots: int       # Other non-equippable tool slots (e.g., ammo mould)
+    activity_name: str          # Display name for the activity
+    notes: str = ""             # Any special notes
+
+# Bank presets (seconds for full bank cycle: open, deposit, withdraw, close, travel)
+BANK_PRESETS = {
+    "Fast": 8.0,      # Optimal setup (e.g., max house, bank chest nearby)
+    "Medium": 15.0,   # Typical efficient banking
+    "Slow": 25.0,     # Suboptimal bank location or slower clicks
+}
+
+# Activity timing data
+# Tick = 0.6 seconds
+ACTIVITY_TIMINGS = {
+    # Cannonballs - smelting at furnace
+    # 9 ticks (5.4s) per bar, but done as batch
+    "Cannonballs": ActivityTiming(
+        ticks_per_action=9,
+        items_per_action=4,  # 4 cannonballs per bar (8 with double mould handled separately)
+        materials_per_action=1,
+        needs_hammer=False,
+        needs_saw=False,
+        other_tool_slots=1,  # Ammo mould (not equippable)
+        activity_name="Cannonball Smelting",
+        notes="Per bar. Double mould doubles output, not speed."
+    ),
+    
+    # Keel Parts - smithing at anvil
+    # ~4 ticks per action, 5 bars per part
+    "Keel Parts": ActivityTiming(
+        ticks_per_action=4,
+        items_per_action=1,
+        materials_per_action=5,
+        needs_hammer=True,
+        needs_saw=False,
+        other_tool_slots=0,
+        activity_name="Keel Parts Smithing",
+        notes="5 bars per part. Imcando hammer saves 1 slot."
+    ),
+    
+    # Dragon Keel Parts - special ratio
+    "Dragon Keel Parts": ActivityTiming(
+        ticks_per_action=4,
+        items_per_action=1,
+        materials_per_action=2,  # 2 dragon metal sheets per part
+        needs_hammer=True,
+        needs_saw=False,
+        other_tool_slots=0,
+        activity_name="Dragon Keel Smithing",
+        notes="2 sheets per part. Requires 92 Smithing."
+    ),
+    
+    # Large Keel Parts - combining at anvil
+    "Large Keel Parts": ActivityTiming(
+        ticks_per_action=3,
+        items_per_action=1,
+        materials_per_action=5,  # 5 regular keel parts
+        needs_hammer=True,
+        needs_saw=False,
+        other_tool_slots=0,
+        activity_name="Large Keel Assembly",
+        notes="5 regular parts per large part."
+    ),
+    
+    # Large Dragon Keel Parts
+    "Large Dragon Keel Parts": ActivityTiming(
+        ticks_per_action=3,
+        items_per_action=1,
+        materials_per_action=2,  # 2 dragon keel parts
+        needs_hammer=True,
+        needs_saw=False,
+        other_tool_slots=0,
+        activity_name="Large Dragon Keel Assembly",
+        notes="2 dragon keel parts per large part."
+    ),
+    
+    # Hull Parts - crafting at workbench
+    # Needs hammer and saw
+    "Hull Parts": ActivityTiming(
+        ticks_per_action=4,
+        items_per_action=1,
+        materials_per_action=5,  # 5 planks per part
+        needs_hammer=True,
+        needs_saw=True,
+        other_tool_slots=0,
+        activity_name="Hull Parts Crafting",
+        notes="5 planks per part. Imcando hammer + Crystal saw each save 1 slot."
+    ),
+    
+    # Large Hull Parts - combining
+    "Large Hull Parts": ActivityTiming(
+        ticks_per_action=3,
+        items_per_action=1,
+        materials_per_action=5,
+        needs_hammer=True,
+        needs_saw=True,
+        other_tool_slots=0,
+        activity_name="Large Hull Assembly",
+        notes="5 regular parts per large part."
+    ),
+    
+    # Nails - smithing, 15 per bar
+    "Nails": ActivityTiming(
+        ticks_per_action=4,
+        items_per_action=15,
+        materials_per_action=1,
+        needs_hammer=True,
+        needs_saw=False,
+        other_tool_slots=0,
+        activity_name="Nail Smithing",
+        notes="15 nails per bar. Imcando hammer saves 1 slot."
+    ),
+    
+    # Planks - Sawmill (batch processing, time is mostly travel)
+    "Planks_Sawmill": ActivityTiming(
+        ticks_per_action=1,  # Instant conversion
+        items_per_action=1,
+        materials_per_action=1,
+        needs_hammer=False,
+        needs_saw=False,
+        other_tool_slots=0,  # Just need coins/pouch
+        activity_name="Sawmill Conversion",
+        notes="Time dominated by travel. Uses coin pouch."
+    ),
+    
+    # Planks - Plank Make spell
+    "Planks_PlankMake": ActivityTiming(
+        ticks_per_action=3,  # 3 ticks per cast
+        items_per_action=1,
+        materials_per_action=1,
+        needs_hammer=False,
+        needs_saw=False,
+        other_tool_slots=3,  # Rune slots (astral, nature, earth or staff)
+        activity_name="Plank Make Spell",
+        notes="3 ticks per cast. Earth staff reduces rune slots needed."
+    ),
+}
+
+
+def calculate_gp_per_hour(
+    profit_per_item: float,
+    category: str,
+    chain_name: str,
+    config: Dict
+) -> Optional[Dict]:
+    """
+    Calculate GP/hr for a processing chain.
+    
+    Returns dict with:
+    - gp_per_hour: float
+    - items_per_hour: float
+    - trips_per_hour: float
+    - effective_inventory: int
+    - timing_used: ActivityTiming
+    - notes: str
+    """
+    
+    # Determine which timing to use
+    timing_key = None
+    
+    if category == "Cannonballs":
+        timing_key = "Cannonballs"
+    elif category == "Keel Parts":
+        if "dragon" in chain_name.lower():
+            timing_key = "Dragon Keel Parts"
+        else:
+            timing_key = "Keel Parts"
+    elif category == "Large Keel Parts":
+        if "dragon" in chain_name.lower():
+            timing_key = "Large Dragon Keel Parts"
+        else:
+            timing_key = "Large Keel Parts"
+    elif category == "Hull Parts":
+        timing_key = "Hull Parts"
+    elif category == "Large Hull Parts":
+        timing_key = "Large Hull Parts"
+    elif category == "Nails":
+        timing_key = "Nails"
+    elif category == "Planks":
+        if "Plank Make" in config.get("plank_method", "Sawmill"):
+            timing_key = "Planks_PlankMake"
+        else:
+            timing_key = "Planks_Sawmill"
+    
+    if not timing_key or timing_key not in ACTIVITY_TIMINGS:
+        return None
+    
+    timing = ACTIVITY_TIMINGS[timing_key]
+    
+    # Get configuration
+    bank_preset = config.get("bank_speed", "Medium")
+    bank_time = BANK_PRESETS.get(bank_preset, 15.0)
+    has_imcando_hammer = config.get("has_imcando_hammer", False)
+    has_crystal_saw = config.get("has_crystal_saw", False)
+    
+    # Calculate tool slots used based on which equipped tools the player has
+    tool_slots_used = timing.other_tool_slots  # Start with non-equippable slots
+    
+    # Add hammer slot if needed and not equipped
+    if timing.needs_hammer:
+        if not has_imcando_hammer:
+            tool_slots_used += 1
+    
+    # Add saw slot if needed and not equipped
+    if timing.needs_saw:
+        if not has_crystal_saw:
+            tool_slots_used += 1
+    
+    # Calculate effective inventory
+    base_inventory = 28
+    effective_inventory = base_inventory - tool_slots_used
+    
+    # Special case: Plank Make with earth staff saves 1 rune slot
+    if timing_key == "Planks_PlankMake" and config.get("use_earth_staff", False):
+        effective_inventory += 1  # Earth staff replaces earth runes
+    
+    # Special case for cannonballs with double mould
+    items_per_action = timing.items_per_action
+    materials_per_action = timing.materials_per_action
+    
+    if category == "Cannonballs" and config.get("double_ammo_mould", False):
+        items_per_action = 8
+        materials_per_action = 2
+    
+    # Calculate items per trip
+    # How many materials fit in inventory?
+    materials_per_trip = effective_inventory
+    
+    # How many actions per trip?
+    actions_per_trip = materials_per_trip // materials_per_action
+    
+    # Items produced per trip
+    items_per_trip = actions_per_trip * items_per_action
+    
+    if items_per_trip <= 0:
+        return None
+    
+    # Time per trip
+    ticks_per_trip = actions_per_trip * timing.ticks_per_action
+    seconds_per_trip = (ticks_per_trip * 0.6) + bank_time
+    
+    # Special handling for sawmill (bulk instant conversion)
+    if timing_key == "Planks_Sawmill":
+        # Sawmill converts all at once, time is just travel
+        # Assume ~20 seconds round trip for efficient sawmill
+        sawmill_travel = config.get("sawmill_travel_time", 20.0)
+        seconds_per_trip = sawmill_travel
+        items_per_trip = effective_inventory  # 1:1 logs to planks
+    
+    # Apply Ancient Furnace speed bonus (halves smithing time, not banking)
+    if config.get("ancient_furnace", False) and timing_key in [
+        "Cannonballs", "Keel Parts", "Dragon Keel Parts", 
+        "Large Keel Parts", "Large Dragon Keel Parts", "Nails"
+    ]:
+        craft_time = ticks_per_trip * 0.6
+        seconds_per_trip = (craft_time / 2) + bank_time
+    
+    # Trips per hour
+    trips_per_hour = 3600.0 / seconds_per_trip
+    
+    # Items per hour
+    items_per_hour = trips_per_hour * items_per_trip
+    
+    # GP per hour
+    gp_per_hour = items_per_hour * profit_per_item
+    
+    # Build notes about tool savings
+    tool_notes = []
+    if timing.needs_hammer:
+        tool_notes.append(f"Hammer: {'equipped' if has_imcando_hammer else 'in inventory'}")
+    if timing.needs_saw:
+        tool_notes.append(f"Saw: {'equipped' if has_crystal_saw else 'in inventory'}")
+    
+    return {
+        "gp_per_hour": gp_per_hour,
+        "items_per_hour": items_per_hour,
+        "trips_per_hour": trips_per_hour,
+        "items_per_trip": items_per_trip,
+        "effective_inventory": effective_inventory,
+        "seconds_per_trip": seconds_per_trip,
+        "timing_key": timing_key,
+        "timing": timing,
+        "notes": timing.notes,
+        "tool_notes": tool_notes,
+        "tool_slots_saved": (1 if timing.needs_hammer and has_imcando_hammer else 0) + 
+                           (1 if timing.needs_saw and has_crystal_saw else 0)
+    }
 
 # Combine all items for easy lookup
 ALL_ITEMS = {
@@ -1488,6 +1788,45 @@ def main():
             
             st.divider()
             
+            # GP/hr Settings
+            st.subheader("GP/hr Calculation")
+            
+            show_gp_hr = st.toggle(
+                "Show GP/hr",
+                value=params.get("show_gp_hr", "false") == "true",
+                help="Calculate and display gold per hour estimates"
+            )
+            
+            if show_gp_hr:
+                bank_speed = st.selectbox(
+                    "Bank Speed",
+                    ["Fast", "Medium", "Slow"],
+                    index=["Fast", "Medium", "Slow"].index(
+                        params.get("bank_speed", "Medium")
+                    ) if params.get("bank_speed") in ["Fast", "Medium", "Slow"] else 1,
+                    help="Fast: 8s (optimal setup), Medium: 15s (typical), Slow: 25s"
+                )
+                
+                st.caption("**Equipped Tools** (saves inventory slots)")
+                
+                has_imcando_hammer = st.toggle(
+                    "Imcando Hammer",
+                    value=params.get("imcando_hammer", "false") == "true",
+                    help="Equippable hammer from Below Ice Mountain quest. Saves 1 slot for smithing activities."
+                )
+                
+                has_crystal_saw = st.toggle(
+                    "Crystal Saw",
+                    value=params.get("crystal_saw", "false") == "true",
+                    help="Equippable saw from Eyes of Glouphrie quest. Saves 1 slot for hull crafting."
+                )
+            else:
+                bank_speed = params.get("bank_speed", "Medium")
+                has_imcando_hammer = params.get("imcando_hammer", "false") == "true"
+                has_crystal_saw = params.get("crystal_saw", "false") == "true"
+            
+            st.divider()
+            
             quantity = st.number_input(
                 "Calculate for quantity:",
                 min_value=1,
@@ -1503,6 +1842,10 @@ def main():
                 st.query_params["self_collected"] = str(self_collected).lower()
                 st.query_params["double_mould"] = str(use_double_mould).lower()
                 st.query_params["ancient_furnace"] = str(ancient_furnace).lower()
+                st.query_params["show_gp_hr"] = str(show_gp_hr).lower()
+                st.query_params["bank_speed"] = bank_speed
+                st.query_params["imcando_hammer"] = str(has_imcando_hammer).lower()
+                st.query_params["crystal_saw"] = str(has_crystal_saw).lower()
                 st.query_params["quantity"] = str(quantity)
                 st.toast("Settings applied!")
         
@@ -1528,12 +1871,18 @@ def main():
     
     # Prepare config
     use_earth_staff = "Earth Staff" in plank_method
+    show_gp_hr = params.get("show_gp_hr", "false") == "true"
     config = {
         "quantity": quantity,
         "use_earth_staff": use_earth_staff,
         "self_collected": self_collected,
         "double_ammo_mould": use_double_mould,
-        "ancient_furnace": ancient_furnace
+        "ancient_furnace": ancient_furnace,
+        "plank_method": plank_method,
+        "show_gp_hr": show_gp_hr,
+        "bank_speed": params.get("bank_speed", "Medium"),
+        "has_imcando_hammer": params.get("imcando_hammer", "false") == "true",
+        "has_crystal_saw": params.get("crystal_saw", "false") == "true",
     }
     
     # Main tabs
@@ -1556,6 +1905,7 @@ def main():
         )
         
         chains = all_chains[category]
+        show_gp_hr = config.get("show_gp_hr", False)
         
         if chains:
             results = []
@@ -1563,8 +1913,10 @@ def main():
                 result = chain.calculate(prices, config, id_lookup)
                 if "error" not in result:
                     profit = result["net_profit"]
+                    profit_per_item = result["profit_per_item"]
                     output_name = result.get("output_item_name", chain.name)
-                    results.append({
+                    
+                    row = {
                         "Icon": get_item_icon_url(output_name),
                         "Item": chain.name,
                         "Input Cost": result["raw_material_cost"],
@@ -1573,69 +1925,107 @@ def main():
                         "Output": result["output_value"],
                         "Tax": result["ge_tax"],
                         "Net Profit": profit,
-                        "Per Item": result["profit_per_item"],
+                        "Per Item": profit_per_item,
                         "ROI %": result['roi'] if result['roi'] != float('inf') else None,
                         "_profit_raw": profit,
                         "_profitable": profit > 0,
                         "_output_name": output_name
-                    })
+                    }
+                    
+                    # Calculate GP/hr if enabled
+                    if show_gp_hr:
+                        gp_hr_data = calculate_gp_per_hour(
+                            profit_per_item, category, chain.name, config
+                        )
+                        if gp_hr_data:
+                            row["GP/hr"] = gp_hr_data["gp_per_hour"]
+                            row["Items/hr"] = gp_hr_data["items_per_hour"]
+                            row["_gp_hr_raw"] = gp_hr_data["gp_per_hour"]
+                        else:
+                            row["GP/hr"] = None
+                            row["Items/hr"] = None
+                            row["_gp_hr_raw"] = 0
+                    
+                    results.append(row)
             
             if results:
                 df = pd.DataFrame(results)
-                df = df.sort_values("_profit_raw", ascending=False)
+                
+                # Sort by GP/hr if enabled, otherwise by profit
+                if show_gp_hr and "GP/hr" in df.columns:
+                    df = df.sort_values("_gp_hr_raw", ascending=False, na_position='last')
+                else:
+                    df = df.sort_values("_profit_raw", ascending=False)
+                
+                # Build column config
+                column_config = {
+                    "Icon": st.column_config.ImageColumn(
+                        "Icon",
+                        width="small",
+                        help="Item icon from OSRS Wiki"
+                    ),
+                    "Item": st.column_config.TextColumn("Item", width="medium"),
+                    "Input Cost": st.column_config.NumberColumn(
+                        "Input Cost",
+                        format="%.0f gp"
+                    ),
+                    "Process Cost": st.column_config.NumberColumn(
+                        "Process Cost",
+                        format="%.0f gp"
+                    ),
+                    "Total Cost": st.column_config.NumberColumn(
+                        "Total Cost",
+                        format="%.0f gp"
+                    ),
+                    "Output": st.column_config.NumberColumn(
+                        "Output Value",
+                        format="%.0f gp"
+                    ),
+                    "Tax": st.column_config.NumberColumn(
+                        "GE Tax",
+                        format="%.0f gp"
+                    ),
+                    "Net Profit": st.column_config.NumberColumn(
+                        "Net Profit",
+                        format="%.0f gp",
+                        help="Profit after all costs and GE tax"
+                    ),
+                    "Per Item": st.column_config.NumberColumn(
+                        "Per Item",
+                        format="%.1f gp"
+                    ),
+                    "ROI %": st.column_config.ProgressColumn(
+                        "ROI %",
+                        format="%.1f%%",
+                        min_value=-100,
+                        max_value=100,
+                        help="Return on Investment percentage"
+                    ),
+                    "_profit_raw": None,
+                    "_profitable": None,
+                    "_output_name": None
+                }
+                
+                # Add GP/hr columns if enabled
+                if show_gp_hr:
+                    column_config["GP/hr"] = st.column_config.NumberColumn(
+                        "GP/hr",
+                        format="%.0f",
+                        help="Estimated gold per hour"
+                    )
+                    column_config["Items/hr"] = st.column_config.NumberColumn(
+                        "Items/hr",
+                        format="%.0f",
+                        help="Items crafted per hour"
+                    )
+                    column_config["_gp_hr_raw"] = None
                 
                 # Display with enhanced column config including icons
                 st.dataframe(
                     df,
                     use_container_width=True,
                     hide_index=True,
-                    column_config={
-                        "Icon": st.column_config.ImageColumn(
-                            "Icon",
-                            width="small",
-                            help="Item icon from OSRS Wiki"
-                        ),
-                        "Item": st.column_config.TextColumn("Item", width="medium"),
-                        "Input Cost": st.column_config.NumberColumn(
-                            "Input Cost",
-                            format="%.0f gp"
-                        ),
-                        "Process Cost": st.column_config.NumberColumn(
-                            "Process Cost",
-                            format="%.0f gp"
-                        ),
-                        "Total Cost": st.column_config.NumberColumn(
-                            "Total Cost",
-                            format="%.0f gp"
-                        ),
-                        "Output": st.column_config.NumberColumn(
-                            "Output Value",
-                            format="%.0f gp"
-                        ),
-                        "Tax": st.column_config.NumberColumn(
-                            "GE Tax",
-                            format="%.0f gp"
-                        ),
-                        "Net Profit": st.column_config.NumberColumn(
-                            "Net Profit",
-                            format="%.0f gp",
-                            help="Profit after all costs and GE tax"
-                        ),
-                        "Per Item": st.column_config.NumberColumn(
-                            "Per Item",
-                            format="%.1f gp"
-                        ),
-                        "ROI %": st.column_config.ProgressColumn(
-                            "ROI %",
-                            format="%.1f%%",
-                            min_value=-100,
-                            max_value=100,
-                            help="Return on Investment percentage"
-                        ),
-                        "_profit_raw": None,
-                        "_profitable": None,
-                        "_output_name": None
-                    }
+                    column_config=column_config
                 )
                 
                 # Summary metrics with improved best item display
@@ -1643,31 +2033,65 @@ def main():
                 best_profit = max(results, key=lambda x: x["_profit_raw"])
                 total_profit = sum(r["_profit_raw"] for r in results if r["_profit_raw"] > 0)
                 
-                col1, col2, col3, col4 = st.columns(4)
-                with col1:
-                    st.metric(
-                        "Profitable Chains",
-                        f"{profitable}/{len(results)}",
-                        delta=f"{(profitable/len(results)*100):.0f}%"
-                    )
-                with col2:
-                    # Custom HTML card for best item with icon
-                    st.markdown(
-                        render_best_item_card(
-                            "Best Item",
-                            get_clean_item_name(best_profit["Item"]),
-                            format_gp(best_profit["Net Profit"])
-                        ),
-                        unsafe_allow_html=True
-                    )
-                with col3:
-                    st.metric(
-                        "Best Profit",
-                        format_gp(best_profit["Net Profit"]),
-                        delta="per batch"
-                    )
-                with col4:
-                    st.metric("Total Potential", format_gp(total_profit))
+                if show_gp_hr:
+                    # Show GP/hr focused metrics
+                    gp_hr_results = [r for r in results if r.get("_gp_hr_raw", 0) > 0]
+                    best_gp_hr = max(gp_hr_results, key=lambda x: x.get("_gp_hr_raw", 0)) if gp_hr_results else None
+                    
+                    col1, col2, col3, col4 = st.columns(4)
+                    with col1:
+                        st.metric(
+                            "Profitable Chains",
+                            f"{profitable}/{len(results)}",
+                            delta=f"{(profitable/len(results)*100):.0f}%"
+                        )
+                    with col2:
+                        if best_gp_hr:
+                            st.markdown(
+                                render_best_item_card(
+                                    "Best GP/hr",
+                                    get_clean_item_name(best_gp_hr["Item"]),
+                                    format_gp(best_gp_hr["_gp_hr_raw"]) + "/hr"
+                                ),
+                                unsafe_allow_html=True
+                            )
+                    with col3:
+                        st.markdown(
+                            render_best_item_card(
+                                "Best Profit",
+                                get_clean_item_name(best_profit["Item"]),
+                                format_gp(best_profit["Net Profit"])
+                            ),
+                            unsafe_allow_html=True
+                        )
+                    with col4:
+                        st.metric("Total Potential", format_gp(total_profit))
+                else:
+                    col1, col2, col3, col4 = st.columns(4)
+                    with col1:
+                        st.metric(
+                            "Profitable Chains",
+                            f"{profitable}/{len(results)}",
+                            delta=f"{(profitable/len(results)*100):.0f}%"
+                        )
+                    with col2:
+                        # Custom HTML card for best item with icon
+                        st.markdown(
+                            render_best_item_card(
+                                "Best Item",
+                                get_clean_item_name(best_profit["Item"]),
+                                format_gp(best_profit["Net Profit"])
+                            ),
+                            unsafe_allow_html=True
+                        )
+                    with col3:
+                        st.metric(
+                            "Best Profit",
+                            format_gp(best_profit["Net Profit"]),
+                            delta="per batch"
+                        )
+                    with col4:
+                        st.metric("Total Potential", format_gp(total_profit))
                 
                 # Expandable details
                 with st.expander("View Chain Details", expanded=False):
@@ -1733,6 +2157,54 @@ def main():
                             
                             if result["missing_prices"]:
                                 st.warning(f"Missing prices for: {', '.join(result['missing_prices'])}")
+                            
+                            # Show GP/hr breakdown if enabled
+                            if show_gp_hr:
+                                gp_hr_data = calculate_gp_per_hour(
+                                    result["profit_per_item"], category, chain.name, config
+                                )
+                                if gp_hr_data:
+                                    st.markdown("---")
+                                    st.markdown("##### GP/hr Calculation")
+                                    
+                                    # Tool info
+                                    tool_info = []
+                                    if gp_hr_data.get("tool_notes"):
+                                        tool_info = gp_hr_data["tool_notes"]
+                                    
+                                    col1, col2 = st.columns(2)
+                                    with col1:
+                                        st.markdown(f"""
+                                        <div style="background: rgba(93,173,226,0.15); padding: 12px; border-radius: 8px; border: 1px solid #5c4d3a;">
+                                            <div style="color: #5dade2; font-weight: 600; margin-bottom: 8px;">Efficiency Stats</div>
+                                            <div style="color: #f4e4bc; font-size: 0.9rem; line-height: 1.6;">
+                                                <strong>Effective inventory:</strong> {gp_hr_data['effective_inventory']} slots<br>
+                                                <strong>Items per trip:</strong> {gp_hr_data['items_per_trip']:,.0f}<br>
+                                                <strong>Seconds per trip:</strong> {gp_hr_data['seconds_per_trip']:.1f}s<br>
+                                                <strong>Trips per hour:</strong> {gp_hr_data['trips_per_hour']:.1f}
+                                            </div>
+                                        </div>
+                                        """, unsafe_allow_html=True)
+                                    
+                                    with col2:
+                                        slots_saved = gp_hr_data.get('tool_slots_saved', 0)
+                                        tool_status = " | ".join(tool_info) if tool_info else "No equipped tools"
+                                        
+                                        st.markdown(f"""
+                                        <div style="background: rgba(212,175,55,0.15); padding: 12px; border-radius: 8px; border: 1px solid #5c4d3a;">
+                                            <div style="color: #d4af37; font-weight: 600; margin-bottom: 8px;">Hourly Output</div>
+                                            <div style="color: #f4e4bc; font-size: 0.9rem; line-height: 1.6;">
+                                                <strong>Items/hr:</strong> {gp_hr_data['items_per_hour']:,.0f}<br>
+                                                <strong>GP/hr:</strong> {format_gp(gp_hr_data['gp_per_hour'])}<br>
+                                                <strong>Tools:</strong> {tool_status}<br>
+                                                <strong>Slots saved:</strong> {slots_saved}
+                                            </div>
+                                        </div>
+                                        """, unsafe_allow_html=True)
+                                    
+                                    if gp_hr_data.get("notes"):
+                                        st.caption(f"*{gp_hr_data['notes']}*")
+                            
                             break
     
     # Tab 2: Item Search

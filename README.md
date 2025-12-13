@@ -1,28 +1,37 @@
-# OSRS Sailing Materials Tracker v4.1 - Item Thumbnails Edition
+# OSRS Sailing Materials Tracker v4.2 - GP/hr with Equipped Tools
 
-A comprehensive Streamlit application for tracking Old School RuneScape Sailing skill materials with real-time Grand Exchange prices and complete processing chain calculations.
+A comprehensive Streamlit application for tracking Old School RuneScape Sailing skill materials with real-time Grand Exchange prices, complete processing chain calculations, and **gold per hour estimates**.
 
-## What's New in v4.1
+## What's New in v4.2
 
-This version adds **item thumbnails** throughout the application and fixes several visual polish issues based on user feedback.
+This version adds **proper GP/hr calculations** with separate toggles for the Imcando Hammer and Crystal Saw, so you can see exactly how your tool unlocks affect your profits.
 
-### Item Thumbnails
-- **Data tables**: All item tables now show OSRS Wiki icons in the first column
-- **Best item cards**: Custom HTML cards display item icons alongside names and profits
-- **Chain details**: Each step in a processing chain shows the relevant item icon
-- **Category tables**: Icons appear in Best Profits, Sailing Items, and Search results
+### GP/hr System
+- **Per-activity calculations**: Each crafting activity (hull parts, keel parts, nails, cannonballs, planks) has its own timing data based on game ticks
+- **Tool-aware inventory**: The system accounts for which tools you need and whether you have the equipped versions
+- **Bank speed presets**: Fast (8s), Medium (15s), Slow (25s) to match your setup
+- **Ancient Furnace support**: Halves smithing time when enabled
 
-### Visual Fixes
-- **Fixed truncated text**: "Best Item" display now uses a custom card layout that wraps long names properly instead of cutting them off
-- **Fixed pie chart labels**: Category labels now appear outside the chart to prevent overlap with the legend
-- **Cleaner chart layouts**: Removed redundant legends where labels are already visible
-- **Better hover states**: All charts show item names and values on hover
+### Equipped Tools (Separate Toggles)
+- **Imcando Hammer**: Saves 1 inventory slot for smithing activities (keel parts, nails). Obtained from Below Ice Mountain quest.
+- **Crystal Saw**: Saves 1 inventory slot for hull crafting. Obtained from Eyes of Glouphrie quest.
+- **Both together**: Hull parts need both tools - each one you have equipped saves a slot (up to 2 total)
+- **Defaults to OFF**: These are meaningful unlocks, not assumed
 
-### Technical Improvements
-- New `get_item_icon_url()` function with common naming fixes
-- New `render_best_item_card()` for custom HTML item displays
-- `ProcessingChain.get_output_item_name()` method for better icon matching
-- Icon column uses `st.column_config.ImageColumn` with graceful fallback
+### Enhanced Chain Details
+- When GP/hr is enabled, the chain details expander shows a full breakdown:
+  - Effective inventory slots
+  - Items per trip
+  - Seconds per trip
+  - Trips per hour
+  - Tool status (equipped vs inventory)
+  - Slots saved by equipped tools
+
+### URL Parameters
+New shareable parameters:
+```
+?imcando_hammer=true&crystal_saw=true&show_gp_hr=true&bank_speed=Fast
+```
 
 ## OSRS Visual Theme (from v4.0)
 - **Parchment sidebar** with driftwood borders
@@ -138,6 +147,37 @@ streamlit run app.py
 
 ## Technical Details
 
+### GP/hr Calculation Model
+The GP/hr system calculates hourly profit based on:
+
+```
+1. Effective Inventory = 28 - tool_slots - other_slots
+   - Hammer: 1 slot (saved if Imcando Hammer equipped)
+   - Saw: 1 slot (saved if Crystal Saw equipped)
+   - Ammo mould: 1 slot (not equippable)
+   
+2. Items per Trip = floor(Effective Inventory / materials_per_craft) × output_per_craft
+
+3. Time per Trip = (actions × ticks × 0.6s) + bank_time
+   - Ancient Furnace halves the crafting portion for smithing
+
+4. Trips per Hour = 3600 / Time per Trip
+
+5. GP per Hour = Trips per Hour × Items per Trip × Profit per Item
+```
+
+### Activity Timing Data
+| Activity | Ticks/Action | Materials | Output | Tools Needed |
+|----------|--------------|-----------|--------|--------------|
+| Hull Parts | 4 | 5 planks | 1 | Hammer + Saw |
+| Large Hull Parts | 3 | 5 hull parts | 1 | Hammer + Saw |
+| Keel Parts | 4 | 5 bars | 1 | Hammer |
+| Dragon Keel Parts | 4 | 2 sheets | 1 | Hammer |
+| Nails | 4 | 1 bar | 15 | Hammer |
+| Cannonballs | 9 | 1 bar | 4 (or 8) | Mould |
+| Sawmill Planks | ~1 | 1 log | 1 | None |
+| Plank Make | 3 | 1 log | 1 | Runes |
+
 ### API Integration
 - Base URL: `https://prices.runescape.wiki/api/v1/osrs`
 - Endpoints: `/mapping` (items), `/latest` (prices)
@@ -181,6 +221,17 @@ https://your-app.streamlit.app/?plank_method=Sawmill&double_mould=true&quantity=
 - Some item icons may not load if the Wiki image name differs from the item name
 
 ## Changelog
+
+### v4.2 (GP/hr with Equipped Tools)
+- **GP/hr calculations**: Full gold-per-hour estimates for all craftable items
+- **Imcando Hammer toggle**: Separate setting for equipped hammer (saves 1 slot on smithing)
+- **Crystal Saw toggle**: Separate setting for equipped saw (saves 1 slot on hull crafting)
+- **Tool defaults OFF**: These are unlocks players earn, not assumed equipment
+- **Ancient Furnace integration**: Properly halves smithing time in GP/hr calculations
+- **Bank speed presets**: Fast/Medium/Slow banking options
+- **Chain details GP/hr breakdown**: Shows full efficiency stats when expanded
+- **Activity timing data**: Each activity type has accurate tick-based timing
+- **URL shareable tool settings**: `?imcando_hammer=true&crystal_saw=true`
 
 ### v4.1 (Item Thumbnails Edition)
 - **Item icons**: Added OSRS Wiki thumbnails throughout all data tables
