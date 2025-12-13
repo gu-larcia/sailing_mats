@@ -1,6 +1,24 @@
-# OSRS Sailing Materials Tracker v4.2 - GP/hr with Equipped Tools
+# OSRS Sailing Materials Tracker v4.3 - Enhanced Analytics
 
 A comprehensive Streamlit application for tracking Old School RuneScape Sailing skill materials with real-time Grand Exchange prices, complete processing chain calculations, and **gold per hour estimates**.
+
+## What's New in v4.3
+
+This version significantly improves the **Analytics tab** with better chart design, proper legends, and more insightful visualizations.
+
+### Enhanced Analytics Charts
+- **ROI vs Profit Scatter**: Now has a proper category legend that exports correctly, annotations for notable items, and quadrant reference lines
+- **Distribution Analysis**: Combines box plot + histogram, shows profitable vs unprofitable chains separately, includes statistical annotations (median, quartiles)
+- **Category Comparison**: Now shows Best/Median/Average profits, sorted by performance, with value labels
+- **Pie Chart**: Consistent category colors across all charts, center total annotation, chain count in hover
+- **Consistent Color Scheme**: All charts use the same category-to-color mapping for easy cross-referencing
+
+### Visual Polish
+- Subtitles on key charts explaining what they show
+- Better axis formatting for GP values  
+- Improved hover templates with more context
+- Annotations highlighting top performers
+- Cleaner grid lines and borders
 
 ## What's New in v4.2
 
@@ -156,14 +174,14 @@ The GP/hr system calculates hourly profit based on:
    - Saw: 1 slot (saved if Crystal Saw equipped)
    - Ammo mould: 1 slot (not equippable)
    
-2. Items per Trip = floor(Effective Inventory / materials_per_craft) × output_per_craft
+2. Items per Trip = floor(Effective Inventory / materials_per_craft) Ã— output_per_craft
 
-3. Time per Trip = (actions × ticks × 0.6s) + bank_time
+3. Time per Trip = (actions Ã— ticks Ã— 0.6s) + bank_time
    - Ancient Furnace halves the crafting portion for smithing
 
 4. Trips per Hour = 3600 / Time per Trip
 
-5. GP per Hour = Trips per Hour × Items per Trip × Profit per Item
+5. GP per Hour = Trips per Hour Ã— Items per Trip Ã— Profit per Item
 ```
 
 ### Activity Timing Data
@@ -221,6 +239,18 @@ https://your-app.streamlit.app/?plank_method=Sawmill&double_mould=true&quantity=
 - Some item icons may not load if the Wiki image name differs from the item name
 
 ## Changelog
+
+### v4.3 (Enhanced Analytics Edition)
+- **ROI vs Profit scatter redesign**: Separate traces per category for proper legend support on export
+- **Automatic item annotations**: Top profit and ROI items are labeled on the scatter plot
+- **Distribution histogram overhaul**: Box plot + histogram combo showing profitable/unprofitable split
+- **Statistical annotations**: Median, Q1, Q3 stats displayed in an info box
+- **Smart binning**: Histogram bin sizes adapt to data range automatically
+- **Category comparison upgrade**: Now shows Best/Median/Average with sorted categories
+- **Consistent color mapping**: All charts use same category colors for cross-reference
+- **Pie chart improvements**: Center total display, chain counts in hover, consistent colors
+- **Chart subtitles**: Added explanatory subtitles to key visualizations
+- **Quadrant reference lines**: ROI scatter shows 0% profit/ROI reference lines when applicable
 
 ### v4.2 (GP/hr with Equipped Tools)
 - **GP/hr calculations**: Full gold-per-hour estimates for all craftable items

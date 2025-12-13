@@ -1,16 +1,18 @@
 """
 OSRS Sailing Materials Tracker
-Version 4.2
+Version 4.3
 """
 
 import streamlit as st
 import pandas as pd
+import numpy as np
 import requests
 from datetime import datetime
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, field
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 # Page config
 st.set_page_config(
@@ -1356,7 +1358,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
 def format_gp(value: float) -> str:
     """Format GP values"""
     if value == float('inf'):
-        return "∞"
+        return "âˆž"
     
     is_negative = value < 0
     value = abs(value)
@@ -1423,12 +1425,31 @@ def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
     
     items = [r["Item"] for r in sorted_results]
     profits = [r["_profit_raw"] for r in sorted_results]
+    categories = [r.get("Category", "Unknown") for r in sorted_results]
     
     # Get clean item names for display
     display_names = [get_clean_item_name(name) for name in items]
     
-    # OSRS-themed colors: gold for profit, dragon red for loss
-    colors = ['#d4af37' if p > 0 else '#c0392b' for p in profits]
+    # Category color mapping for consistency
+    category_colors = {
+        'Planks': '#27ae60',
+        'Hull Parts': '#d4af37',
+        'Large Hull Parts': '#f39c12',
+        'Hull Repair Kits': '#1abc9c',
+        'Keel Parts': '#5dade2',
+        'Large Keel Parts': '#3498db',
+        'Nails': '#cd7f32',
+        'Cannonballs': '#c0392b',
+    }
+    
+    # Assign colors by category, fallback to gold/red based on profit
+    colors = []
+    for i, p in enumerate(profits):
+        cat = categories[i]
+        if p > 0:
+            colors.append(category_colors.get(cat, '#d4af37'))
+        else:
+            colors.append('#c0392b')
     
     fig = go.Figure(data=[
         go.Bar(
@@ -1436,35 +1457,40 @@ def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
             y=display_names,
             orientation='h',
             marker_color=colors,
-            marker_line_color='#5c4d3a',
-            marker_line_width=2,
+            marker_line_color='#1a2a3a',
+            marker_line_width=1.5,
             text=[format_gp(p) for p in profits],
             textposition='outside',
-            textfont=dict(color='#f4e4bc', size=11),
+            textfont=dict(color='#f4e4bc', size=10),
             name='Profit',
-            hovertemplate='<b>%{y}</b><br>Profit: %{x:,.0f} GP<extra></extra>'
+            customdata=categories,
+            hovertemplate='<b>%{y}</b><br>Category: %{customdata}<br>Profit: %{x:,.0f} GP<extra></extra>'
         )
     ])
     
     fig.update_layout(
         title=dict(
             text="Top Profitable Chains",
-            font=dict(color='#ffd700', size=18)
+            font=dict(color='#ffd700', size=18),
+            subtitle=dict(
+                text=f"Top {len(sorted_results)} by net profit",
+                font=dict(color='#a08b6d', size=12)
+            )
         ),
         xaxis=dict(
             title="Net Profit (GP)",
             title_font=dict(color='#f4e4bc'),
             tickfont=dict(color='#f4e4bc'),
-            gridcolor='rgba(139,115,85,0.3)',
+            gridcolor='rgba(139,115,85,0.25)',
             tickformat=',.0f'
         ),
         yaxis=dict(
             title="",
-            tickfont=dict(color='#f4e4bc', size=11),
+            tickfont=dict(color='#f4e4bc', size=10),
             autorange="reversed"
         ),
-        height=max(400, top_n * 40),
-        margin=dict(l=160, r=100, t=50, b=50),
+        height=max(400, top_n * 38),
+        margin=dict(l=170, r=100, t=70, b=50),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)',
         showlegend=False
@@ -1476,10 +1502,12 @@ def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
 def create_category_pie(results: List[Dict]) -> go.Figure:
     """Create a pie chart of profits by category with OSRS theming - fixed layout"""
     category_profits = {}
+    category_counts = {}
     for r in results:
         cat = r.get("Category", "Unknown")
         profit = max(0, r.get("_profit_raw", 0))
         category_profits[cat] = category_profits.get(cat, 0) + profit
+        category_counts[cat] = category_counts.get(cat, 0) + 1
     
     # Sort by profit and separate small slices
     sorted_cats = sorted(category_profits.items(), key=lambda x: x[1], reverse=True)
@@ -1488,31 +1516,45 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
     # Group categories under 2% into "Other"
     main_cats = []
     other_total = 0
+    other_count = 0
     threshold = total_profit * 0.02
     
     for cat, profit in sorted_cats:
         if profit >= threshold:
-            main_cats.append((cat, profit))
+            main_cats.append((cat, profit, category_counts[cat]))
         else:
             other_total += profit
+            other_count += category_counts.get(cat, 0)
     
     if other_total > 0:
-        main_cats.append(("Other", other_total))
+        main_cats.append(("Other", other_total, other_count))
     
     labels = [c[0] for c in main_cats]
     values = [c[1] for c in main_cats]
+    counts = [c[2] for c in main_cats]
     
-    # OSRS-themed color palette
-    osrs_colors = [
-        '#d4af37',  # Gold
-        '#cd7f32',  # Bronze
-        '#5dade2',  # Rune blue
-        '#c0392b',  # Dragon red
-        '#27ae60',  # Nature green
-        '#8e44ad',  # Magic purple
-        '#f39c12',  # Orange/copper
-        '#1abc9c',  # Teal
-        '#7f8c8d',  # Gray (for Other)
+    # OSRS-themed color palette - consistent with scatter plot
+    osrs_colors = {
+        'Planks': '#27ae60',
+        'Hull Parts': '#d4af37',
+        'Large Hull Parts': '#f39c12',
+        'Hull Repair Kits': '#1abc9c',
+        'Keel Parts': '#5dade2',
+        'Large Keel Parts': '#3498db',
+        'Nails': '#cd7f32',
+        'Cannonballs': '#c0392b',
+        'Other': '#7f8c8d',
+    }
+    
+    colors = [osrs_colors.get(label, '#8e44ad') for label in labels]
+    
+    # Custom hover text with more info
+    hover_text = [
+        f"<b>{label}</b><br>"
+        f"Total Profit: {format_gp(val)}<br>"
+        f"Chains: {cnt}<br>"
+        f"Share: {val/total_profit*100:.1f}%"
+        for label, val, cnt in zip(labels, values, counts)
     ]
     
     fig = go.Figure(data=[
@@ -1522,76 +1564,223 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
             hole=0.4,
             textinfo='label+percent',
             textposition='outside',
-            textfont=dict(color='#f4e4bc', size=12),
-            hovertemplate='<b>%{label}</b><br>Profit: %{value:,.0f} GP<br>Share: %{percent}<extra></extra>',
+            textfont=dict(color='#f4e4bc', size=11),
+            hovertext=hover_text,
+            hoverinfo='text',
             marker=dict(
-                colors=osrs_colors[:len(labels)],
-                line=dict(color='#5c4d3a', width=2)
+                colors=colors,
+                line=dict(color='#1a2a3a', width=2)
             ),
             pull=[0.03 if i == 0 else 0 for i in range(len(labels))],
-            insidetextorientation='horizontal'
+            insidetextorientation='horizontal',
+            sort=False  # Keep our sorted order
         )
     ])
     
+    # Add center annotation
+    fig.add_annotation(
+        text=f"<b>Total</b><br>{format_gp(total_profit)}",
+        x=0.5, y=0.5,
+        font=dict(color='#ffd700', size=14),
+        showarrow=False
+    )
+    
     fig.update_layout(
         title=dict(
-            text="Profit by Category",
+            text="Profit Distribution by Category",
             font=dict(color='#ffd700', size=18)
         ),
         height=450,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)',
-        showlegend=False,  # Disabled legend since labels are outside
+        showlegend=False,
         margin=dict(l=80, r=80, t=60, b=60),
-        uniformtext=dict(minsize=10, mode='hide')
+        uniformtext=dict(minsize=9, mode='hide')
     )
     
     return fig
 
 
-def create_profit_histogram(profits: List[float]) -> go.Figure:
-    """Create a histogram of profit distribution"""
-    fig = go.Figure(data=[
-        go.Histogram(
+def create_profit_histogram(profits: List[float], results: List[Dict] = None) -> go.Figure:
+    """Create an enhanced histogram with box plot showing profit distribution"""
+    # Calculate statistics
+    profits_arr = np.array(profits)
+    median_val = np.median(profits_arr)
+    q1 = np.percentile(profits_arr, 25)
+    q3 = np.percentile(profits_arr, 75)
+    profitable = profits_arr[profits_arr > 0]
+    unprofitable = profits_arr[profits_arr <= 0]
+    
+    # Create figure with secondary y-axis for box plot
+    fig = make_subplots(
+        rows=2, cols=1,
+        row_heights=[0.2, 0.8],
+        vertical_spacing=0.05,
+        shared_xaxes=True
+    )
+    
+    # Top: Box plot for quick distribution overview
+    fig.add_trace(
+        go.Box(
             x=profits,
-            nbinsx=30,
+            name='Distribution',
             marker_color='#d4af37',
-            marker_line_color='#5c4d3a',
-            marker_line_width=1,
-            name='Chains',
-            hovertemplate='Profit Range: %{x}<br>Count: %{y}<extra></extra>'
+            line_color='#ffd700',
+            fillcolor='rgba(212, 175, 55, 0.3)',
+            boxpoints='outliers',
+            jitter=0.3,
+            pointpos=0,
+            marker=dict(
+                color='#c0392b',
+                size=6,
+                opacity=0.7
+            ),
+            hovertemplate='Value: %{x:,.0f} GP<extra></extra>'
+        ),
+        row=1, col=1
+    )
+    
+    # Bottom: Stacked histogram showing profitable vs unprofitable
+    # Determine smart bin edges based on data range
+    min_val, max_val = min(profits), max(profits)
+    data_range = max_val - min_val
+    
+    # Create bins that make sense for the data
+    if data_range > 1_000_000:
+        bin_size = 100_000
+    elif data_range > 100_000:
+        bin_size = 25_000
+    elif data_range > 10_000:
+        bin_size = 5_000
+    else:
+        bin_size = max(1_000, data_range / 20)
+    
+    # Add profitable chains histogram
+    if len(profitable) > 0:
+        fig.add_trace(
+            go.Histogram(
+                x=profitable,
+                name='Profitable',
+                marker_color='#d4af37',
+                marker_line_color='#b8860b',
+                marker_line_width=1,
+                opacity=0.85,
+                xbins=dict(size=bin_size),
+                hovertemplate='<b>Profitable</b><br>Range: %{x:,.0f} GP<br>Count: %{y}<extra></extra>'
+            ),
+            row=2, col=1
         )
-    ])
+    
+    # Add unprofitable chains histogram
+    if len(unprofitable) > 0:
+        fig.add_trace(
+            go.Histogram(
+                x=unprofitable,
+                name='Unprofitable',
+                marker_color='#c0392b',
+                marker_line_color='#922b21',
+                marker_line_width=1,
+                opacity=0.85,
+                xbins=dict(size=bin_size),
+                hovertemplate='<b>Unprofitable</b><br>Range: %{x:,.0f} GP<br>Count: %{y}<extra></extra>'
+            ),
+            row=2, col=1
+        )
+    
+    # Add vertical line at 0 for reference
+    fig.add_vline(
+        x=0, 
+        line_dash="dash", 
+        line_color="#f4e4bc",
+        line_width=1,
+        opacity=0.5,
+        row=2, col=1
+    )
+    
+    # Add median annotation
+    fig.add_vline(
+        x=median_val,
+        line_dash="dot",
+        line_color="#5dade2",
+        line_width=2,
+        annotation_text=f"Median: {format_gp(median_val)}",
+        annotation_position="top",
+        annotation_font=dict(color='#5dade2', size=11),
+        row=2, col=1
+    )
     
     fig.update_layout(
         title=dict(
-            text="Profit Distribution",
+            text="Profit Distribution Analysis",
             font=dict(color='#ffd700', size=18)
         ),
-        xaxis=dict(
+        xaxis2=dict(
             title="Net Profit (GP)",
             title_font=dict(color='#f4e4bc'),
             tickfont=dict(color='#f4e4bc'),
             gridcolor='rgba(139,115,85,0.3)',
-            tickformat=',.0f'
+            tickformat=',.0f',
+            zeroline=True,
+            zerolinecolor='rgba(244,228,188,0.3)',
+            zerolinewidth=1
         ),
         yaxis=dict(
+            showticklabels=False,
+            showgrid=False
+        ),
+        yaxis2=dict(
             title="Number of Chains",
             title_font=dict(color='#f4e4bc'),
             tickfont=dict(color='#f4e4bc'),
             gridcolor='rgba(139,115,85,0.3)'
         ),
-        height=300,
+        height=380,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)',
-        bargap=0.05
+        barmode='overlay',
+        legend=dict(
+            font=dict(color='#f4e4bc', size=11),
+            bgcolor='rgba(92,77,58,0.8)',
+            bordercolor='#5c4d3a',
+            borderwidth=1,
+            orientation='h',
+            yanchor='bottom',
+            y=1.02,
+            xanchor='center',
+            x=0.5
+        ),
+        margin=dict(l=60, r=20, t=70, b=50)
+    )
+    
+    # Add statistics annotation box
+    stats_text = (
+        f"<b>Statistics</b><br>"
+        f"Median: {format_gp(median_val)}<br>"
+        f"Q1: {format_gp(q1)}<br>"
+        f"Q3: {format_gp(q3)}<br>"
+        f"Profitable: {len(profitable)}/{len(profits)}"
+    )
+    
+    fig.add_annotation(
+        x=0.98,
+        y=0.95,
+        xref='paper',
+        yref='paper',
+        text=stats_text,
+        showarrow=False,
+        font=dict(color='#f4e4bc', size=10),
+        align='right',
+        bgcolor='rgba(92,77,58,0.85)',
+        bordercolor='#d4af37',
+        borderwidth=1,
+        borderpad=8
     )
     
     return fig
 
 
 def create_category_comparison(results: List[Dict]) -> go.Figure:
-    """Create a grouped bar chart comparing categories"""
+    """Create an enhanced grouped bar chart comparing categories with more metrics"""
     category_stats = {}
     for r in results:
         cat = r.get("Category", "Unknown")
@@ -1601,35 +1790,67 @@ def create_category_comparison(results: List[Dict]) -> go.Figure:
         category_stats[cat]["profits"].append(profit)
         category_stats[cat]["count"] += 1
     
-    categories = list(category_stats.keys())
-    avg_profits = [sum(category_stats[c]["profits"]) / len(category_stats[c]["profits"]) for c in categories]
-    max_profits = [max(category_stats[c]["profits"]) for c in categories]
+    # Sort categories by best profit for better visual
+    sorted_categories = sorted(
+        category_stats.items(),
+        key=lambda x: max(x[1]["profits"]),
+        reverse=True
+    )
+    
+    categories = [c[0] for c in sorted_categories]
+    stats = [c[1] for c in sorted_categories]
+    
+    avg_profits = [np.mean(s["profits"]) for s in stats]
+    max_profits = [max(s["profits"]) for s in stats]
+    median_profits = [np.median(s["profits"]) for s in stats]
     
     fig = go.Figure()
     
-    fig.add_trace(go.Bar(
-        name='Average Profit',
-        x=categories,
-        y=avg_profits,
-        marker_color='#5dade2',
-        marker_line_color='#5c4d3a',
-        marker_line_width=2,
-        hovertemplate='<b>%{x}</b><br>Avg: %{y:,.0f} GP<extra></extra>'
-    ))
-    
+    # Add bars in order: Best (gold), Median (blue), Average (teal)
     fig.add_trace(go.Bar(
         name='Best Profit',
         x=categories,
         y=max_profits,
         marker_color='#d4af37',
-        marker_line_color='#5c4d3a',
-        marker_line_width=2,
+        marker_line_color='#b8860b',
+        marker_line_width=1.5,
+        text=[format_gp(v) for v in max_profits],
+        textposition='outside',
+        textfont=dict(color='#f4e4bc', size=9),
         hovertemplate='<b>%{x}</b><br>Best: %{y:,.0f} GP<extra></extra>'
     ))
     
+    fig.add_trace(go.Bar(
+        name='Median Profit',
+        x=categories,
+        y=median_profits,
+        marker_color='#5dade2',
+        marker_line_color='#3498db',
+        marker_line_width=1.5,
+        hovertemplate='<b>%{x}</b><br>Median: %{y:,.0f} GP<extra></extra>'
+    ))
+    
+    fig.add_trace(go.Bar(
+        name='Average Profit',
+        x=categories,
+        y=avg_profits,
+        marker_color='#1abc9c',
+        marker_line_color='#16a085',
+        marker_line_width=1.5,
+        hovertemplate='<b>%{x}</b><br>Avg: %{y:,.0f} GP<extra></extra>'
+    ))
+    
+    # Add subtle reference line at 0
+    fig.add_hline(
+        y=0,
+        line_dash="solid",
+        line_color="rgba(244,228,188,0.3)",
+        line_width=1
+    )
+    
     fig.update_layout(
         title=dict(
-            text="Category Comparison",
+            text="Category Performance Comparison",
             font=dict(color='#ffd700', size=18)
         ),
         xaxis=dict(
@@ -1641,16 +1862,18 @@ def create_category_comparison(results: List[Dict]) -> go.Figure:
             title="Profit (GP)",
             title_font=dict(color='#f4e4bc'),
             tickfont=dict(color='#f4e4bc'),
-            gridcolor='rgba(139,115,85,0.3)',
-            tickformat=',.0f'
+            gridcolor='rgba(139,115,85,0.25)',
+            tickformat=',.0f',
+            zeroline=True,
+            zerolinecolor='rgba(244,228,188,0.3)'
         ),
         barmode='group',
-        height=400,
+        height=420,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)',
         legend=dict(
             font=dict(color='#f4e4bc', size=11),
-            bgcolor='rgba(92,77,58,0.7)',
+            bgcolor='rgba(92,77,58,0.85)',
             bordercolor='#5c4d3a',
             borderwidth=1,
             orientation='h',
@@ -1659,65 +1882,181 @@ def create_category_comparison(results: List[Dict]) -> go.Figure:
             xanchor='center',
             x=0.5
         ),
-        margin=dict(l=60, r=20, t=80, b=100)
+        margin=dict(l=70, r=20, t=80, b=110),
+        bargap=0.2,
+        bargroupgap=0.1
     )
     
     return fig
 
 
 def create_roi_scatter(results: List[Dict]) -> go.Figure:
-    """Create a scatter plot of ROI vs Profit"""
+    """Create a scatter plot of ROI vs Profit with proper category legend"""
     data = [r for r in results if r.get("ROI %") is not None and r.get("ROI %") != float('inf')]
     
     if not data:
         return None
     
-    profits = [r["_profit_raw"] for r in data]
-    rois = [r["ROI %"] for r in data]
-    names = [get_clean_item_name(r["Item"]) for r in data]
-    categories = [r.get("Category", "Unknown") for r in data]
+    # Group data by category for separate traces (required for proper legend)
+    categories_data = {}
+    for r in data:
+        cat = r.get("Category", "Unknown")
+        if cat not in categories_data:
+            categories_data[cat] = {"profits": [], "rois": [], "names": []}
+        categories_data[cat]["profits"].append(r["_profit_raw"])
+        categories_data[cat]["rois"].append(r["ROI %"])
+        categories_data[cat]["names"].append(get_clean_item_name(r["Item"]))
     
-    # Color by category
-    unique_cats = list(set(categories))
-    osrs_colors = ['#d4af37', '#cd7f32', '#5dade2', '#c0392b', '#27ae60', '#8e44ad', '#f39c12', '#1abc9c']
-    cat_colors = {cat: osrs_colors[i % len(osrs_colors)] for i, cat in enumerate(unique_cats)}
-    colors = [cat_colors[c] for c in categories]
+    # OSRS-themed color palette with good contrast
+    osrs_colors = {
+        'Planks': '#27ae60',           # Nature green
+        'Hull Parts': '#d4af37',       # Gold
+        'Large Hull Parts': '#f39c12', # Copper/orange
+        'Hull Repair Kits': '#1abc9c', # Teal
+        'Keel Parts': '#5dade2',       # Rune blue
+        'Large Keel Parts': '#3498db', # Deeper blue
+        'Nails': '#cd7f32',            # Bronze
+        'Cannonballs': '#c0392b',      # Dragon red
+    }
     
-    fig = go.Figure(data=[
-        go.Scatter(
-            x=profits,
-            y=rois,
+    # Fallback colors for unknown categories
+    fallback_colors = ['#8e44ad', '#e74c3c', '#9b59b6', '#34495e']
+    
+    fig = go.Figure()
+    
+    # Add one trace per category for proper legend
+    for i, (cat, cat_data) in enumerate(categories_data.items()):
+        color = osrs_colors.get(cat, fallback_colors[i % len(fallback_colors)])
+        
+        fig.add_trace(go.Scatter(
+            x=cat_data["profits"],
+            y=cat_data["rois"],
             mode='markers',
+            name=cat,
             marker=dict(
-                size=12,
-                color=colors,
-                line=dict(color='#5c4d3a', width=1)
+                size=11,
+                color=color,
+                line=dict(color='#1a2a3a', width=1.5),
+                opacity=0.85
             ),
-            text=names,
-            hovertemplate='<b>%{text}</b><br>Profit: %{x:,.0f} GP<br>ROI: %{y:.1f}%<extra></extra>'
+            text=cat_data["names"],
+            hovertemplate=(
+                '<b>%{text}</b><br>'
+                f'<span style="color:{color}">●</span> {cat}<br>'
+                'Profit: %{x:,.0f} GP<br>'
+                'ROI: %{y:.1f}%'
+                '<extra></extra>'
+            )
+        ))
+    
+    # Find and annotate notable outliers (top 3 by profit, top 3 by ROI)
+    all_profits = [r["_profit_raw"] for r in data]
+    all_rois = [r["ROI %"] for r in data]
+    
+    # Find notable points to annotate
+    notable_indices = set()
+    
+    # Top profit items
+    sorted_by_profit = sorted(range(len(data)), key=lambda i: all_profits[i], reverse=True)
+    for i in sorted_by_profit[:2]:
+        notable_indices.add(i)
+    
+    # Top ROI items (that aren't already noted)
+    sorted_by_roi = sorted(range(len(data)), key=lambda i: all_rois[i], reverse=True)
+    for i in sorted_by_roi[:2]:
+        if len(notable_indices) < 4:
+            notable_indices.add(i)
+    
+    # Add annotations for notable items
+    for idx in notable_indices:
+        item_name = get_clean_item_name(data[idx]["Item"])
+        # Shorten name if too long
+        display_name = item_name[:20] + "..." if len(item_name) > 20 else item_name
+        
+        fig.add_annotation(
+            x=all_profits[idx],
+            y=all_rois[idx],
+            text=display_name,
+            showarrow=True,
+            arrowhead=2,
+            arrowsize=1,
+            arrowwidth=1.5,
+            arrowcolor='#f4e4bc',
+            font=dict(color='#f4e4bc', size=9),
+            bgcolor='rgba(26,42,58,0.85)',
+            bordercolor='#5c4d3a',
+            borderwidth=1,
+            borderpad=3,
+            ax=30,
+            ay=-25
         )
-    ])
+    
+    # Add quadrant lines if data spans both positive and negative
+    min_profit, max_profit = min(all_profits), max(all_profits)
+    min_roi, max_roi = min(all_rois), max(all_rois)
+    
+    if min_profit < 0 < max_profit:
+        fig.add_vline(
+            x=0,
+            line_dash="dash",
+            line_color="rgba(244,228,188,0.4)",
+            line_width=1
+        )
+    
+    if min_roi < 0 < max_roi:
+        fig.add_hline(
+            y=0,
+            line_dash="dash",
+            line_color="rgba(244,228,188,0.4)",
+            line_width=1
+        )
     
     fig.update_layout(
         title=dict(
             text="ROI vs Profit Analysis",
-            font=dict(color='#ffd700', size=18)
+            font=dict(color='#ffd700', size=18),
+            subtitle=dict(
+                text="Higher & further right = better investment",
+                font=dict(color='#a08b6d', size=12)
+            )
         ),
         xaxis=dict(
             title="Net Profit (GP)",
             title_font=dict(color='#f4e4bc'),
             tickfont=dict(color='#f4e4bc'),
-            gridcolor='rgba(139,115,85,0.3)'
+            gridcolor='rgba(139,115,85,0.25)',
+            tickformat=',.0f',
+            zeroline=True,
+            zerolinecolor='rgba(244,228,188,0.3)'
         ),
         yaxis=dict(
-            title="ROI (%)",
+            title="Return on Investment (%)",
             title_font=dict(color='#f4e4bc'),
             tickfont=dict(color='#f4e4bc'),
-            gridcolor='rgba(139,115,85,0.3)'
+            gridcolor='rgba(139,115,85,0.25)',
+            ticksuffix='%',
+            zeroline=True,
+            zerolinecolor='rgba(244,228,188,0.3)'
         ),
-        height=400,
+        height=450,
         paper_bgcolor='rgba(0,0,0,0)',
-        plot_bgcolor='rgba(26,42,58,0.8)'
+        plot_bgcolor='rgba(26,42,58,0.8)',
+        legend=dict(
+            title=dict(
+                text='Category',
+                font=dict(color='#ffd700', size=11)
+            ),
+            font=dict(color='#f4e4bc', size=10),
+            bgcolor='rgba(92,77,58,0.85)',
+            bordercolor='#5c4d3a',
+            borderwidth=1,
+            orientation='v',
+            yanchor='top',
+            y=0.98,
+            xanchor='left',
+            x=1.02
+        ),
+        margin=dict(l=70, r=150, t=70, b=60)
     )
     
     return fig
@@ -2124,13 +2463,13 @@ def main():
                                 step_icon_url = get_item_icon_url(step['name'])
                                 
                                 if step_type == "Output":
-                                    icon = "🎯"
+                                    icon = "ðŸŽ¯"
                                     bg_color = "rgba(212,175,55,0.2)"
                                 elif step_type == "Input":
-                                    icon = "📥"
+                                    icon = "ðŸ“¥"
                                     bg_color = "rgba(93,173,226,0.2)"
                                 else:
-                                    icon = "⚙️"
+                                    icon = "âš™ï¸"
                                     bg_color = "rgba(139,115,85,0.2)"
                                 
                                 self_note = " (self-collected)" if step.get("is_self_obtained") and step_type != "Output" else ""
