@@ -1601,74 +1601,76 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
     return fig
 
 
-def create_profit_histogram(profits: List[float], results: List[Dict] = None) -> go.Figure:
-    """Create an enhanced histogram with box plot showing profit distribution"""
-    # Calculate statistics
+def create_profit_histogram(profits: List[float], results: List[Dict] = None, per_item: bool = False) -> go.Figure:
+    """Create an enhanced histogram with outlier handling for better visualization"""
+    # Calculate statistics on full data
     profits_arr = np.array(profits)
     median_val = np.median(profits_arr)
     q1 = np.percentile(profits_arr, 25)
     q3 = np.percentile(profits_arr, 75)
-    profitable = profits_arr[profits_arr > 0]
-    unprofitable = profits_arr[profits_arr <= 0]
+    iqr = q3 - q1
     
-    # Create figure with secondary y-axis for box plot
-    fig = make_subplots(
-        rows=2, cols=1,
-        row_heights=[0.2, 0.8],
-        vertical_spacing=0.05,
-        shared_xaxes=True
+    # Unit label for display
+    unit_label = "GP/item" if per_item else "GP"
+    
+    # Detect outliers using IQR method (3x IQR for extreme outliers)
+    lower_fence = q1 - 3 * iqr
+    upper_fence = q3 + 3 * iqr
+    
+    # Separate main data from extreme outliers
+    main_data = profits_arr[(profits_arr >= lower_fence) & (profits_arr <= upper_fence)]
+    outliers = profits_arr[(profits_arr < lower_fence) | (profits_arr > upper_fence)]
+    
+    # If outliers exist and distort the view significantly, use clipped data for histogram
+    has_extreme_outliers = len(outliers) > 0 and (
+        len(main_data) >= len(profits_arr) * 0.75  # At least 75% of data is "normal"
     )
     
-    # Top: Box plot for quick distribution overview
-    fig.add_trace(
-        go.Box(
-            x=profits,
-            name='Distribution',
-            marker_color='#d4af37',
-            line_color='#ffd700',
-            fillcolor='rgba(212, 175, 55, 0.3)',
-            boxpoints='outliers',
-            jitter=0.3,
-            pointpos=0,
-            marker=dict(
-                color='#c0392b',
-                size=6,
-                opacity=0.7
-            ),
-            hovertemplate='Value: %{x:,.0f} GP<extra></extra>'
-        ),
-        row=1, col=1
-    )
-    
-    # Bottom: Stacked histogram showing profitable vs unprofitable
-    # Determine smart bin edges based on data range
-    min_val, max_val = min(profits), max(profits)
-    data_range = max_val - min_val
-    
-    # Create bins that make sense for the data
-    if data_range > 1_000_000:
-        bin_size = 100_000
-    elif data_range > 100_000:
-        bin_size = 25_000
-    elif data_range > 10_000:
-        bin_size = 5_000
+    # Use main data for histogram if outliers are extreme
+    if has_extreme_outliers and len(main_data) > 0:
+        hist_data = main_data
+        outlier_note = f"{len(outliers)} extreme outlier(s) excluded"
     else:
-        bin_size = max(1_000, data_range / 20)
+        hist_data = profits_arr
+        outlier_note = None
+    
+    # Split into profitable/unprofitable
+    profitable = hist_data[hist_data > 0]
+    unprofitable = hist_data[hist_data <= 0]
+    
+    # Calculate smart bin size based on the data we're actually showing
+    if len(hist_data) > 1:
+        hist_min, hist_max = hist_data.min(), hist_data.max()
+        hist_range = hist_max - hist_min
+        
+        # Aim for ~15-25 bins for good granularity
+        target_bins = 20
+        bin_size = hist_range / target_bins if hist_range > 0 else 1000
+        
+        # Round bin size to a nice number
+        if bin_size > 0:
+            magnitude = 10 ** np.floor(np.log10(max(abs(bin_size), 1)))
+            bin_size = np.ceil(bin_size / magnitude) * magnitude
+        bin_size = max(bin_size, 100)  # Minimum 100 GP bins
+    else:
+        bin_size = 10000
+    
+    # Create simple figure (no subplot complexity)
+    fig = go.Figure()
     
     # Add profitable chains histogram
     if len(profitable) > 0:
         fig.add_trace(
             go.Histogram(
                 x=profitable,
-                name='Profitable',
+                name=f'Profitable ({len(profitable)})',
                 marker_color='#d4af37',
                 marker_line_color='#b8860b',
                 marker_line_width=1,
-                opacity=0.85,
+                opacity=0.9,
                 xbins=dict(size=bin_size),
-                hovertemplate='<b>Profitable</b><br>Range: %{x:,.0f} GP<br>Count: %{y}<extra></extra>'
-            ),
-            row=2, col=1
+                hovertemplate=f'<b>Profitable Chains</b><br>Range: %{{x:,.0f}} {unit_label}<br>Count: %{{y}}<extra></extra>'
+            )
         )
     
     # Add unprofitable chains histogram
@@ -1676,71 +1678,79 @@ def create_profit_histogram(profits: List[float], results: List[Dict] = None) ->
         fig.add_trace(
             go.Histogram(
                 x=unprofitable,
-                name='Unprofitable',
+                name=f'Unprofitable ({len(unprofitable)})',
                 marker_color='#c0392b',
                 marker_line_color='#922b21',
                 marker_line_width=1,
-                opacity=0.85,
+                opacity=0.9,
                 xbins=dict(size=bin_size),
-                hovertemplate='<b>Unprofitable</b><br>Range: %{x:,.0f} GP<br>Count: %{y}<extra></extra>'
-            ),
-            row=2, col=1
+                hovertemplate=f'<b>Unprofitable Chains</b><br>Range: %{{x:,.0f}} {unit_label}<br>Count: %{{y}}<extra></extra>'
+            )
         )
     
-    # Add vertical line at 0 for reference
+    # Add vertical line at 0 for reference (break-even point)
     fig.add_vline(
         x=0, 
-        line_dash="dash", 
-        line_color="#f4e4bc",
-        line_width=1,
-        opacity=0.5,
-        row=2, col=1
+        line_dash="solid", 
+        line_color="rgba(244,228,188,0.5)",
+        line_width=2,
+        annotation_text="Break-even",
+        annotation_position="top",
+        annotation_font=dict(color='#f4e4bc', size=10)
     )
     
-    # Add median annotation
-    fig.add_vline(
-        x=median_val,
-        line_dash="dot",
-        line_color="#5dade2",
-        line_width=2,
-        annotation_text=f"Median: {format_gp(median_val)}",
-        annotation_position="top",
-        annotation_font=dict(color='#5dade2', size=11),
-        row=2, col=1
-    )
+    # Add median line (only if within displayed range)
+    if not has_extreme_outliers or (lower_fence <= median_val <= upper_fence):
+        fig.add_vline(
+            x=median_val,
+            line_dash="dot",
+            line_color="#5dade2",
+            line_width=2,
+            annotation_text=f"Median: {format_gp(median_val)}",
+            annotation_position="top right",
+            annotation_font=dict(color='#5dade2', size=10)
+        )
+    
+    # Build title with outlier note if applicable
+    title_text = "Profit Distribution"
+    subtitle_parts = [f"Showing {len(hist_data)} chains"]
+    if outlier_note:
+        subtitle_parts.append(outlier_note)
+    subtitle_text = " • ".join(subtitle_parts)
     
     fig.update_layout(
         title=dict(
-            text="Profit Distribution Analysis",
-            font=dict(color='#ffd700', size=18)
+            text=title_text,
+            font=dict(color='#ffd700', size=18),
+            subtitle=dict(
+                text=subtitle_text,
+                font=dict(color='#a08b6d', size=11)
+            )
         ),
-        xaxis2=dict(
-            title="Net Profit (GP)",
+        xaxis=dict(
+            title=f"Net Profit ({unit_label})",
             title_font=dict(color='#f4e4bc'),
             tickfont=dict(color='#f4e4bc'),
-            gridcolor='rgba(139,115,85,0.3)',
+            gridcolor='rgba(139,115,85,0.25)',
             tickformat=',.0f',
             zeroline=True,
             zerolinecolor='rgba(244,228,188,0.3)',
             zerolinewidth=1
         ),
         yaxis=dict(
-            showticklabels=False,
-            showgrid=False
-        ),
-        yaxis2=dict(
             title="Number of Chains",
             title_font=dict(color='#f4e4bc'),
             tickfont=dict(color='#f4e4bc'),
-            gridcolor='rgba(139,115,85,0.3)'
+            gridcolor='rgba(139,115,85,0.25)'
         ),
-        height=380,
+        height=340,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)',
         barmode='overlay',
+        bargap=0.1,
         legend=dict(
             font=dict(color='#f4e4bc', size=11),
-            bgcolor='rgba(92,77,58,0.8)',
+            bgcolor='rgba(92,77,58,0.85)',
             bordercolor='#5c4d3a',
             borderwidth=1,
             orientation='h',
@@ -1749,28 +1759,29 @@ def create_profit_histogram(profits: List[float], results: List[Dict] = None) ->
             xanchor='center',
             x=0.5
         ),
-        margin=dict(l=60, r=20, t=70, b=50)
+        margin=dict(l=70, r=30, t=80, b=60)
     )
     
-    # Add statistics annotation box
-    stats_text = (
-        f"<b>Statistics</b><br>"
-        f"Median: {format_gp(median_val)}<br>"
-        f"Q1: {format_gp(q1)}<br>"
-        f"Q3: {format_gp(q3)}<br>"
-        f"Profitable: {len(profitable)}/{len(profits)}"
-    )
+    # Add statistics box (shows full dataset stats for reference)
+    stats_lines = [
+        "<b>Full Dataset</b>",
+        f"Median: {format_gp(median_val)}",
+        f"Q1: {format_gp(q1)}",
+        f"Q3: {format_gp(q3)}",
+        f"Min: {format_gp(profits_arr.min())}",
+        f"Max: {format_gp(profits_arr.max())}"
+    ]
     
     fig.add_annotation(
         x=0.98,
         y=0.95,
         xref='paper',
         yref='paper',
-        text=stats_text,
+        text="<br>".join(stats_lines),
         showarrow=False,
         font=dict(color='#f4e4bc', size=10),
         align='right',
-        bgcolor='rgba(92,77,58,0.85)',
+        bgcolor='rgba(92,77,58,0.9)',
         bordercolor='#d4af37',
         borderwidth=1,
         borderpad=8
@@ -2814,17 +2825,32 @@ def main():
     with tabs[4]:
         st.header("Profit Analytics")
         
-        # Filter controls
-        filter_col1, filter_col2 = st.columns(2)
+        # Filter controls - more prominent
+        st.markdown("##### Analysis Filters")
+        filter_col1, filter_col2, filter_col3 = st.columns(3)
         with filter_col1:
             exclude_dragon = st.toggle(
                 "Exclude Dragon Items",
+                value=True,  # Default ON - dragon items are extreme outliers
+                help="Dragon items have profits 100x higher than other items, making charts unreadable"
+            )
+        with filter_col2:
+            use_per_item = st.toggle(
+                "Show Per-Item Profit",
                 value=False,
-                help="Dragon items are outliers with very high profits - exclude them to see other trends more clearly"
+                help="Show profit per single item instead of per batch"
+            )
+        with filter_col3:
+            filter_outliers = st.toggle(
+                "Filter Statistical Outliers",
+                value=False,
+                help="Remove values beyond 1.5×IQR (standard outlier detection)"
             )
         
         # Calculate all for charts
         all_results_for_charts = []
+        quantity = config.get("quantity", 100)
+        
         for category, chains in all_chains.items():
             for chain in chains:
                 # Skip dragon items if filter is on
@@ -2833,12 +2859,35 @@ def main():
                     
                 result = chain.calculate(prices, config, id_lookup)
                 if "error" not in result:
+                    profit = result["net_profit"]
+                    # Apply per-item conversion if requested
+                    if use_per_item and quantity > 0:
+                        profit = profit / quantity
+                    
                     all_results_for_charts.append({
                         "Category": category,
                         "Item": chain.name,
                         "ROI %": result['roi'] if result['roi'] != float('inf') else None,
-                        "_profit_raw": result["net_profit"]
+                        "_profit_raw": profit
                     })
+        
+        # Apply statistical outlier filtering if requested
+        if filter_outliers and len(all_results_for_charts) > 4:
+            profits = [r["_profit_raw"] for r in all_results_for_charts]
+            q1 = np.percentile(profits, 25)
+            q3 = np.percentile(profits, 75)
+            iqr = q3 - q1
+            lower_bound = q1 - 1.5 * iqr
+            upper_bound = q3 + 1.5 * iqr
+            
+            original_count = len(all_results_for_charts)
+            all_results_for_charts = [
+                r for r in all_results_for_charts 
+                if lower_bound <= r["_profit_raw"] <= upper_bound
+            ]
+            filtered_count = original_count - len(all_results_for_charts)
+            if filtered_count > 0:
+                st.caption(f"*{filtered_count} statistical outliers hidden*")
         
         if all_results_for_charts:
             profitable_results = [r for r in all_results_for_charts if r["_profit_raw"] > 0]
@@ -2871,9 +2920,10 @@ def main():
                     st.plotly_chart(fig, use_container_width=True)
             
             # Row 3: Profit distribution histogram
-            st.subheader("Distribution Analysis")
+            profit_label = "Per-Item Profit" if use_per_item else f"Batch Profit (qty: {quantity})"
+            st.subheader(f"Distribution Analysis — {profit_label}")
             profits = [r["_profit_raw"] for r in all_results_for_charts]
-            fig = create_profit_histogram(profits)
+            fig = create_profit_histogram(profits, per_item=use_per_item)
             st.plotly_chart(fig, use_container_width=True)
             
             # Summary stats

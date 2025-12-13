@@ -8,13 +8,14 @@ This version significantly improves the **Analytics tab** with better chart desi
 
 ### Enhanced Analytics Charts
 - **ROI vs Profit Scatter**: Now has a proper category legend that exports correctly, annotations for notable items, and quadrant reference lines
-- **Distribution Analysis**: Combines box plot + histogram, shows profitable vs unprofitable chains separately, includes statistical annotations (median, quartiles)
+- **Distribution Analysis**: Shows profitable vs unprofitable chains separately with automatic outlier exclusion for cleaner visualization
 - **Category Comparison**: Now shows Best/Median/Average profits, sorted by performance, with value labels
 - **Pie Chart**: Consistent category colors across all charts, center total annotation, chain count in hover
 - **Consistent Color Scheme**: All charts use the same category-to-color mapping for easy cross-referencing
 
 ### Visual Polish
-- Subtitles on key charts explaining what they show
+- Subtitles on key charts explaining what they show (including outlier counts)
+- Automatic outlier handling prevents extreme values from distorting charts
 - Better axis formatting for GP values  
 - Improved hover templates with more context
 - Annotations highlighting top performers
@@ -243,14 +244,15 @@ https://your-app.streamlit.app/?plank_method=Sawmill&double_mould=true&quantity=
 ### v4.3 (Enhanced Analytics Edition)
 - **ROI vs Profit scatter redesign**: Separate traces per category for proper legend support on export
 - **Automatic item annotations**: Top profit and ROI items are labeled on the scatter plot
-- **Distribution histogram overhaul**: Box plot + histogram combo showing profitable/unprofitable split
-- **Statistical annotations**: Median, Q1, Q3 stats displayed in an info box
-- **Smart binning**: Histogram bin sizes adapt to data range automatically
+- **Distribution histogram overhaul**: Simplified design with automatic outlier detection and exclusion
+- **IQR-based outlier handling**: Extreme outliers (>3x IQR) are automatically excluded from histogram to show meaningful distribution
+- **Smart binning**: Histogram bin sizes adapt to displayed data range automatically
 - **Category comparison upgrade**: Now shows Best/Median/Average with sorted categories
 - **Consistent color mapping**: All charts use same category colors for cross-reference
 - **Pie chart improvements**: Center total display, chain counts in hover, consistent colors
-- **Chart subtitles**: Added explanatory subtitles to key visualizations
+- **Chart subtitles**: Added explanatory subtitles with outlier counts when applicable
 - **Quadrant reference lines**: ROI scatter shows 0% profit/ROI reference lines when applicable
+- **Statistics box**: Shows full dataset stats (min/max/median/quartiles) even when outliers excluded
 
 ### v4.2 (GP/hr with Equipped Tools)
 - **GP/hr calculations**: Full gold-per-hour estimates for all craftable items
