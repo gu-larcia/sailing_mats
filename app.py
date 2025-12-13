@@ -359,6 +359,117 @@ st.markdown(OSRS_CSS, unsafe_allow_html=True)
 # Constants
 API_BASE = "https://prices.runescape.wiki/api/v1/osrs"
 
+# =================
+# OSRS COLOR SYSTEM
+# =================
+
+# Metal tier colors - based on actual OSRS item appearances
+METAL_COLORS = {
+    'bronze': '#CD7F32',      # Classic bronze orange-brown
+    'iron': '#5C5C5C',        # Dark iron gray
+    'steel': '#71797E',       # Steel gray
+    'black': '#1C1C1C',       # Near black
+    'mithril': '#284B63',     # Dark mithril blue
+    'adamant': '#2E8B57',     # Adamant green (sea green)
+    'rune': '#00CED1',        # Rune cyan/turquoise
+    'dragon': '#DC143C',      # Dragon crimson red
+}
+
+# Wood tier colors - based on actual wood appearances
+WOOD_COLORS = {
+    'wooden': '#DEB887',      # Burlywood (basic plank)
+    'oak': '#C19A6B',         # Camel tan
+    'willow': '#A8C090',      # Willow greenish
+    'teak': '#8B7355',        # Teak brown
+    'maple': '#C9A66B',       # Maple golden brown
+    'mahogany': '#6B4423',    # Dark mahogany
+    'yew': '#8B4513',         # Saddle brown
+    'magic': '#4B0082',       # Indigo (magic logs glow)
+    'redwood': '#A52A2A',     # Brown-red
+    'camphor': '#7B9971',     # Sage green (camphor)
+    'ironwood': '#4A4A4A',    # Dark gray (ironwood)
+    'rosewood': '#65000B',    # Dark rose red
+}
+
+# Category colors - thematic for each processing category
+CATEGORY_COLORS = {
+    'Planks': '#C19A6B',           # Wood tan
+    'Hull Parts': '#8B7355',       # Crafted wood brown
+    'Large Hull Parts': '#6B4423', # Dark mahogany
+    'Hull Repair Kits': '#DAA520', # Goldenrod (repair/utility)
+    'Keel Parts': '#71797E',       # Steel gray (mixed metals)
+    'Large Keel Parts': '#5F9EA0', # Cadet blue (larger metal)
+    'Nails': '#CD7F32',            # Bronze (common nails)
+    'Cannonballs': '#5C5C5C',      # Iron gray
+    'Other': '#7f8c8d',            # Neutral gray
+}
+
+
+def get_item_tier_color(item_name: str, profit: float = 0) -> str:
+    """
+    Determine the appropriate OSRS color for an item based on its name.
+    Returns the tier color, or falls back to profit-based coloring.
+    """
+    name_lower = item_name.lower()
+    
+    # Check for metal tiers (order matters - check dragon first)
+    if 'dragon' in name_lower:
+        return METAL_COLORS['dragon']
+    elif 'rune ' in name_lower or 'rune_' in name_lower or 'runite' in name_lower:
+        return METAL_COLORS['rune']
+    elif 'adamant' in name_lower:
+        return METAL_COLORS['adamant']
+    elif 'mithril' in name_lower:
+        return METAL_COLORS['mithril']
+    elif 'black' in name_lower and ('nail' in name_lower or 'keel' in name_lower):
+        return METAL_COLORS['black']
+    elif 'steel' in name_lower:
+        return METAL_COLORS['steel']
+    elif 'iron ' in name_lower or 'iron_' in name_lower or name_lower.startswith('iron'):
+        # Be careful not to match "ironwood"
+        if 'ironwood' not in name_lower:
+            return METAL_COLORS['iron']
+    elif 'bronze' in name_lower:
+        return METAL_COLORS['bronze']
+    
+    # Check for wood tiers
+    if 'rosewood' in name_lower:
+        return WOOD_COLORS['rosewood']
+    elif 'ironwood' in name_lower:
+        return WOOD_COLORS['ironwood']
+    elif 'camphor' in name_lower:
+        return WOOD_COLORS['camphor']
+    elif 'mahogany' in name_lower:
+        return WOOD_COLORS['mahogany']
+    elif 'teak' in name_lower:
+        return WOOD_COLORS['teak']
+    elif 'oak' in name_lower:
+        return WOOD_COLORS['oak']
+    elif 'wooden' in name_lower or name_lower == 'plank' or name_lower.endswith(' plank'):
+        # Basic plank/wooden
+        if not any(wood in name_lower for wood in ['oak', 'teak', 'mahogany', 'camphor', 'ironwood', 'rosewood']):
+            return WOOD_COLORS['wooden']
+    
+    # Fallback: gold for profit, red for loss
+    return '#d4af37' if profit >= 0 else '#c0392b'
+
+
+def get_tier_from_name(item_name: str) -> str:
+    """Extract the tier/material name from an item for labeling purposes."""
+    name_lower = item_name.lower()
+    
+    # Metal tiers
+    for tier in ['dragon', 'rune', 'adamant', 'mithril', 'steel', 'iron', 'bronze']:
+        if tier in name_lower and not (tier == 'iron' and 'ironwood' in name_lower):
+            return tier.capitalize()
+    
+    # Wood tiers
+    for tier in ['rosewood', 'ironwood', 'camphor', 'mahogany', 'teak', 'oak', 'wooden']:
+        if tier in name_lower:
+            return tier.capitalize()
+    
+    return "Other"
+
 # =============
 # ITEM DATABASE
 # =============
@@ -1420,7 +1531,7 @@ def render_best_item_card(label: str, item_name: str, value: str) -> str:
 
 
 def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
-    """Create a bar chart of top profits with OSRS theming and item icons"""
+    """Create a bar chart of top profits with OSRS tier-based coloring"""
     sorted_results = sorted(results, key=lambda x: x.get("_profit_raw", 0), reverse=True)[:top_n]
     
     items = [r["Item"] for r in sorted_results]
@@ -1430,26 +1541,11 @@ def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
     # Get clean item names for display
     display_names = [get_clean_item_name(name) for name in items]
     
-    # Category color mapping for consistency
-    category_colors = {
-        'Planks': '#27ae60',
-        'Hull Parts': '#d4af37',
-        'Large Hull Parts': '#f39c12',
-        'Hull Repair Kits': '#1abc9c',
-        'Keel Parts': '#5dade2',
-        'Large Keel Parts': '#3498db',
-        'Nails': '#cd7f32',
-        'Cannonballs': '#c0392b',
-    }
+    # Get tier info for hover
+    tiers = [get_tier_from_name(name) for name in items]
     
-    # Assign colors by category, fallback to gold/red based on profit
-    colors = []
-    for i, p in enumerate(profits):
-        cat = categories[i]
-        if p > 0:
-            colors.append(category_colors.get(cat, '#d4af37'))
-        else:
-            colors.append('#c0392b')
+    # Assign colors by material tier (dragon = red, rune = cyan, etc.)
+    colors = [get_item_tier_color(items[i], profits[i]) for i in range(len(items))]
     
     fig = go.Figure(data=[
         go.Bar(
@@ -1463,8 +1559,8 @@ def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
             textposition='outside',
             textfont=dict(color='#f4e4bc', size=10),
             name='Profit',
-            customdata=categories,
-            hovertemplate='<b>%{y}</b><br>Category: %{customdata}<br>Profit: %{x:,.0f} GP<extra></extra>'
+            customdata=list(zip(categories, tiers)),
+            hovertemplate='<b>%{y}</b><br>Category: %{customdata[0]}<br>Tier: %{customdata[1]}<br>Profit: %{x:,.0f} GP<extra></extra>'
         )
     ])
     
@@ -1473,7 +1569,7 @@ def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
             text="Top Profitable Chains",
             font=dict(color='#ffd700', size=18),
             subtitle=dict(
-                text=f"Top {len(sorted_results)} by net profit",
+                text=f"Top {len(sorted_results)} by net profit • colored by material tier",
                 font=dict(color='#a08b6d', size=12)
             )
         ),
@@ -1533,20 +1629,8 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
     values = [c[1] for c in main_cats]
     counts = [c[2] for c in main_cats]
     
-    # OSRS-themed color palette - consistent with scatter plot
-    osrs_colors = {
-        'Planks': '#27ae60',
-        'Hull Parts': '#d4af37',
-        'Large Hull Parts': '#f39c12',
-        'Hull Repair Kits': '#1abc9c',
-        'Keel Parts': '#5dade2',
-        'Large Keel Parts': '#3498db',
-        'Nails': '#cd7f32',
-        'Cannonballs': '#c0392b',
-        'Other': '#7f8c8d',
-    }
-    
-    colors = [osrs_colors.get(label, '#8e44ad') for label in labels]
+    # Use the global CATEGORY_COLORS for consistency
+    colors = [CATEGORY_COLORS.get(label, '#8e44ad') for label in labels]
     
     # Custom hover text with more info
     hover_text = [
@@ -1918,18 +2002,6 @@ def create_roi_scatter(results: List[Dict]) -> go.Figure:
         categories_data[cat]["rois"].append(r["ROI %"])
         categories_data[cat]["names"].append(get_clean_item_name(r["Item"]))
     
-    # OSRS-themed color palette with good contrast
-    osrs_colors = {
-        'Planks': '#27ae60',           # Nature green
-        'Hull Parts': '#d4af37',       # Gold
-        'Large Hull Parts': '#f39c12', # Copper/orange
-        'Hull Repair Kits': '#1abc9c', # Teal
-        'Keel Parts': '#5dade2',       # Rune blue
-        'Large Keel Parts': '#3498db', # Deeper blue
-        'Nails': '#cd7f32',            # Bronze
-        'Cannonballs': '#c0392b',      # Dragon red
-    }
-    
     # Fallback colors for unknown categories
     fallback_colors = ['#8e44ad', '#e74c3c', '#9b59b6', '#34495e']
     
@@ -1937,7 +2009,7 @@ def create_roi_scatter(results: List[Dict]) -> go.Figure:
     
     # Add one trace per category for proper legend
     for i, (cat, cat_data) in enumerate(categories_data.items()):
-        color = osrs_colors.get(cat, fallback_colors[i % len(fallback_colors)])
+        color = CATEGORY_COLORS.get(cat, fallback_colors[i % len(fallback_colors)])
         
         fig.add_trace(go.Scatter(
             x=cat_data["profits"],

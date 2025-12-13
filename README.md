@@ -13,6 +13,24 @@ This version significantly improves the **Analytics tab** with better chart desi
 - **Pie Chart**: Consistent category colors across all charts, center total annotation, chain count in hover
 - **Consistent Color Scheme**: All charts use the same category-to-color mapping for easy cross-referencing
 
+### OSRS-Authentic Color System
+Items are now colored by their **actual material tier**, just like in-game:
+- **Dragon**: Crimson red (#DC143C)
+- **Rune**: Cyan/turquoise (#00CED1)
+- **Adamant**: Sea green (#2E8B57)
+- **Mithril**: Dark blue (#284B63)
+- **Steel**: Steel gray (#71797E)
+- **Iron**: Dark gray (#5C5C5C)
+- **Bronze**: Classic bronze (#CD7F32)
+
+Wood tiers also match their in-game appearance:
+- **Rosewood**: Dark rose red
+- **Ironwood**: Dark gray
+- **Camphor**: Sage green
+- **Mahogany**: Dark reddish brown
+- **Teak**: Medium brown
+- **Oak**: Tan
+
 ### Visual Polish
 - Subtitles on key charts explaining what they show (including outlier counts)
 - Automatic outlier handling prevents extreme values from distorting charts
@@ -242,13 +260,16 @@ https://your-app.streamlit.app/?plank_method=Sawmill&double_mould=true&quantity=
 ## Changelog
 
 ### v4.3 (Enhanced Analytics Edition)
+- **OSRS-authentic color system**: Items colored by material tier (dragon=red, rune=cyan, adamant=green, etc.)
+- **Metal tier colors**: Bronze, Iron, Steel, Mithril, Adamant, Rune, Dragon all have their in-game colors
+- **Wood tier colors**: Oak, Teak, Mahogany, Camphor, Ironwood, Rosewood match their appearance
 - **ROI vs Profit scatter redesign**: Separate traces per category for proper legend support on export
 - **Automatic item annotations**: Top profit and ROI items are labeled on the scatter plot
 - **Distribution histogram overhaul**: Simplified design with automatic outlier detection and exclusion
 - **IQR-based outlier handling**: Extreme outliers (>3x IQR) are automatically excluded from histogram to show meaningful distribution
 - **Smart binning**: Histogram bin sizes adapt to displayed data range automatically
 - **Category comparison upgrade**: Now shows Best/Median/Average with sorted categories
-- **Consistent color mapping**: All charts use same category colors for cross-reference
+- **Consistent color mapping**: All charts use centralized CATEGORY_COLORS for cross-reference
 - **Pie chart improvements**: Center total display, chain counts in hover, consistent colors
 - **Chart subtitles**: Added explanatory subtitles with outlier counts when applicable
 - **Quadrant reference lines**: ROI scatter shows 0% profit/ROI reference lines when applicable
