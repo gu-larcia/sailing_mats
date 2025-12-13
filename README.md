@@ -1,4 +1,4 @@
-# OSRS Sailing Materials Tracker v4.4 - Mobile & Bug Fix Update
+# OSRS Sailing Materials Tracker v4.4 - Text Cleanup
 
 A comprehensive Streamlit application for tracking Old School RuneScape Sailing skill materials with real-time Grand Exchange prices, complete processing chain calculations, and **gold per hour estimates**.
 
@@ -223,14 +223,14 @@ The GP/hr system calculates hourly profit based on:
    - Saw: 1 slot (saved if Crystal Saw equipped)
    - Ammo mould: 1 slot (not equippable)
    
-2. Items per Trip = floor(Effective Inventory / materials_per_craft) Ãƒâ€” output_per_craft
+2. Items per Trip = floor(Effective Inventory / materials_per_craft) x output_per_craft
 
-3. Time per Trip = (actions Ãƒâ€” ticks Ãƒâ€” 0.6s) + bank_time
+3. Time per Trip = (actions x ticks x 0.6s) + bank_time
    - Ancient Furnace halves the crafting portion for smithing
 
 4. Trips per Hour = 3600 / Time per Trip
 
-5. GP per Hour = Trips per Hour Ãƒâ€” Items per Trip Ãƒâ€” Profit per Item
+5. GP per Hour = Trips per Hour x Items per Trip x Profit per Item
 ```
 
 ### Activity Timing Data
@@ -289,10 +289,20 @@ https://your-app.streamlit.app/?plank_method=Sawmill&double_mould=true&quantity=
 
 ## Changelog
 
+### v4.5 (Text Cleanup)
+- **Fixed encoding issues**: Replaced all corrupted unicode characters with plain ASCII
+- **Chart subtitles**: Fixed garbled bullet point separators in chart subtitles
+- **Hover templates**: Fixed corrupted category markers in scatter plot tooltips
+- **Help text**: Fixed "1.5x IQR" display in outlier filter help
+- **Scroll hints**: Replaced arrow symbols with plain "scroll horizontally" text
+- **Step markers**: Changed emoji step indicators to text markers ([OUT], [IN], [>])
+- **Infinity display**: Changed infinity symbol to "Inf" text for ROI display
+- **README formulas**: Fixed multiplication symbols in GP/hr calculation docs
+
 ### v4.4 (Mobile & Bug Fix Update)
 - **Hull Repair Kit recipe fix**: MAJOR BUG - Repair kits were using completely wrong ingredients (hull parts instead of planks, bronze nails instead of tier-matched nails, missing swamp paste). Now uses correct wiki recipes:
   - Planks (not hull parts) - appropriate tier
-  - Tier-matched nails (Bronze→Iron→Steel→Mithril→Adamant→Rune→Dragon)
+  - Tier-matched nails (Bronze > Iron > Steel > Mithril > Adamant > Rune > Dragon)
   - 5 Swamp paste
   - Produces 2-3 kits per craft depending on tier
 - **Amy's Saw**: Renamed from "Crystal Saw" - the equippable saw is Amy's Saw from Sailing, not Crystal Saw

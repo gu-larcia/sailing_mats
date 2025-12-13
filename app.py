@@ -481,7 +481,7 @@ hr {
     
     /* Horizontal scroll hint text */
     [data-testid="stDataFrame"]::before {
-        content: 'â† scroll â†’';
+        content: 'scroll horizontally';
         display: block;
         text-align: center;
         font-size: 0.7rem;
@@ -1708,7 +1708,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
 def format_gp(value: float) -> str:
     """Format GP values"""
     if value == float('inf'):
-        return "Ã¢Ë†Å¾"
+        return "Inf"
     
     is_negative = value < 0
     value = abs(value)
@@ -1808,7 +1808,7 @@ def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
             text="Top Profitable Chains",
             font=dict(color='#ffd700', size=16),
             subtitle=dict(
-                text=f"Top {len(sorted_results)} by profit • colored by tier",
+                text=f"Top {len(sorted_results)} by profit  -  colored by tier",
                 font=dict(color='#a08b6d', size=10)
             )
         ),
@@ -2039,7 +2039,7 @@ def create_profit_histogram(profits: List[float], results: List[Dict] = None, pe
     subtitle_parts = [f"Showing {len(hist_data)} chains"]
     if outlier_note:
         subtitle_parts.append(outlier_note)
-    subtitle_text = " â€¢ ".join(subtitle_parts)
+    subtitle_text = "  -  ".join(subtitle_parts)
     
     fig.update_layout(
         title=dict(
@@ -2264,7 +2264,7 @@ def create_roi_scatter(results: List[Dict]) -> go.Figure:
             text=cat_data["names"],
             hovertemplate=(
                 '<b>%{text}</b><br>'
-                f'<span style="color:{color}">â—</span> {cat}<br>'
+                f'<span style="color:{color}">*</span> {cat}<br>'
                 'Profit: %{x:,.0f} GP<br>'
                 'ROI: %{y:.1f}%'
                 '<extra></extra>'
@@ -2787,13 +2787,13 @@ def main():
                                 step_icon_url = get_item_icon_url(step['name'])
                                 
                                 if step_type == "Output":
-                                    icon = "Ã°Å¸Å½Â¯"
+                                    icon = "[OUT]"
                                     bg_color = "rgba(212,175,55,0.2)"
                                 elif step_type == "Input":
-                                    icon = "Ã°Å¸â€œÂ¥"
+                                    icon = "[IN]"
                                     bg_color = "rgba(93,173,226,0.2)"
                                 else:
-                                    icon = "Ã¢Å¡â„¢Ã¯Â¸Â"
+                                    icon = "[>]"
                                     bg_color = "rgba(139,115,85,0.2)"
                                 
                                 self_note = " (self-collected)" if step.get("is_self_obtained") and step_type != "Output" else ""
@@ -3157,7 +3157,7 @@ def main():
             filter_outliers = st.toggle(
                 "Filter Statistical Outliers",
                 value=False,
-                help="Remove values beyond 1.5Ã—IQR (standard outlier detection)"
+                help="Remove values beyond 1.5x IQR (standard outlier detection)"
             )
         
         # Calculate all for charts
