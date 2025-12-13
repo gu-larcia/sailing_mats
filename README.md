@@ -1,10 +1,32 @@
-# OSRS Sailing Materials Tracker v4.3 - Enhanced Analytics
+# OSRS Sailing Materials Tracker v4.4 - Mobile & Bug Fix Update
 
 A comprehensive Streamlit application for tracking Old School RuneScape Sailing skill materials with real-time Grand Exchange prices, complete processing chain calculations, and **gold per hour estimates**.
 
+## What's New in v4.4
+
+This version fixes critical bugs and significantly improves the mobile experience.
+
+### Bug Fixes
+- **Hull Repair Kit Calculation**: Fixed incorrect profit calculation for repair kits. The multi-input recipe (hull parts + nails = kit) was using calculation logic meant for linear chains. Now correctly calculates material costs for all multi-input recipes.
+- **Amy's Saw (renamed from Crystal Saw)**: Corrected the equippable saw tool - it's Amy's Saw, not Crystal Saw. Crystal Saw is not equippable.
+
+### Mobile Chart Improvements
+- **Responsive Legends**: All chart legends now use horizontal orientation and position at bottom/top instead of cutting off on the right side
+- **Reduced Margins**: Charts use smaller margins to maximize viewing area on mobile screens
+- **Smaller Fonts**: All chart text, titles, and annotations use mobile-appropriate font sizes
+- **Better Annotations**: ROI scatter plot annotations are shorter and positioned closer to avoid overflow
+- **Plotly Mobile CSS**: Added CSS rules to scale modebar, reduce SVG text size, and prevent legend overflow
+
+### URL Parameters
+Updated shareable parameters:
+```
+?imcando_hammer=true&amys_saw=true&show_gp_hr=true&bank_speed=Fast
+```
+Note: `amys_saw` replaces the old `crystal_saw` parameter.
+
 ## What's New in v4.3
 
-This version significantly improves the **Analytics tab** with better chart design, proper legends, and more insightful visualizations.
+This version significantly improves the **Analytics tab** with better chart design, cleaner legends, and better visualizations.
 
 ### Enhanced Analytics Charts
 - **ROI vs Profit Scatter**: Now has a proper category legend that exports correctly, annotations for notable items, and quadrant reference lines
@@ -42,7 +64,7 @@ Items are now colored by their **actual material tier**, just like in-game:
 - Cleaner grid lines and borders
 
 ### Bug Fixes & UX Improvements
-- **Hull Repair Kits**: Added missing processing chain (was showing empty category)
+- **Hull Repair Kits**: Reenabled hull parts repair kit.
 - **Mobile-friendly tables**: Tables now scroll horizontally on mobile devices
 - **Responsive design**: Better touch targets, scrollable tabs, adaptive font sizes
 - **Default quantity = 1**: More intuitive starting point for per-item analysis
@@ -61,7 +83,7 @@ This version adds **proper GP/hr calculations** with separate toggles for the Im
 - **Imcando Hammer**: Saves 1 inventory slot for smithing activities (keel parts, nails). Obtained from Below Ice Mountain quest.
 - **Crystal Saw**: Saves 1 inventory slot for hull crafting. Obtained from Eyes of Glouphrie quest.
 - **Both together**: Hull parts need both tools - each one you have equipped saves a slot (up to 2 total)
-- **Defaults to OFF**: These are meaningful unlocks, not assumed
+- **Defaults to OFF**: These are big unlocks, not assumed
 
 ### Enhanced Chain Details
 - When GP/hr is enabled, the chain details expander shows a full breakdown:
@@ -75,7 +97,7 @@ This version adds **proper GP/hr calculations** with separate toggles for the Im
 ### URL Parameters
 New shareable parameters:
 ```
-?imcando_hammer=true&crystal_saw=true&show_gp_hr=true&bank_speed=Fast
+?imcando_hammer=true&amys_saw=true&show_gp_hr=true&bank_speed=Fast
 ```
 
 ## OSRS Visual Theme (from v4.0)
@@ -201,14 +223,14 @@ The GP/hr system calculates hourly profit based on:
    - Saw: 1 slot (saved if Crystal Saw equipped)
    - Ammo mould: 1 slot (not equippable)
    
-2. Items per Trip = floor(Effective Inventory / materials_per_craft) Ã— output_per_craft
+2. Items per Trip = floor(Effective Inventory / materials_per_craft) Ãƒâ€” output_per_craft
 
-3. Time per Trip = (actions Ã— ticks Ã— 0.6s) + bank_time
+3. Time per Trip = (actions Ãƒâ€” ticks Ãƒâ€” 0.6s) + bank_time
    - Ancient Furnace halves the crafting portion for smithing
 
 4. Trips per Hour = 3600 / Time per Trip
 
-5. GP per Hour = Trips per Hour Ã— Items per Trip Ã— Profit per Item
+5. GP per Hour = Trips per Hour Ãƒâ€” Items per Trip Ãƒâ€” Profit per Item
 ```
 
 ### Activity Timing Data
@@ -267,6 +289,16 @@ https://your-app.streamlit.app/?plank_method=Sawmill&double_mould=true&quantity=
 
 ## Changelog
 
+### v4.4 (Mobile & Bug Fix Update)
+- **Hull Repair Kit fix**: Fixed calculation bug for multi-input recipes (hull parts + nails). Was incorrectly using cascading ratios.
+- **Amy's Saw**: Renamed from "Crystal Saw" - the equippable saw is Amy's Saw from Sailing, not Crystal Saw
+- **Mobile chart legends**: Changed all charts to use horizontal legends at top/bottom instead of vertical on right
+- **Reduced chart margins**: Smaller margins maximize chart viewing area on small screens
+- **Mobile-friendly fonts**: Reduced font sizes for all chart titles, labels, and annotations
+- **Plotly mobile CSS**: Added CSS rules for modebar scaling, SVG text sizing, and legend overflow prevention
+- **Shorter annotations**: ROI scatter annotations truncated to 15 characters for mobile display
+- **Updated URL params**: `amys_saw` replaces `crystal_saw` parameter
+
 ### v4.3 (Enhanced Analytics Edition)
 - **OSRS-authentic color system**: Items colored by material tier (dragon=red, rune=cyan, adamant=green, etc.)
 - **Metal tier colors**: Bronze, Iron, Steel, Mithril, Adamant, Rune, Dragon all have their in-game colors
@@ -290,13 +322,13 @@ https://your-app.streamlit.app/?plank_method=Sawmill&double_mould=true&quantity=
 ### v4.2 (GP/hr with Equipped Tools)
 - **GP/hr calculations**: Full gold-per-hour estimates for all craftable items
 - **Imcando Hammer toggle**: Separate setting for equipped hammer (saves 1 slot on smithing)
-- **Crystal Saw toggle**: Separate setting for equipped saw (saves 1 slot on hull crafting)
+- **Crystal Saw toggle**: Separate setting for equipped saw (saves 1 slot on hull crafting) *(Note: Renamed to "Amy's Saw" in v4.4)*
 - **Tool defaults OFF**: These are unlocks players earn, not assumed equipment
 - **Ancient Furnace integration**: Properly halves smithing time in GP/hr calculations
 - **Bank speed presets**: Fast/Medium/Slow banking options
 - **Chain details GP/hr breakdown**: Shows full efficiency stats when expanded
 - **Activity timing data**: Each activity type has accurate tick-based timing
-- **URL shareable tool settings**: `?imcando_hammer=true&crystal_saw=true`
+- **URL shareable tool settings**: `?imcando_hammer=true&amys_saw=true` *(was crystal_saw before v4.4)*
 
 ### v4.1 (Item Thumbnails Edition)
 - **Item icons**: Added OSRS Wiki thumbnails throughout all data tables

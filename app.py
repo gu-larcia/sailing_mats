@@ -1,6 +1,6 @@
 """
 OSRS Sailing Materials Tracker
-Version 4.3
+Version 4.4
 """
 
 import streamlit as st
@@ -416,6 +416,23 @@ hr {
         overflow-x: auto;
     }
     
+    /* Plotly chart mobile improvements */
+    .js-plotly-plot .plotly .modebar {
+        transform: scale(0.8);
+        transform-origin: top right;
+    }
+    
+    /* Reduce SVG text size on mobile */
+    .js-plotly-plot .plotly svg text {
+        font-size: 90% !important;
+    }
+    
+    /* Ensure legend doesn't overflow */
+    .js-plotly-plot .legend {
+        max-width: 100%;
+        overflow-x: auto;
+    }
+    
     /* Better touch targets for buttons */
     .stButton > button {
         min-height: 44px;
@@ -464,7 +481,7 @@ hr {
     
     /* Horizontal scroll hint text */
     [data-testid="stDataFrame"]::before {
-        content: '← scroll →';
+        content: 'â† scroll â†’';
         display: block;
         text-align: center;
         font-size: 0.7rem;
@@ -929,7 +946,7 @@ ACTIVITY_TIMINGS = {
         needs_saw=True,
         other_tool_slots=0,
         activity_name="Hull Parts Crafting",
-        notes="5 planks per part. Imcando hammer + Crystal saw each save 1 slot."
+        notes="5 planks per part. Imcando hammer + Amy's saw each save 1 slot."
     ),
     
     # Large Hull Parts - combining
@@ -1036,7 +1053,7 @@ def calculate_gp_per_hour(
     bank_preset = config.get("bank_speed", "Medium")
     bank_time = BANK_PRESETS.get(bank_preset, 15.0)
     has_imcando_hammer = config.get("has_imcando_hammer", False)
-    has_crystal_saw = config.get("has_crystal_saw", False)
+    has_amys_saw = config.get("has_amys_saw", False)
     
     # Calculate tool slots used based on which equipped tools the player has
     tool_slots_used = timing.other_tool_slots # None is default
@@ -1048,7 +1065,7 @@ def calculate_gp_per_hour(
     
     # Add saw slot if needed and not equipped
     if timing.needs_saw:
-        if not has_crystal_saw:
+        if not has_amys_saw:
             tool_slots_used += 1
     
     # Calculate effective inventory
@@ -1114,7 +1131,7 @@ def calculate_gp_per_hour(
     if timing.needs_hammer:
         tool_notes.append(f"Hammer: {'equipped' if has_imcando_hammer else 'in inventory'}")
     if timing.needs_saw:
-        tool_notes.append(f"Saw: {'equipped' if has_crystal_saw else 'in inventory'}")
+        tool_notes.append(f"Saw: {'equipped' if has_amys_saw else 'in inventory'}")
     
     return {
         "gp_per_hour": gp_per_hour,
@@ -1128,7 +1145,7 @@ def calculate_gp_per_hour(
         "notes": timing.notes,
         "tool_notes": tool_notes,
         "tool_slots_saved": (1 if timing.needs_hammer and has_imcando_hammer else 0) + 
-                           (1 if timing.needs_saw and has_crystal_saw else 0)
+                           (1 if timing.needs_saw and has_amys_saw else 0)
     }
 
 # Combine all items for easy lookup
@@ -1340,17 +1357,28 @@ class ProcessingChain:
                     output_step.quantity = 4
                     input_step.quantity = 1
         
+        # Hull Repair Kits use multi-input: hull parts AND nails combine to make kit
+        # Handle these specially - each input is per-kit, not cascaded
+        is_multi_input = self.category == "Hull Repair Kits"
+        
         num_steps = len(self.steps)
         needed = [0.0] * num_steps
         needed[-1] = final_quantity
 
-        for idx in range(num_steps - 2, -1, -1):
-            prev = self.steps[idx]
-            nxt = self.steps[idx + 1]
-            if getattr(nxt, 'quantity', 0) == 0:
-                needed[idx] = needed[idx + 1] * getattr(prev, 'quantity', 1)
-            else:
-                needed[idx] = needed[idx + 1] * (getattr(prev, 'quantity', 1) / getattr(nxt, 'quantity', 1))
+        if is_multi_input and num_steps >= 3:
+            # For multi-input chains: each non-output step uses its quantity directly
+            # e.g., 1 hull part + 5 nails = 1 kit (each input is per kit produced)
+            for idx in range(num_steps - 1):
+                needed[idx] = final_quantity * getattr(self.steps[idx], 'quantity', 1)
+        else:
+            # Standard cascading calculation for linear chains
+            for idx in range(num_steps - 2, -1, -1):
+                prev = self.steps[idx]
+                nxt = self.steps[idx + 1]
+                if getattr(nxt, 'quantity', 0) == 0:
+                    needed[idx] = needed[idx + 1] * getattr(prev, 'quantity', 1)
+                else:
+                    needed[idx] = needed[idx + 1] * (getattr(prev, 'quantity', 1) / getattr(nxt, 'quantity', 1))
 
         for i, step in enumerate(self.steps):
             resolved_id = id_lookup.get_or_find_id(step.item_id, step.item_name)
@@ -1670,7 +1698,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
 def format_gp(value: float) -> str:
     """Format GP values"""
     if value == float('inf'):
-        return "âˆž"
+        return "Ã¢Ë†Å¾"
     
     is_negative = value < 0
     value = abs(value)
@@ -1768,26 +1796,26 @@ def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
     fig.update_layout(
         title=dict(
             text="Top Profitable Chains",
-            font=dict(color='#ffd700', size=18),
+            font=dict(color='#ffd700', size=16),
             subtitle=dict(
-                text=f"Top {len(sorted_results)} by net profit • colored by material tier",
-                font=dict(color='#a08b6d', size=12)
+                text=f"Top {len(sorted_results)} by profit • colored by tier",
+                font=dict(color='#a08b6d', size=10)
             )
         ),
         xaxis=dict(
             title="Net Profit (GP)",
-            title_font=dict(color='#f4e4bc'),
-            tickfont=dict(color='#f4e4bc'),
+            title_font=dict(color='#f4e4bc', size=11),
+            tickfont=dict(color='#f4e4bc', size=9),
             gridcolor='rgba(139,115,85,0.25)',
             tickformat=',.0f'
         ),
         yaxis=dict(
             title="",
-            tickfont=dict(color='#f4e4bc', size=10),
+            tickfont=dict(color='#f4e4bc', size=9),
             autorange="reversed"
         ),
-        height=max(400, top_n * 38),
-        margin=dict(l=170, r=100, t=70, b=50),
+        height=max(380, top_n * 36),
+        margin=dict(l=140, r=80, t=60, b=45),
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)',
         showlegend=False
@@ -1849,7 +1877,7 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
             hole=0.4,
             textinfo='label+percent',
             textposition='outside',
-            textfont=dict(color='#f4e4bc', size=11),
+            textfont=dict(color='#f4e4bc', size=10),
             hovertext=hover_text,
             hoverinfo='text',
             marker=dict(
@@ -1866,21 +1894,21 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
     fig.add_annotation(
         text=f"<b>Total</b><br>{format_gp(total_profit)}",
         x=0.5, y=0.5,
-        font=dict(color='#ffd700', size=14),
+        font=dict(color='#ffd700', size=12),
         showarrow=False
     )
     
     fig.update_layout(
         title=dict(
-            text="Profit Distribution by Category",
-            font=dict(color='#ffd700', size=18)
+            text="Profit by Category",
+            font=dict(color='#ffd700', size=16)
         ),
-        height=450,
+        height=400,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)',
         showlegend=False,
-        margin=dict(l=80, r=80, t=60, b=60),
-        uniformtext=dict(minsize=9, mode='hide')
+        margin=dict(l=40, r=40, t=50, b=40),
+        uniformtext=dict(minsize=8, mode='hide')
     )
     
     return fig
@@ -2001,21 +2029,21 @@ def create_profit_histogram(profits: List[float], results: List[Dict] = None, pe
     subtitle_parts = [f"Showing {len(hist_data)} chains"]
     if outlier_note:
         subtitle_parts.append(outlier_note)
-    subtitle_text = " • ".join(subtitle_parts)
+    subtitle_text = " â€¢ ".join(subtitle_parts)
     
     fig.update_layout(
         title=dict(
             text=title_text,
-            font=dict(color='#ffd700', size=18),
+            font=dict(color='#ffd700', size=16),
             subtitle=dict(
                 text=subtitle_text,
-                font=dict(color='#a08b6d', size=11)
+                font=dict(color='#a08b6d', size=10)
             )
         ),
         xaxis=dict(
             title=f"Net Profit ({unit_label})",
-            title_font=dict(color='#f4e4bc'),
-            tickfont=dict(color='#f4e4bc'),
+            title_font=dict(color='#f4e4bc', size=11),
+            tickfont=dict(color='#f4e4bc', size=9),
             gridcolor='rgba(139,115,85,0.25)',
             tickformat=',.0f',
             zeroline=True,
@@ -2023,18 +2051,18 @@ def create_profit_histogram(profits: List[float], results: List[Dict] = None, pe
             zerolinewidth=1
         ),
         yaxis=dict(
-            title="Number of Chains",
-            title_font=dict(color='#f4e4bc'),
-            tickfont=dict(color='#f4e4bc'),
+            title="Count",
+            title_font=dict(color='#f4e4bc', size=11),
+            tickfont=dict(color='#f4e4bc', size=9),
             gridcolor='rgba(139,115,85,0.25)'
         ),
-        height=340,
+        height=320,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)',
         barmode='overlay',
         bargap=0.1,
         legend=dict(
-            font=dict(color='#f4e4bc', size=11),
+            font=dict(color='#f4e4bc', size=9),
             bgcolor='rgba(92,77,58,0.85)',
             bordercolor='#5c4d3a',
             borderwidth=1,
@@ -2042,19 +2070,18 @@ def create_profit_histogram(profits: List[float], results: List[Dict] = None, pe
             yanchor='bottom',
             y=1.02,
             xanchor='center',
-            x=0.5
+            x=0.5,
+            itemsizing='constant'
         ),
-        margin=dict(l=70, r=30, t=80, b=60)
+        margin=dict(l=55, r=25, t=70, b=50)
     )
     
     # Add statistics box (shows full dataset stats for reference)
     stats_lines = [
-        "<b>Full Dataset</b>",
-        f"Median: {format_gp(median_val)}",
+        "<b>Stats</b>",
+        f"Med: {format_gp(median_val)}",
         f"Q1: {format_gp(q1)}",
         f"Q3: {format_gp(q3)}",
-        f"Min: {format_gp(profits_arr.min())}",
-        f"Max: {format_gp(profits_arr.max())}"
     ]
     
     fig.add_annotation(
@@ -2064,12 +2091,12 @@ def create_profit_histogram(profits: List[float], results: List[Dict] = None, pe
         yref='paper',
         text="<br>".join(stats_lines),
         showarrow=False,
-        font=dict(color='#f4e4bc', size=10),
+        font=dict(color='#f4e4bc', size=9),
         align='right',
         bgcolor='rgba(92,77,58,0.9)',
         bordercolor='#d4af37',
         borderwidth=1,
-        borderpad=8
+        borderpad=5
     )
     
     return fig
@@ -2146,29 +2173,29 @@ def create_category_comparison(results: List[Dict]) -> go.Figure:
     
     fig.update_layout(
         title=dict(
-            text="Category Performance Comparison",
-            font=dict(color='#ffd700', size=18)
+            text="Category Performance",
+            font=dict(color='#ffd700', size=16)
         ),
         xaxis=dict(
             title="",
-            tickfont=dict(color='#f4e4bc', size=10),
+            tickfont=dict(color='#f4e4bc', size=9),
             tickangle=45
         ),
         yaxis=dict(
             title="Profit (GP)",
-            title_font=dict(color='#f4e4bc'),
-            tickfont=dict(color='#f4e4bc'),
+            title_font=dict(color='#f4e4bc', size=11),
+            tickfont=dict(color='#f4e4bc', size=9),
             gridcolor='rgba(139,115,85,0.25)',
             tickformat=',.0f',
             zeroline=True,
             zerolinecolor='rgba(244,228,188,0.3)'
         ),
         barmode='group',
-        height=420,
+        height=400,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)',
         legend=dict(
-            font=dict(color='#f4e4bc', size=11),
+            font=dict(color='#f4e4bc', size=9),
             bgcolor='rgba(92,77,58,0.85)',
             bordercolor='#5c4d3a',
             borderwidth=1,
@@ -2176,11 +2203,12 @@ def create_category_comparison(results: List[Dict]) -> go.Figure:
             yanchor='bottom',
             y=1.02,
             xanchor='center',
-            x=0.5
+            x=0.5,
+            itemsizing='constant'
         ),
-        margin=dict(l=70, r=20, t=80, b=110),
-        bargap=0.2,
-        bargroupgap=0.1
+        margin=dict(l=55, r=15, t=70, b=100),
+        bargap=0.15,
+        bargroupgap=0.08
     )
     
     return fig
@@ -2226,7 +2254,7 @@ def create_roi_scatter(results: List[Dict]) -> go.Figure:
             text=cat_data["names"],
             hovertemplate=(
                 '<b>%{text}</b><br>'
-                f'<span style="color:{color}">●</span> {cat}<br>'
+                f'<span style="color:{color}">â—</span> {cat}<br>'
                 'Profit: %{x:,.0f} GP<br>'
                 'ROI: %{y:.1f}%'
                 '<extra></extra>'
@@ -2255,7 +2283,7 @@ def create_roi_scatter(results: List[Dict]) -> go.Figure:
     for idx in notable_indices:
         item_name = get_clean_item_name(data[idx]["Item"])
         # Shorten name if too long
-        display_name = item_name[:20] + "..." if len(item_name) > 20 else item_name
+        display_name = item_name[:15] + "..." if len(item_name) > 15 else item_name
         
         fig.add_annotation(
             x=all_profits[idx],
@@ -2263,16 +2291,16 @@ def create_roi_scatter(results: List[Dict]) -> go.Figure:
             text=display_name,
             showarrow=True,
             arrowhead=2,
-            arrowsize=1,
-            arrowwidth=1.5,
+            arrowsize=0.8,
+            arrowwidth=1,
             arrowcolor='#f4e4bc',
-            font=dict(color='#f4e4bc', size=9),
+            font=dict(color='#f4e4bc', size=8),
             bgcolor='rgba(26,42,58,0.85)',
             bordercolor='#5c4d3a',
             borderwidth=1,
-            borderpad=3,
-            ax=30,
-            ay=-25
+            borderpad=2,
+            ax=25,
+            ay=-20
         )
     
     # Add quadrant lines if data spans both positive and negative
@@ -2298,49 +2326,51 @@ def create_roi_scatter(results: List[Dict]) -> go.Figure:
     fig.update_layout(
         title=dict(
             text="ROI vs Profit Analysis",
-            font=dict(color='#ffd700', size=18),
+            font=dict(color='#ffd700', size=16),
             subtitle=dict(
                 text="Higher & further right = better investment",
-                font=dict(color='#a08b6d', size=12)
+                font=dict(color='#a08b6d', size=11)
             )
         ),
         xaxis=dict(
             title="Net Profit (GP)",
-            title_font=dict(color='#f4e4bc'),
-            tickfont=dict(color='#f4e4bc'),
+            title_font=dict(color='#f4e4bc', size=11),
+            tickfont=dict(color='#f4e4bc', size=9),
             gridcolor='rgba(139,115,85,0.25)',
             tickformat=',.0f',
             zeroline=True,
             zerolinecolor='rgba(244,228,188,0.3)'
         ),
         yaxis=dict(
-            title="Return on Investment (%)",
-            title_font=dict(color='#f4e4bc'),
-            tickfont=dict(color='#f4e4bc'),
+            title="ROI (%)",
+            title_font=dict(color='#f4e4bc', size=11),
+            tickfont=dict(color='#f4e4bc', size=9),
             gridcolor='rgba(139,115,85,0.25)',
             ticksuffix='%',
             zeroline=True,
             zerolinecolor='rgba(244,228,188,0.3)'
         ),
-        height=450,
+        height=420,
         paper_bgcolor='rgba(0,0,0,0)',
         plot_bgcolor='rgba(26,42,58,0.8)',
         legend=dict(
             title=dict(
                 text='Category',
-                font=dict(color='#ffd700', size=11)
+                font=dict(color='#ffd700', size=10)
             ),
-            font=dict(color='#f4e4bc', size=10),
+            font=dict(color='#f4e4bc', size=9),
             bgcolor='rgba(92,77,58,0.85)',
             bordercolor='#5c4d3a',
             borderwidth=1,
-            orientation='v',
+            orientation='h',
             yanchor='top',
-            y=0.98,
-            xanchor='left',
-            x=1.02
+            y=-0.15,
+            xanchor='center',
+            x=0.5,
+            itemsizing='constant',
+            itemwidth=30
         ),
-        margin=dict(l=70, r=150, t=70, b=60)
+        margin=dict(l=55, r=20, t=60, b=90)
     )
     
     return fig
@@ -2438,15 +2468,15 @@ def main():
                     help="Equippable hammer from Below Ice Mountain quest. Saves 1 slot for smithing activities."
                 )
                 
-                has_crystal_saw = st.toggle(
-                    "Crystal Saw",
-                    value=params.get("crystal_saw", "false") == "true",
-                    help="Equippable saw from Eyes of Glouphrie quest. Saves 1 slot for hull crafting."
+                has_amys_saw = st.toggle(
+                    "Amy's Saw",
+                    value=params.get("amys_saw", "false") == "true",
+                    help="Equippable saw reward from Sailing. Saves 1 slot for hull crafting."
                 )
             else:
                 bank_speed = params.get("bank_speed", "Medium")
                 has_imcando_hammer = params.get("imcando_hammer", "false") == "true"
-                has_crystal_saw = params.get("crystal_saw", "false") == "true"
+                has_amys_saw = params.get("amys_saw", "false") == "true"
             
             st.divider()
             
@@ -2468,7 +2498,7 @@ def main():
                 st.query_params["show_gp_hr"] = str(show_gp_hr).lower()
                 st.query_params["bank_speed"] = bank_speed
                 st.query_params["imcando_hammer"] = str(has_imcando_hammer).lower()
-                st.query_params["crystal_saw"] = str(has_crystal_saw).lower()
+                st.query_params["amys_saw"] = str(has_amys_saw).lower()
                 st.query_params["quantity"] = str(quantity)
                 st.toast("Settings applied!")
         
@@ -2505,7 +2535,7 @@ def main():
         "show_gp_hr": show_gp_hr,
         "bank_speed": params.get("bank_speed", "Medium"),
         "has_imcando_hammer": params.get("imcando_hammer", "false") == "true",
-        "has_crystal_saw": params.get("crystal_saw", "false") == "true",
+        "has_amys_saw": params.get("amys_saw", "false") == "true",
     }
     
     # Main tabs
@@ -2747,13 +2777,13 @@ def main():
                                 step_icon_url = get_item_icon_url(step['name'])
                                 
                                 if step_type == "Output":
-                                    icon = "ðŸŽ¯"
+                                    icon = "Ã°Å¸Å½Â¯"
                                     bg_color = "rgba(212,175,55,0.2)"
                                 elif step_type == "Input":
-                                    icon = "ðŸ“¥"
+                                    icon = "Ã°Å¸â€œÂ¥"
                                     bg_color = "rgba(93,173,226,0.2)"
                                 else:
-                                    icon = "âš™ï¸"
+                                    icon = "Ã¢Å¡â„¢Ã¯Â¸Â"
                                     bg_color = "rgba(139,115,85,0.2)"
                                 
                                 self_note = " (self-collected)" if step.get("is_self_obtained") and step_type != "Output" else ""
@@ -3117,7 +3147,7 @@ def main():
             filter_outliers = st.toggle(
                 "Filter Statistical Outliers",
                 value=False,
-                help="Remove values beyond 1.5×IQR (standard outlier detection)"
+                help="Remove values beyond 1.5Ã—IQR (standard outlier detection)"
             )
         
         # Calculate all for charts
@@ -3194,7 +3224,7 @@ def main():
             
             # Row 3: Profit distribution histogram
             profit_label = "Per-Item Profit" if use_per_item else f"Batch Profit (qty: {quantity})"
-            st.subheader(f"Distribution Analysis — {profit_label}")
+            st.subheader(f"Distribution Analysis â€” {profit_label}")
             profits = [r["_profit_raw"] for r in all_results_for_charts]
             fig = create_profit_histogram(profits, per_item=use_per_item)
             st.plotly_chart(fig, use_container_width=True)
