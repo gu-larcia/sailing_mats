@@ -7,8 +7,8 @@ A comprehensive Streamlit application for tracking Old School RuneScape Sailing 
 This version fixes critical bugs and significantly improves the mobile experience.
 
 ### Bug Fixes
-- **Hull Repair Kit Calculation**: Fixed incorrect profit calculation for repair kits. The multi-input recipe (hull parts + nails = kit) was using calculation logic meant for linear chains. Now correctly calculates material costs for all multi-input recipes.
-- **Amy's Saw (renamed from Crystal Saw)**: Corrected the equippable saw tool - it's Amy's Saw, not Crystal Saw. Crystal Saw is not equippable.
+- **Hull Repair Kit Recipe**: MAJOR FIX - The repair kit chains were referencing completely wrong ingredients, and then multiplying an already inflated result. They processing chain now correctly assigns the correct ingredients and handles multiple outputs (2 or 3 depending on wood quality) as a seperate function from the original cost calculator.
+- **Amy's Saw (renamed from Crystal Saw)**: Corrected the equippable saw tool - it's Amy's Saw, not Crystal Saw. And Crystal Saw is not equippable!
 
 ### Mobile Chart Improvements
 - **Responsive Legends**: All chart legends now use horizontal orientation and position at bottom/top instead of cutting off on the right side
@@ -26,7 +26,7 @@ Note: `amys_saw` replaces the old `crystal_saw` parameter.
 
 ## What's New in v4.3
 
-This version significantly improves the **Analytics tab** with better chart design, cleaner legends, and better visualizations.
+This version significantly improves the **Analytics tab** with better chart design, proper legends, and more insightful visualizations.
 
 ### Enhanced Analytics Charts
 - **ROI vs Profit Scatter**: Now has a proper category legend that exports correctly, annotations for notable items, and quadrant reference lines
@@ -64,7 +64,7 @@ Items are now colored by their **actual material tier**, just like in-game:
 - Cleaner grid lines and borders
 
 ### Bug Fixes & UX Improvements
-- **Hull Repair Kits**: Reenabled hull parts repair kit.
+- **Hull Repair Kits**: Added missing processing chain (was showing empty category)
 - **Mobile-friendly tables**: Tables now scroll horizontally on mobile devices
 - **Responsive design**: Better touch targets, scrollable tabs, adaptive font sizes
 - **Default quantity = 1**: More intuitive starting point for per-item analysis
@@ -80,10 +80,10 @@ This version adds **proper GP/hr calculations** with separate toggles for the Im
 - **Ancient Furnace support**: Halves smithing time when enabled
 
 ### Equipped Tools (Separate Toggles)
-- **Imcando Hammer**: Saves 1 inventory slot for smithing activities (keel parts, nails). Obtained from Below Ice Mountain quest.
-- **Crystal Saw**: Saves 1 inventory slot for hull crafting. Obtained from Eyes of Glouphrie quest.
+- **Imcando Hammer**: Saves 1 inventory slot for smithing activities (keel parts, nails).
+- **Crystal Saw**: Saves 1 inventory slot for hull crafting.
 - **Both together**: Hull parts need both tools - each one you have equipped saves a slot (up to 2 total)
-- **Defaults to OFF**: These are big unlocks, not assumed
+- **Defaults to OFF**: These are big unlocks, not assumed.
 
 ### Enhanced Chain Details
 - When GP/hr is enabled, the chain details expander shows a full breakdown:
@@ -290,7 +290,11 @@ https://your-app.streamlit.app/?plank_method=Sawmill&double_mould=true&quantity=
 ## Changelog
 
 ### v4.4 (Mobile & Bug Fix Update)
-- **Hull Repair Kit fix**: Fixed calculation bug for multi-input recipes (hull parts + nails). Was incorrectly using cascading ratios.
+- **Hull Repair Kit recipe fix**: MAJOR BUG - Repair kits were using completely wrong ingredients (hull parts instead of planks, bronze nails instead of tier-matched nails, missing swamp paste). Now uses correct wiki recipes:
+  - Planks (not hull parts) - appropriate tier
+  - Tier-matched nails (Bronze→Iron→Steel→Mithril→Adamant→Rune→Dragon)
+  - 5 Swamp paste
+  - Produces 2-3 kits per craft depending on tier
 - **Amy's Saw**: Renamed from "Crystal Saw" - the equippable saw is Amy's Saw from Sailing, not Crystal Saw
 - **Mobile chart legends**: Changed all charts to use horizontal legends at top/bottom instead of vertical on right
 - **Reduced chart margins**: Smaller margins maximize chart viewing area on small screens
@@ -298,6 +302,7 @@ https://your-app.streamlit.app/?plank_method=Sawmill&double_mould=true&quantity=
 - **Plotly mobile CSS**: Added CSS rules for modebar scaling, SVG text sizing, and legend overflow prevention
 - **Shorter annotations**: ROI scatter annotations truncated to 15 characters for mobile display
 - **Updated URL params**: `amys_saw` replaces `crystal_saw` parameter
+- **Added Swamp paste**: Added to item database for repair kit calculations
 
 ### v4.3 (Enhanced Analytics Edition)
 - **OSRS-authentic color system**: Items colored by material tier (dragon=red, rune=cyan, adamant=green, etc.)

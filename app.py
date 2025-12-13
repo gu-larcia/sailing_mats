@@ -820,6 +820,11 @@ AMMO_MOULDS = {
     27012: "Double ammo mould",
 }
 
+# Miscellaneous crafting materials
+MISC_ITEMS = {
+    1941: "Swamp paste",
+}
+
 # Processing costs by wood type
 SAWMILL_COSTS = {
     "Plank": 100,
@@ -1152,7 +1157,8 @@ def calculate_gp_per_hour(
 ALL_ITEMS = {
     **ALL_LOGS, **ALL_PLANKS, **HULL_PARTS, **LARGE_HULL_PARTS,
     **HULL_REPAIR_KITS, **ALL_ORES, **ALL_BARS, **KEEL_PARTS,
-    **LARGE_KEEL_PARTS, **ALL_NAILS, **ALL_CANNONBALLS, **AMMO_MOULDS
+    **LARGE_KEEL_PARTS, **ALL_NAILS, **ALL_CANNONBALLS, **AMMO_MOULDS,
+    **MISC_ITEMS
 }
 
 
@@ -1357,28 +1363,19 @@ class ProcessingChain:
                     output_step.quantity = 4
                     input_step.quantity = 1
         
-        # Hull Repair Kits use multi-input: hull parts AND nails combine to make kit
-        # Handle these specially - each input is per-kit, not cascaded
-        is_multi_input = self.category == "Hull Repair Kits"
-        
         num_steps = len(self.steps)
         needed = [0.0] * num_steps
         needed[-1] = final_quantity
 
-        if is_multi_input and num_steps >= 3:
-            # For multi-input chains: each non-output step uses its quantity directly
-            # e.g., 1 hull part + 5 nails = 1 kit (each input is per kit produced)
-            for idx in range(num_steps - 1):
-                needed[idx] = final_quantity * getattr(self.steps[idx], 'quantity', 1)
-        else:
-            # Standard cascading calculation for linear chains
-            for idx in range(num_steps - 2, -1, -1):
-                prev = self.steps[idx]
-                nxt = self.steps[idx + 1]
-                if getattr(nxt, 'quantity', 0) == 0:
-                    needed[idx] = needed[idx + 1] * getattr(prev, 'quantity', 1)
-                else:
-                    needed[idx] = needed[idx + 1] * (getattr(prev, 'quantity', 1) / getattr(nxt, 'quantity', 1))
+        # Standard cascading calculation - works for both linear and multi-input chains
+        # by propagating ratios backwards from output to inputs
+        for idx in range(num_steps - 2, -1, -1):
+            prev = self.steps[idx]
+            nxt = self.steps[idx + 1]
+            if getattr(nxt, 'quantity', 0) == 0:
+                needed[idx] = needed[idx + 1] * getattr(prev, 'quantity', 1)
+            else:
+                needed[idx] = needed[idx + 1] * (getattr(prev, 'quantity', 1) / getattr(nxt, 'quantity', 1))
 
         for i, step in enumerate(self.steps):
             resolved_id = id_lookup.get_or_find_id(step.item_id, step.item_name)
@@ -1563,28 +1560,41 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Large Hull Parts"].append(chain)
     
-    # HULL REPAIR KITS (1 hull part + nails = 1 repair kit)
-    # Repair kits use the same tier hull parts plus appropriate nails
+    # HULL REPAIR KITS - Correct recipes from OSRS Wiki
+    # Recipe: Planks + Tier-matched Nails + Swamp paste = Multiple kits
+    # Swamp paste ID: 1941
+    # Lower tiers (Wooden-Camphor): 2 planks + 10 nails = 2 kits
+    # Higher tiers (Ironwood-Rosewood): 1 plank + nails = 3 kits
+    
+    # Format: (plank_id, plank_name, nail_id, nail_name, paste_qty, plank_qty, nail_qty, output_qty, kit_id, kit_name)
     repair_kit_mappings = [
-        (32041, "Wooden hull parts", 4819, "Bronze nails", 31964, "Repair kit"),
-        (32044, "Oak hull parts", 4819, "Bronze nails", 31967, "Oak repair kit"),
-        (32047, "Teak hull parts", 4819, "Bronze nails", 31970, "Teak repair kit"),
-        (32050, "Mahogany hull parts", 4819, "Bronze nails", 31973, "Mahogany repair kit"),
-        (32053, "Camphor hull parts", 4819, "Bronze nails", 31976, "Camphor repair kit"),
-        (32056, "Ironwood hull parts", 4819, "Bronze nails", 31979, "Ironwood repair kit"),
-        (32059, "Rosewood hull parts", 4819, "Bronze nails", 31982, "Rosewood repair kit"),
+        # Wooden: 2 planks + 10 bronze nails + 5 paste = 2 kits
+        (960, "Plank", 4819, "Bronze nails", 5, 2, 10, 2, 31964, "Repair kit"),
+        # Oak: 2 planks + 10 iron nails + 5 paste = 2 kits
+        (8778, "Oak plank", 4820, "Iron nails", 5, 2, 10, 2, 31967, "Oak repair kit"),
+        # Teak: 2 planks + 10 steel nails + 5 paste = 2 kits
+        (8780, "Teak plank", 1539, "Steel nails", 5, 2, 10, 2, 31970, "Teak repair kit"),
+        # Mahogany: 2 planks + 10 mithril nails + 5 paste = 2 kits
+        (8782, "Mahogany plank", 4822, "Mithril nails", 5, 2, 10, 2, 31973, "Mahogany repair kit"),
+        # Camphor: 2 planks + 10 adamant nails + 5 paste = 2 kits
+        (31432, "Camphor plank", 4823, "Adamantite nails", 5, 2, 10, 2, 31976, "Camphor repair kit"),
+        # Ironwood: 1 plank + 10 rune nails + 5 paste = 3 kits
+        (31435, "Ironwood plank", 4824, "Rune nails", 5, 1, 10, 3, 31979, "Ironwood repair kit"),
+        # Rosewood: 1 plank + 5 dragon nails + 5 paste = 3 kits
+        (31438, "Rosewood plank", 31406, "Dragon nails", 5, 1, 5, 3, 31982, "Rosewood repair kit"),
     ]
     
-    for hull_id, hull_name, nail_id, nail_name, kit_id, kit_name in repair_kit_mappings:
+    for plank_id, plank_name, nail_id, nail_name, paste_qty, plank_qty, nail_qty, output_qty, kit_id, kit_name in repair_kit_mappings:
         chain = ProcessingChain(
             name=kit_name,
             category="Hull Repair Kits"
         )
-        # 1 hull part + 5 nails = 1 repair kit (estimated recipe)
+        # Multi-input recipe: planks + nails + swamp paste = kits
         chain.steps = [
-            ChainStep(hull_id, hull_name, 1),
-            ChainStep(nail_id, nail_name, 5),
-            ChainStep(kit_id, kit_name, 1)
+            ChainStep(plank_id, plank_name, plank_qty),
+            ChainStep(nail_id, nail_name, nail_qty),
+            ChainStep(1941, "Swamp paste", paste_qty),
+            ChainStep(kit_id, kit_name, output_qty)
         ]
         chains["Hull Repair Kits"].append(chain)
     
