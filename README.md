@@ -41,6 +41,12 @@ Items are now colored by their **actual material tier**, just like in-game:
 - Annotations highlighting top performers
 - Cleaner grid lines and borders
 
+### Bug Fixes & UX Improvements
+- **Hull Repair Kits**: Added missing processing chain (was showing empty category)
+- **Mobile-friendly tables**: Tables now scroll horizontally on mobile devices
+- **Responsive design**: Better touch targets, scrollable tabs, adaptive font sizes
+- **Default quantity = 1**: More intuitive starting point for per-item analysis
+
 ## What's New in v4.2
 
 This version adds **proper GP/hr calculations** with separate toggles for the Imcando Hammer and Crystal Saw, so you can see exactly how your tool unlocks affect your profits.
@@ -264,7 +270,11 @@ https://your-app.streamlit.app/?plank_method=Sawmill&double_mould=true&quantity=
 ### v4.3 (Enhanced Analytics Edition)
 - **OSRS-authentic color system**: Items colored by material tier (dragon=red, rune=cyan, adamant=green, etc.)
 - **Metal tier colors**: Bronze, Iron, Steel, Mithril, Adamant, Rune, Dragon all have their in-game colors
-- **Wood tier colors**: Oak, Teak, Mahogany, Camphor, Ironwood, Rosewood match their appearance
+- **Wood tier colors**: Sailing woods match metal tier equivalents (Rosewood=Dragon, Ironwood=Rune, Camphor=Adamant)
+- **Hull Repair Kits**: Added missing processing chain for repair kits (hull parts + nails)
+- **Mobile-friendly tables**: Added horizontal scrolling for dataframes on mobile devices
+- **Responsive design**: Better touch targets, scrollable tabs, and adaptive font sizes for mobile
+- **Default quantity = 1**: Changed default calculation quantity to 1 for clearer per-item profit analysis
 - **ROI vs Profit scatter redesign**: Separate traces per category for proper legend support on export
 - **Automatic item annotations**: Top profit and ROI items are labeled on the scatter plot
 - **Distribution histogram overhaul**: Simplified design with automatic outlier detection and exclusion

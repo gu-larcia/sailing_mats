@@ -142,7 +142,7 @@ OSRS_CSS = """
 [data-testid="stDataFrame"] {
     border: 3px solid var(--driftwood);
     border-radius: 8px;
-    overflow: hidden;
+    overflow: visible;
 }
 
 /* Buttons - wooden/gold style */
@@ -332,6 +332,182 @@ hr {
     font-family: 'Crimson Text', serif;
     font-size: 1rem;
     word-wrap: break-word;
+}
+
+/* ===================
+   MOBILE RESPONSIVE
+   =================== */
+
+/* Enable horizontal scroll on dataframes/tables */
+[data-testid="stDataFrame"] {
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch;
+    width: 100% !important;
+}
+
+[data-testid="stDataFrame"] > div {
+    overflow-x: auto !important;
+    min-width: 100%;
+}
+
+[data-testid="stDataFrame"] iframe {
+    min-width: 100%;
+}
+
+/* Ensure table containers scroll */
+.stDataFrame, .dataframe-container {
+    overflow-x: auto !important;
+    max-width: 100%;
+    display: block;
+}
+
+/* Force table to allow horizontal scroll */
+[data-testid="stDataFrame"] table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+/* Arrow wrapper - ensure dataframe wrapper scrolls */
+[data-testid="stDataFrame"] [data-testid="stDataFrameResizable"] {
+    overflow-x: auto !important;
+    max-width: 100% !important;
+}
+
+/* Mobile-specific styles */
+@media screen and (max-width: 768px) {
+    /* Reduce padding on mobile */
+    .stApp {
+        padding: 0.5rem;
+    }
+    
+    /* Make sidebar collapsible more obvious */
+    [data-testid="stSidebar"] {
+        min-width: 250px;
+    }
+    
+    /* Smaller fonts for tables on mobile */
+    [data-testid="stDataFrame"] {
+        font-size: 0.85rem;
+    }
+    
+    /* Add scroll hint shadow on mobile */
+    [data-testid="stDataFrame"]::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 30px;
+        background: linear-gradient(to right, transparent, rgba(26,42,58,0.8));
+        pointer-events: none;
+        opacity: 0.7;
+    }
+    
+    /* Stack metric columns on mobile */
+    [data-testid="stMetric"] {
+        padding: 10px;
+    }
+    
+    /* Ensure charts don't overflow */
+    .js-plotly-plot, .plotly {
+        max-width: 100% !important;
+        overflow-x: auto;
+    }
+    
+    /* Better touch targets for buttons */
+    .stButton > button {
+        min-height: 44px;
+        padding: 10px 16px;
+    }
+    
+    /* Form inputs more touch-friendly */
+    .stSelectbox, .stNumberInput, .stTextInput {
+        min-height: 44px;
+    }
+    
+    /* Tabs scroll horizontally on mobile */
+    .stTabs [data-baseweb="tab-list"] {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        flex-shrink: 0;
+        padding: 8px 12px;
+    }
+    
+    /* Headers smaller on mobile */
+    .stApp h1 {
+        font-size: 1.5rem !important;
+    }
+    
+    .stApp h2 {
+        font-size: 1.25rem !important;
+    }
+    
+    .stApp h3 {
+        font-size: 1.1rem !important;
+    }
+    
+    /* Best item cards stack better */
+    .best-item-display {
+        padding: 10px;
+    }
+    
+    .best-item-display img {
+        width: 32px;
+        height: 32px;
+    }
+    
+    /* Horizontal scroll hint text */
+    [data-testid="stDataFrame"]::before {
+        content: '← scroll →';
+        display: block;
+        text-align: center;
+        font-size: 0.7rem;
+        color: var(--gold-dark);
+        padding: 4px;
+        opacity: 0.7;
+    }
+}
+
+/* Extra small screens (phones in portrait) */
+@media screen and (max-width: 480px) {
+    /* Even smaller text */
+    [data-testid="stDataFrame"] {
+        font-size: 0.75rem;
+    }
+    
+    /* Compact metrics */
+    [data-testid="stMetric"] label {
+        font-size: 0.8rem !important;
+    }
+    
+    [data-testid="stMetric"] [data-testid="stMetricValue"] {
+        font-size: 1rem !important;
+    }
+}
+
+/* Ensure horizontal scroll indicator visible */
+[data-testid="stDataFrame"]::-webkit-scrollbar {
+    height: 8px;
+}
+
+[data-testid="stDataFrame"]::-webkit-scrollbar-track {
+    background: var(--driftwood-dark);
+    border-radius: 4px;
+}
+
+[data-testid="stDataFrame"]::-webkit-scrollbar-thumb {
+    background: var(--gold-dark);
+    border-radius: 4px;
+}
+
+[data-testid="stDataFrame"]::-webkit-scrollbar-thumb:hover {
+    background: var(--gold);
 }
 </style>
 <script>
@@ -977,10 +1153,10 @@ def get_wiki_image_url(item_name: str) -> str:
 def get_item_icon_url(item_name: str) -> str:
     """Get item icon URL with common naming fixes"""
     # Some items have different image names than their item names
+    # Note: Steel cannonball was renamed from "Cannonball" - wiki now uses "Steel_cannonball.png"
     name_fixes = {
         "Plank": "Plank",
         "Logs": "Logs",
-        "Steel cannonball": "Cannonball",  # Regular cannonball has different name
     }
     
     fixed_name = name_fixes.get(item_name, item_name)
@@ -1202,8 +1378,8 @@ class ProcessingChain:
                 unit_price = price_data.get("high", 0) if price_data and not is_free else 0
                 total_value = unit_price * step_qty
 
-                if is_input:
-                    results["raw_material_cost"] = total_value
+                # Add ALL input costs (not just first step) - fixes multi-input recipes like repair kits
+                results["raw_material_cost"] += total_value
 
             processing_cost = 0
             process_notes = ""
@@ -1358,6 +1534,31 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
             ChainStep(large_id, large_name, 1)
         ]
         chains["Large Hull Parts"].append(chain)
+    
+    # HULL REPAIR KITS (1 hull part + nails = 1 repair kit)
+    # Repair kits use the same tier hull parts plus appropriate nails
+    repair_kit_mappings = [
+        (32041, "Wooden hull parts", 4819, "Bronze nails", 31964, "Repair kit"),
+        (32044, "Oak hull parts", 4819, "Bronze nails", 31967, "Oak repair kit"),
+        (32047, "Teak hull parts", 4819, "Bronze nails", 31970, "Teak repair kit"),
+        (32050, "Mahogany hull parts", 4819, "Bronze nails", 31973, "Mahogany repair kit"),
+        (32053, "Camphor hull parts", 4819, "Bronze nails", 31976, "Camphor repair kit"),
+        (32056, "Ironwood hull parts", 4819, "Bronze nails", 31979, "Ironwood repair kit"),
+        (32059, "Rosewood hull parts", 4819, "Bronze nails", 31982, "Rosewood repair kit"),
+    ]
+    
+    for hull_id, hull_name, nail_id, nail_name, kit_id, kit_name in repair_kit_mappings:
+        chain = ProcessingChain(
+            name=kit_name,
+            category="Hull Repair Kits"
+        )
+        # 1 hull part + 5 nails = 1 repair kit (estimated recipe)
+        chain.steps = [
+            ChainStep(hull_id, hull_name, 1),
+            ChainStep(nail_id, nail_name, 5),
+            ChainStep(kit_id, kit_name, 1)
+        ]
+        chains["Hull Repair Kits"].append(chain)
     
     # KEEL PARTS (5 bars each, except dragon which needs 2 sheets)
     keel_mappings = [
@@ -2253,8 +2454,8 @@ def main():
                 "Calculate for quantity:",
                 min_value=1,
                 max_value=100000,
-                value=int(params.get("quantity", 100)),
-                step=10
+                value=int(params.get("quantity", 1)),
+                step=1
             )
             
             submitted = st.form_submit_button("Apply Settings", use_container_width=True)
@@ -2921,7 +3122,7 @@ def main():
         
         # Calculate all for charts
         all_results_for_charts = []
-        quantity = config.get("quantity", 100)
+        quantity = config.get("quantity", 1)
         
         for category, chains in all_chains.items():
             for chain in chains:
