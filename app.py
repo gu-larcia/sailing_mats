@@ -359,9 +359,9 @@ st.markdown(OSRS_CSS, unsafe_allow_html=True)
 # Constants
 API_BASE = "https://prices.runescape.wiki/api/v1/osrs"
 
-# =================
+# ===================
 # OSRS COLOR SYSTEM
-# =================
+# ===================
 
 # Metal tier colors - based on actual OSRS item appearances
 METAL_COLORS = {
@@ -386,9 +386,9 @@ WOOD_COLORS = {
     'yew': '#8B4513',         # Saddle brown
     'magic': '#4B0082',       # Indigo (magic logs glow)
     'redwood': '#A52A2A',     # Brown-red
-    'camphor': '#7B9971',     # Sage green (camphor)
-    'ironwood': '#4A4A4A',    # Dark gray (ironwood)
-    'rosewood': '#65000B',    # Dark rose red
+    'camphor': '#2E8B57',     # Adamant green (camphor = adamant tier)
+    'ironwood': '#00CED1',    # Rune cyan (ironwood = rune tier)
+    'rosewood': '#DC143C',    # Dragon red (rosewood = dragon tier)
 }
 
 # Category colors - thematic for each processing category

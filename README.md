@@ -15,6 +15,8 @@ This version significantly improves the **Analytics tab** with better chart desi
 
 ### OSRS-Authentic Color System
 Items are now colored by their **actual material tier**, just like in-game:
+
+**Metal Tiers:**
 - **Dragon**: Crimson red (#DC143C)
 - **Rune**: Cyan/turquoise (#00CED1)
 - **Adamant**: Sea green (#2E8B57)
@@ -23,10 +25,10 @@ Items are now colored by their **actual material tier**, just like in-game:
 - **Iron**: Dark gray (#5C5C5C)
 - **Bronze**: Classic bronze (#CD7F32)
 
-Wood tiers also match their in-game appearance:
-- **Rosewood**: Dark rose red
-- **Ironwood**: Dark gray
-- **Camphor**: Sage green
+**Sailing Wood Tiers** (matched to metal equivalents):
+- **Rosewood**: Dragon red - highest tier
+- **Ironwood**: Rune cyan - rune equivalent
+- **Camphor**: Adamant green - adamant equivalent  
 - **Mahogany**: Dark reddish brown
 - **Teak**: Medium brown
 - **Oak**: Tan
