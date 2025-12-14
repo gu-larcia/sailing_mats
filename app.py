@@ -2475,13 +2475,13 @@ def main():
                 has_imcando_hammer = st.toggle(
                     "Imcando Hammer",
                     value=params.get("imcando_hammer", "false") == "true",
-                    help="Equippable hammer from Below Ice Mountain quest. Saves 1 slot for smithing activities."
+                    help="Equippable hammer. Saves 1 slot for smithing activities."
                 )
                 
                 has_amys_saw = st.toggle(
                     "Amy's Saw",
                     value=params.get("amys_saw", "false") == "true",
-                    help="Equippable saw reward from Sailing. Saves 1 slot for hull crafting."
+                    help="Equippable saw. Saves 1 slot for hull crafting."
                 )
             else:
                 bank_speed = params.get("bank_speed", "Medium")
