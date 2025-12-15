@@ -1,6 +1,11 @@
-# OSRS Sailing Materials Tracker v4.4 - Text Cleanup
+# OSRS Sailing Materials Tracker v4.5
 
 A comprehensive Streamlit application for tracking Old School RuneScape Sailing skill materials with real-time Grand Exchange prices, complete processing chain calculations, and **gold per hour estimates**.
+
+## What's New in v4.5
+- **BankLocation expansion** - Now tracks the production facility responsible for each production chain. 
+- **GP/HR Optimizations** - Now displays the actual number of materials being processed per trip.
+- **Organization preparation** - Removed comments and sectionheaders to prepare for larger function reorganization ("It's all one Python file?!")
 
 ## What's New in v4.4
 
