@@ -1,6 +1,6 @@
 """
 OSRS Sailing Materials Tracker
-Version 4.5
+Version 4.4
 """
 
 import streamlit as st
@@ -14,6 +14,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
+# Page config
 st.set_page_config(
     page_title="OSRS Sailing Tracker",
     page_icon="https://oldschool.runescape.wiki/images/Sailing_icon.png",
@@ -21,10 +22,16 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# ==============
+# OSRS THEME CSS
+# ==============
+
 OSRS_CSS = """
 <style>
+/* Import OSRS-style fonts */
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
 
+/* Root variables for OSRS theme */
 :root {
     --parchment: #f4e4bc;
     --parchment-dark: #e8d5a3;
@@ -44,10 +51,12 @@ OSRS_CSS = """
     --dragon-red: #c0392b;
 }
 
+/* Main app background - dark ocean theme */
 .stApp {
     background: linear-gradient(180deg, #1a2a3a 0%, #0d1a24 50%, #1a2a3a 100%);
 }
 
+/* Sidebar styling - parchment look */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, var(--parchment) 0%, var(--parchment-dark) 100%);
     border-right: 4px solid var(--driftwood);
@@ -64,6 +73,7 @@ OSRS_CSS = """
     color: var(--driftwood-dark) !important;
 }
 
+/* Main content headers */
 .stApp h1, .stApp h2, .stApp h3 {
     font-family: 'Cinzel', serif !important;
     color: var(--gold) !important;
@@ -75,6 +85,7 @@ OSRS_CSS = """
     padding-bottom: 10px;
 }
 
+/* Tabs styling */
 .stTabs [data-baseweb="tab-list"] {
     background: linear-gradient(180deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
     border-radius: 8px 8px 0 0;
@@ -103,6 +114,7 @@ OSRS_CSS = """
     padding: 20px;
 }
 
+/* Metrics styling - gold coin look */
 [data-testid="stMetric"] {
     background: linear-gradient(145deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
     border: 2px solid var(--gold-dark);
@@ -126,12 +138,14 @@ OSRS_CSS = """
     font-family: 'Crimson Text', serif !important;
 }
 
+/* Dataframe styling */
 [data-testid="stDataFrame"] {
     border: 3px solid var(--driftwood);
     border-radius: 8px;
     overflow: visible;
 }
 
+/* Buttons - wooden/gold style */
 .stButton > button {
     font-family: 'Cinzel', serif !important;
     background: linear-gradient(180deg, var(--gold) 0%, var(--gold-dark) 100%);
@@ -149,6 +163,7 @@ OSRS_CSS = """
     box-shadow: 0 4px 8px rgba(0,0,0,0.4);
 }
 
+/* Form styling */
 [data-testid="stForm"] {
     background: linear-gradient(180deg, rgba(139,115,85,0.2) 0%, rgba(92,77,58,0.2) 100%);
     border: 2px solid var(--driftwood);
@@ -156,6 +171,7 @@ OSRS_CSS = """
     padding: 15px;
 }
 
+/* Selectbox styling - disable text input */
 .stSelectbox > div > div {
     background: var(--parchment-light) !important;
     border: 2px solid var(--driftwood) !important;
@@ -165,15 +181,18 @@ OSRS_CSS = """
     color: var(--driftwood-dark) !important;
 }
 
+/* Make selectbox input read-only appearance */
 .stSelectbox input {
     caret-color: transparent !important;
     pointer-events: none !important;
 }
 
+/* Ensure the dropdown arrow is clickable */
 .stSelectbox > div > div {
     cursor: pointer !important;
 }
 
+/* Selectbox dropdown menu */
 [data-baseweb="select"] > div,
 [data-baseweb="popover"] > div,
 [role="listbox"],
@@ -186,18 +205,22 @@ OSRS_CSS = """
     background: var(--parchment-dark) !important;
 }
 
+/* Main content selectbox text */
 .stSelectbox label {
     color: var(--parchment) !important;
 }
 
+/* Sidebar selectbox text */
 [data-testid="stSidebar"] .stSelectbox label {
     color: var(--driftwood-dark) !important;
 }
 
+/* Toggle styling */
 .stCheckbox label, .stToggle label {
     font-family: 'Crimson Text', serif !important;
 }
 
+/* Expander styling */
 .streamlit-expanderHeader {
     font-family: 'Cinzel', serif !important;
     background: linear-gradient(180deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
@@ -206,6 +229,7 @@ OSRS_CSS = """
     color: var(--gold) !important;
 }
 
+/* Link button */
 .stLinkButton > a {
     font-family: 'Cinzel', serif !important;
     background: linear-gradient(180deg, var(--ocean) 0%, var(--ocean-dark) 100%);
@@ -213,16 +237,19 @@ OSRS_CSS = """
     border: 2px solid var(--ocean-light);
 }
 
+/* Caption text */
 .stCaption {
     font-family: 'Crimson Text', serif !important;
     color: var(--parchment-dark) !important;
     font-style: italic;
 }
 
+/* Spinner */
 .stSpinner > div {
     border-color: var(--gold) !important;
 }
 
+/* Toast notifications */
 [data-testid="stToast"] {
     background: linear-gradient(180deg, var(--parchment) 0%, var(--parchment-dark) 100%);
     border: 2px solid var(--gold-dark);
@@ -230,21 +257,25 @@ OSRS_CSS = """
     font-family: 'Crimson Text', serif;
 }
 
+/* Divider */
 hr {
     border-color: var(--driftwood) !important;
 }
 
+/* Number input in sidebar */
 [data-testid="stSidebar"] input {
     background: var(--parchment-light) !important;
     border: 2px solid var(--driftwood) !important;
     color: var(--driftwood-dark) !important;
 }
 
+/* Warning/Info boxes */
 .stAlert {
     font-family: 'Crimson Text', serif;
     border-radius: 6px;
 }
 
+/* Custom item card styling */
 .item-card {
     background: linear-gradient(145deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
     border: 2px solid var(--gold-dark);
@@ -273,6 +304,7 @@ hr {
     font-weight: 600;
 }
 
+/* Best item display with icon */
 .best-item-display {
     background: linear-gradient(145deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
     border: 2px solid var(--gold-dark);
@@ -302,6 +334,11 @@ hr {
     word-wrap: break-word;
 }
 
+/* ===================
+   MOBILE RESPONSIVE
+   =================== */
+
+/* Enable horizontal scroll on dataframes/tables */
 [data-testid="stDataFrame"] {
     overflow-x: auto !important;
     overflow-y: visible !important;
@@ -318,36 +355,44 @@ hr {
     min-width: 100%;
 }
 
+/* Ensure table containers scroll */
 .stDataFrame, .dataframe-container {
     overflow-x: auto !important;
     max-width: 100%;
     display: block;
 }
 
+/* Force table to allow horizontal scroll */
 [data-testid="stDataFrame"] table {
     display: block;
     overflow-x: auto;
     white-space: nowrap;
 }
 
+/* Arrow wrapper - ensure dataframe wrapper scrolls */
 [data-testid="stDataFrame"] [data-testid="stDataFrameResizable"] {
     overflow-x: auto !important;
     max-width: 100% !important;
 }
 
+/* Mobile-specific styles */
 @media screen and (max-width: 768px) {
+    /* Reduce padding on mobile */
     .stApp {
         padding: 0.5rem;
     }
     
+    /* Make sidebar collapsible more obvious */
     [data-testid="stSidebar"] {
         min-width: 250px;
     }
     
+    /* Smaller fonts for tables on mobile */
     [data-testid="stDataFrame"] {
         font-size: 0.85rem;
     }
     
+    /* Add scroll hint shadow on mobile */
     [data-testid="stDataFrame"]::after {
         content: '';
         position: absolute;
@@ -360,38 +405,46 @@ hr {
         opacity: 0.7;
     }
     
+    /* Stack metric columns on mobile */
     [data-testid="stMetric"] {
         padding: 10px;
     }
     
+    /* Ensure charts don't overflow */
     .js-plotly-plot, .plotly {
         max-width: 100% !important;
         overflow-x: auto;
     }
     
+    /* Plotly chart mobile improvements */
     .js-plotly-plot .plotly .modebar {
         transform: scale(0.8);
         transform-origin: top right;
     }
     
+    /* Reduce SVG text size on mobile */
     .js-plotly-plot .plotly svg text {
         font-size: 90% !important;
     }
     
+    /* Ensure legend doesn't overflow */
     .js-plotly-plot .legend {
         max-width: 100%;
         overflow-x: auto;
     }
     
+    /* Better touch targets for buttons */
     .stButton > button {
         min-height: 44px;
         padding: 10px 16px;
     }
     
+    /* Form inputs more touch-friendly */
     .stSelectbox, .stNumberInput, .stTextInput {
         min-height: 44px;
     }
     
+    /* Tabs scroll horizontally on mobile */
     .stTabs [data-baseweb="tab-list"] {
         overflow-x: auto;
         flex-wrap: nowrap;
@@ -403,6 +456,7 @@ hr {
         padding: 8px 12px;
     }
     
+    /* Headers smaller on mobile */
     .stApp h1 {
         font-size: 1.5rem !important;
     }
@@ -415,6 +469,7 @@ hr {
         font-size: 1.1rem !important;
     }
     
+    /* Best item cards stack better */
     .best-item-display {
         padding: 10px;
     }
@@ -424,6 +479,7 @@ hr {
         height: 32px;
     }
     
+    /* Horizontal scroll hint text */
     [data-testid="stDataFrame"]::before {
         content: 'scroll horizontally';
         display: block;
@@ -435,11 +491,14 @@ hr {
     }
 }
 
+/* Extra small screens (phones in portrait) */
 @media screen and (max-width: 480px) {
+    /* Even smaller text */
     [data-testid="stDataFrame"] {
         font-size: 0.75rem;
     }
     
+    /* Compact metrics */
     [data-testid="stMetric"] label {
         font-size: 0.8rem !important;
     }
@@ -449,6 +508,7 @@ hr {
     }
 }
 
+/* Ensure horizontal scroll indicator visible */
 [data-testid="stDataFrame"]::-webkit-scrollbar {
     height: 8px;
 }
@@ -468,12 +528,14 @@ hr {
 }
 </style>
 <script>
+// Disable autocomplete on all inputs
 document.addEventListener('DOMContentLoaded', function() {
     const inputs = document.querySelectorAll('input');
     inputs.forEach(input => {
         input.setAttribute('autocomplete', 'off');
     });
 });
+// Also run on mutations for dynamic content
 const observer = new MutationObserver(function(mutations) {
     const inputs = document.querySelectorAll('input');
     inputs.forEach(input => {
@@ -484,52 +546,66 @@ observer.observe(document.body, { childList: true, subtree: true });
 </script>
 """
 
+# Applying OSRS theme
 st.markdown(OSRS_CSS, unsafe_allow_html=True)
 
+# Constants
 API_BASE = "https://prices.runescape.wiki/api/v1/osrs"
 
+# ===================
+# OSRS COLOR SYSTEM
+# ===================
+
+# Metal tier colors - based on actual OSRS item appearances
 METAL_COLORS = {
-    'bronze': '#CD7F32',
-    'iron': '#5C5C5C',
-    'steel': '#71797E',
-    'black': '#1C1C1C',
-    'mithril': '#284B63',
-    'adamant': '#2E8B57',
-    'rune': '#00CED1',
-    'dragon': '#DC143C',
+    'bronze': '#CD7F32',      # Classic bronze orange-brown
+    'iron': '#5C5C5C',        # Dark iron gray
+    'steel': '#71797E',       # Steel gray
+    'black': '#1C1C1C',       # Near black
+    'mithril': '#284B63',     # Dark mithril blue
+    'adamant': '#2E8B57',     # Adamant green (sea green)
+    'rune': '#00CED1',        # Rune cyan/turquoise
+    'dragon': '#DC143C',      # Dragon crimson red
 }
 
+# Wood tier colors - based on actual wood appearances
 WOOD_COLORS = {
-    'wooden': '#DEB887',
-    'oak': '#C19A6B',
-    'willow': '#A8C090',
-    'teak': '#8B7355',
-    'maple': '#C9A66B',
-    'mahogany': '#6B4423',
-    'yew': '#8B4513',
-    'magic': '#4B0082',
-    'redwood': '#A52A2A',
-    'camphor': '#2E8B57',
-    'ironwood': '#00CED1',
-    'rosewood': '#DC143C',
+    'wooden': '#DEB887',      # Burlywood (basic plank)
+    'oak': '#C19A6B',         # Camel tan
+    'willow': '#A8C090',      # Willow greenish
+    'teak': '#8B7355',        # Teak brown
+    'maple': '#C9A66B',       # Maple golden brown
+    'mahogany': '#6B4423',    # Dark mahogany
+    'yew': '#8B4513',         # Saddle brown
+    'magic': '#4B0082',       # Indigo (magic logs glow)
+    'redwood': '#A52A2A',     # Brown-red
+    'camphor': '#2E8B57',     # Adamant green (camphor = adamant tier)
+    'ironwood': '#00CED1',    # Rune cyan (ironwood = rune tier)
+    'rosewood': '#DC143C',    # Dragon red (rosewood = dragon tier)
 }
 
+# Category colors - thematic for each processing category
 CATEGORY_COLORS = {
-    'Planks': '#C19A6B',
-    'Hull Parts': '#8B7355',
-    'Large Hull Parts': '#6B4423',
-    'Hull Repair Kits': '#DAA520',
-    'Keel Parts': '#71797E',
-    'Large Keel Parts': '#5F9EA0',
-    'Nails': '#CD7F32',
-    'Cannonballs': '#5C5C5C',
-    'Other': '#7f8c8d',
+    'Planks': '#C19A6B',           # Wood tan
+    'Hull Parts': '#8B7355',       # Crafted wood brown
+    'Large Hull Parts': '#6B4423', # Dark mahogany
+    'Hull Repair Kits': '#DAA520', # Goldenrod (repair/utility)
+    'Keel Parts': '#71797E',       # Steel gray (mixed metals)
+    'Large Keel Parts': '#5F9EA0', # Cadet blue (larger metal)
+    'Nails': '#CD7F32',            # Bronze (common nails)
+    'Cannonballs': '#5C5C5C',      # Iron gray
+    'Other': '#7f8c8d',            # Neutral gray
 }
 
 
 def get_item_tier_color(item_name: str, profit: float = 0) -> str:
+    """
+    Determine the appropriate OSRS color for an item based on its name.
+    Returns the tier color, or falls back to profit-based coloring.
+    """
     name_lower = item_name.lower()
     
+    # Check for metal tiers (order matters - check dragon first)
     if 'dragon' in name_lower:
         return METAL_COLORS['dragon']
     elif 'rune ' in name_lower or 'rune_' in name_lower or 'runite' in name_lower:
@@ -543,11 +619,13 @@ def get_item_tier_color(item_name: str, profit: float = 0) -> str:
     elif 'steel' in name_lower:
         return METAL_COLORS['steel']
     elif 'iron ' in name_lower or 'iron_' in name_lower or name_lower.startswith('iron'):
+        # Be careful not to match "ironwood"
         if 'ironwood' not in name_lower:
             return METAL_COLORS['iron']
     elif 'bronze' in name_lower:
         return METAL_COLORS['bronze']
     
+    # Check for wood tiers
     if 'rosewood' in name_lower:
         return WOOD_COLORS['rosewood']
     elif 'ironwood' in name_lower:
@@ -561,26 +639,35 @@ def get_item_tier_color(item_name: str, profit: float = 0) -> str:
     elif 'oak' in name_lower:
         return WOOD_COLORS['oak']
     elif 'wooden' in name_lower or name_lower == 'plank' or name_lower.endswith(' plank'):
+        # Basic plank/wooden
         if not any(wood in name_lower for wood in ['oak', 'teak', 'mahogany', 'camphor', 'ironwood', 'rosewood']):
             return WOOD_COLORS['wooden']
     
+    # Fallback: gold for profit, red for loss
     return '#d4af37' if profit >= 0 else '#c0392b'
 
 
 def get_tier_from_name(item_name: str) -> str:
+    """Extract the tier/material name from an item for labeling purposes."""
     name_lower = item_name.lower()
     
+    # Metal tiers
     for tier in ['dragon', 'rune', 'adamant', 'mithril', 'steel', 'iron', 'bronze']:
         if tier in name_lower and not (tier == 'iron' and 'ironwood' in name_lower):
             return tier.capitalize()
     
+    # Wood tiers
     for tier in ['rosewood', 'ironwood', 'camphor', 'mahogany', 'teak', 'oak', 'wooden']:
         if tier in name_lower:
             return tier.capitalize()
     
     return "Other"
 
+# =============
+# ITEM DATABASE
+# =============
 
+# ALL LOGS
 ALL_LOGS = {
     1511: "Logs",
     1521: "Oak logs",
@@ -594,21 +681,25 @@ ALL_LOGS = {
     2862: "Achey tree logs",
     10810: "Arctic pine logs",
     3239: "Bark",
+    # Sailing woods
     32904: "Camphor logs",
     32907: "Ironwood logs",
     32910: "Rosewood logs",
 }
 
+# ALL PLANKS
 ALL_PLANKS = {
     960: "Plank",
     8778: "Oak plank",
     8780: "Teak plank",
     8782: "Mahogany plank",
+    # Sailing planks
     31432: "Camphor plank",
     31435: "Ironwood plank",
     31438: "Rosewood plank",
 }
 
+# HULL PARTS (Regular - 5 planks each)
 HULL_PARTS = {
     32041: "Wooden hull parts",
     32044: "Oak hull parts",
@@ -619,6 +710,7 @@ HULL_PARTS = {
     32059: "Rosewood hull parts",
 }
 
+# LARGE HULL PARTS (5 regular hull parts each = 25 planks)
 LARGE_HULL_PARTS = {
     32062: "Large wooden hull parts",
     32065: "Large oak hull parts",
@@ -629,6 +721,7 @@ LARGE_HULL_PARTS = {
     32080: "Large rosewood hull parts",
 }
 
+# HULL REPAIR KITS
 HULL_REPAIR_KITS = {
     31964: "Repair kit",
     31967: "Oak repair kit",
@@ -639,6 +732,7 @@ HULL_REPAIR_KITS = {
     31982: "Rosewood repair kit",
 }
 
+# ALL ORES
 ALL_ORES = {
     436: "Copper ore",
     438: "Tin ore",
@@ -650,12 +744,15 @@ ALL_ORES = {
     449: "Adamantite ore",
     451: "Runite ore",
     21341: "Amethyst",
+    # Sailing ores
     31716: "Lead ore",
     31719: "Nickel ore",
+    # Essence
     1436: "Rune essence",
     1440: "Pure essence",
 }
 
+# ALL BARS
 ALL_BARS = {
     2349: "Bronze bar",
     2351: "Iron bar",
@@ -665,11 +762,13 @@ ALL_BARS = {
     2359: "Mithril bar",
     2361: "Adamantite bar",
     2363: "Runite bar",
+    # Sailing bars
     32889: "Lead bar",
     32892: "Cupronickel bar",
     31996: "Dragon metal sheet",
 }
 
+# KEEL PARTS (Regular - 5 bars each, except dragon)
 KEEL_PARTS = {
     31999: "Bronze keel parts",
     32002: "Iron keel parts",
@@ -680,6 +779,7 @@ KEEL_PARTS = {
     32017: "Dragon keel parts",
 }
 
+# LARGE KEEL PARTS (5 regular each, except dragon which is 2:1)
 LARGE_KEEL_PARTS = {
     32020: "Large bronze keel parts",
     32023: "Large iron keel parts",
@@ -690,6 +790,7 @@ LARGE_KEEL_PARTS = {
     32038: "Large dragon keel parts",
 }
 
+# ALL NAILS (15 per bar via Smithing)
 ALL_NAILS = {
     4819: "Bronze nails",
     4820: "Iron nails",
@@ -701,8 +802,10 @@ ALL_NAILS = {
     31406: "Dragon nails",
 }
 
+# ALL CANNONBALLS
 ALL_CANNONBALLS = {
     2: "Steel cannonball",
+    # Sailing cannonballs
     31906: "Bronze cannonball",
     31908: "Iron cannonball",
     31910: "Mithril cannonball",
@@ -711,16 +814,18 @@ ALL_CANNONBALLS = {
     31916: "Dragon cannonball",
 }
 
+# Ammo moulds
 AMMO_MOULDS = {
     4: "Ammo mould",
     27012: "Double ammo mould",
 }
 
+# Miscellaneous crafting materials
 MISC_ITEMS = {
     1941: "Swamp paste",
-    25580: "Plank sack",
 }
 
+# Processing costs by wood type
 SAWMILL_COSTS = {
     "Plank": 100,
     "Oak plank": 250,
@@ -741,208 +846,54 @@ PLANK_MAKE_COSTS = {
     "Rosewood plank": 5250,
 }
 
+# Rune IDs for Plank Make
 RUNE_IDS = {
     "Astral rune": 9075,
     "Nature rune": 561,
     "Earth rune": 557,
 }
 
-PLANK_SACK_CAPACITY = 28
-
+# =================
+# GP/HR TIMING DATA
+# =================
 
 @dataclass
 class ActivityTiming:
-    ticks_per_action: int
-    items_per_action: int
-    materials_per_action: int
-    needs_hammer: bool
-    needs_saw: bool
-    other_tool_slots: int
-    activity_name: str
-    is_smithing: bool = False
-    uses_planks: bool = False
-    notes: str = ""
+    """Timing parameters for a crafting activity"""
+    ticks_per_action: int       # Game ticks to perform one craft action
+    items_per_action: int       # Items produced per action
+    materials_per_action: int   # Materials consumed per action
+    needs_hammer: bool          # Whether activity needs a hammer
+    needs_saw: bool             # Whether activity needs a saw
+    other_tool_slots: int       # Other non-equippable tool slots (e.g., ammo mould)
+    activity_name: str          # Name for the activity
+    notes: str = ""             # Any special notes
 
-
-@dataclass
-class BankLocation:
-    name: str
-    bank_time: float
-    travel_time: float
-    has_anvil: bool
-    has_furnace: bool
-    has_shipwright: bool
-    has_sawmill: bool
-    requirements: str
-    stamina_dependent: bool
-    
-    @property
-    def total_overhead(self) -> float:
-        return self.bank_time + self.travel_time
-
-
-BANK_LOCATIONS = {
-    "Deepfin Point": BankLocation(
-        name="Deepfin Point",
-        bank_time=3.0,
-        travel_time=4.0,
-        has_anvil=True,
-        has_furnace=True,
-        has_shipwright=True,
-        has_sawmill=False,
-        requirements="67 Sailing",
-        stamina_dependent=False
-    ),
-    "Prifddinas": BankLocation(
-        name="Prifddinas",
-        bank_time=4.0,
-        travel_time=4.0,
-        has_anvil=True,
-        has_furnace=True,
-        has_shipwright=False,
-        has_sawmill=True,
-        requirements="Song of the Elves",
-        stamina_dependent=False
-    ),
-    "Edgeville Furnace": BankLocation(
-        name="Edgeville Furnace",
-        bank_time=4.0,
-        travel_time=6.0,
-        has_anvil=False,
-        has_furnace=True,
-        has_shipwright=False,
-        has_sawmill=False,
-        requirements="None",
-        stamina_dependent=False
-    ),
-    "Varrock West Anvil": BankLocation(
-        name="Varrock West Anvil",
-        bank_time=4.0,
-        travel_time=8.0,
-        has_anvil=True,
-        has_furnace=False,
-        has_shipwright=False,
-        has_sawmill=False,
-        requirements="None",
-        stamina_dependent=False
-    ),
-    "Port Phasmatys": BankLocation(
-        name="Port Phasmatys",
-        bank_time=5.0,
-        travel_time=10.0,
-        has_anvil=False,
-        has_furnace=True,
-        has_shipwright=False,
-        has_sawmill=False,
-        requirements="Priest in Peril",
-        stamina_dependent=False
-    ),
-    "Neitiznot": BankLocation(
-        name="Neitiznot",
-        bank_time=4.0,
-        travel_time=8.0,
-        has_anvil=True,
-        has_furnace=False,
-        has_shipwright=False,
-        has_sawmill=False,
-        requirements="The Fremennik Isles (partial)",
-        stamina_dependent=False
-    ),
-    "Al Kharid Furnace": BankLocation(
-        name="Al Kharid Furnace",
-        bank_time=5.0,
-        travel_time=12.0,
-        has_anvil=False,
-        has_furnace=True,
-        has_shipwright=False,
-        has_sawmill=False,
-        requirements="None (10gp gate or Prince Ali Rescue)",
-        stamina_dependent=False
-    ),
-    "Shilo Village": BankLocation(
-        name="Shilo Village",
-        bank_time=5.0,
-        travel_time=10.0,
-        has_anvil=False,
-        has_furnace=True,
-        has_shipwright=False,
-        has_sawmill=False,
-        requirements="Shilo Village quest",
-        stamina_dependent=False
-    ),
-    "WC Guild Sawmill": BankLocation(
-        name="WC Guild Sawmill",
-        bank_time=4.0,
-        travel_time=8.0,
-        has_anvil=False,
-        has_furnace=False,
-        has_shipwright=False,
-        has_sawmill=True,
-        requirements="60 Woodcutting",
-        stamina_dependent=False
-    ),
-    "Fast (Optimal)": BankLocation(
-        name="Fast (Optimal)",
-        bank_time=4.0,
-        travel_time=4.0,
-        has_anvil=True,
-        has_furnace=True,
-        has_shipwright=True,
-        has_sawmill=True,
-        requirements="Best available setup",
-        stamina_dependent=False
-    ),
-    "Medium (Typical)": BankLocation(
-        name="Medium (Typical)",
-        bank_time=5.0,
-        travel_time=10.0,
-        has_anvil=True,
-        has_furnace=True,
-        has_shipwright=True,
-        has_sawmill=True,
-        requirements="Typical efficient banking",
-        stamina_dependent=False
-    ),
-    "Slow (Suboptimal)": BankLocation(
-        name="Slow (Suboptimal)",
-        bank_time=6.0,
-        travel_time=19.0,
-        has_anvil=True,
-        has_furnace=True,
-        has_shipwright=True,
-        has_sawmill=True,
-        requirements="Suboptimal setup",
-        stamina_dependent=True
-    ),
+# Bank presets (in seconds)
+BANK_PRESETS = {
+    "Fast": 8.0,      # Optimal setup (e.g., max house, bank chest nearby)
+    "Medium": 15.0,   # Typical efficient banking
+    "Slow": 25.0,     # Suboptimal bank location or slower clicks
 }
 
-SMITHING_OUTFIT_TICK_SAVE_CHANCE = 0.15
-
+# Activity timing data
+# Tick = 0.6 seconds
 ACTIVITY_TIMINGS = {
-    "Cannonballs_Single": ActivityTiming(
+    # Cannonballs - smelting at furnace
+    # 9 ticks (5.4s) per bar, but done as batch
+    "Cannonballs": ActivityTiming(
         ticks_per_action=9,
-        items_per_action=4,
+        items_per_action=4,  # 4 cannonballs per bar (double mould handled elsewhere)
         materials_per_action=1,
         needs_hammer=False,
         needs_saw=False,
-        other_tool_slots=1,
-        activity_name="Cannonball Smelting (Single)",
-        is_smithing=True,
-        uses_planks=False,
-        notes="Regular ammo mould: 1 bar per 4 cannonballs per 9 ticks."
+        other_tool_slots=1,  # Ammo mould (not equippable)
+        activity_name="Cannonball Smelting",
+        notes="Per bar. Double mould doubles output, not speed."
     ),
-    "Cannonballs_Double": ActivityTiming(
-        ticks_per_action=9,
-        items_per_action=8,
-        materials_per_action=2,
-        needs_hammer=False,
-        needs_saw=False,
-        other_tool_slots=1,
-        activity_name="Cannonball Smelting (Double)",
-        is_smithing=True,
-        uses_planks=False,
-        notes="Double ammo mould: 2 bars per 8 cannonballs per 9 ticks."
-    ),
+    
+    # Keel Parts - smithing at anvil
+    # ~4 ticks per action, 5 bars per part
     "Keel Parts": ActivityTiming(
         ticks_per_action=4,
         items_per_action=1,
@@ -951,58 +902,59 @@ ACTIVITY_TIMINGS = {
         needs_saw=False,
         other_tool_slots=0,
         activity_name="Keel Parts Smithing",
-        is_smithing=True,
-        uses_planks=False,
-        notes="5 bars per part."
+        notes="5 bars per part. Imcando hammer saves 1 slot."
     ),
+    
+    # Dragon Keel Parts - special ratio
     "Dragon Keel Parts": ActivityTiming(
         ticks_per_action=4,
         items_per_action=1,
-        materials_per_action=2,
+        materials_per_action=2,  # 2 dragon metal sheets per part
         needs_hammer=True,
         needs_saw=False,
         other_tool_slots=0,
         activity_name="Dragon Keel Smithing",
-        is_smithing=True,
-        uses_planks=False,
         notes="2 sheets per part. Requires 92 Smithing."
     ),
+    
+    # Large Keel Parts - combining at anvil
     "Large Keel Parts": ActivityTiming(
         ticks_per_action=3,
         items_per_action=1,
-        materials_per_action=5,
+        materials_per_action=5,  # 5 regular keel parts
         needs_hammer=True,
         needs_saw=False,
         other_tool_slots=0,
         activity_name="Large Keel Assembly",
-        is_smithing=True,
-        uses_planks=False,
         notes="5 regular parts per large part."
     ),
+    
+    # Large Dragon Keel Parts
     "Large Dragon Keel Parts": ActivityTiming(
         ticks_per_action=3,
         items_per_action=1,
-        materials_per_action=2,
+        materials_per_action=2,  # 2 dragon keel parts
         needs_hammer=True,
         needs_saw=False,
         other_tool_slots=0,
         activity_name="Large Dragon Keel Assembly",
-        is_smithing=True,
-        uses_planks=False,
         notes="2 dragon keel parts per large part."
     ),
+    
+    # Hull Parts - crafting at workbench
+    # Needs hammer and saw
     "Hull Parts": ActivityTiming(
         ticks_per_action=4,
         items_per_action=1,
-        materials_per_action=5,
+        materials_per_action=5,  # 5 planks per part
         needs_hammer=True,
         needs_saw=True,
         other_tool_slots=0,
         activity_name="Hull Parts Crafting",
-        is_smithing=False,
-        uses_planks=True,
-        notes="5 planks per part."
+        notes="5 planks per part. Imcando hammer + Amy's saw each save 1 slot."
     ),
+    
+    # Large Hull Parts - combining
     "Large Hull Parts": ActivityTiming(
         ticks_per_action=3,
         items_per_action=1,
@@ -1011,10 +963,10 @@ ACTIVITY_TIMINGS = {
         needs_saw=True,
         other_tool_slots=0,
         activity_name="Large Hull Assembly",
-        is_smithing=False,
-        uses_planks=False,
         notes="5 regular parts per large part."
     ),
+    
+    # Nails - smithing, 15 per bar
     "Nails": ActivityTiming(
         ticks_per_action=4,
         items_per_action=15,
@@ -1023,32 +975,30 @@ ACTIVITY_TIMINGS = {
         needs_saw=False,
         other_tool_slots=0,
         activity_name="Nail Smithing",
-        is_smithing=True,
-        uses_planks=False,
-        notes="15 nails per bar."
+        notes="15 nails per bar. Imcando hammer saves 1 slot."
     ),
+    
+    # Planks - Sawmill (batch processing, time is mostly travel)
     "Planks_Sawmill": ActivityTiming(
-        ticks_per_action=1,
+        ticks_per_action=1,  # Instant conversion
         items_per_action=1,
         materials_per_action=1,
         needs_hammer=False,
         needs_saw=False,
-        other_tool_slots=0,
+        other_tool_slots=0,  # Just need coins/pouch
         activity_name="Sawmill Conversion",
-        is_smithing=False,
-        uses_planks=False,
         notes="Time dominated by travel. Uses coin pouch."
     ),
+    
+    # Planks - Plank Make spell
     "Planks_PlankMake": ActivityTiming(
-        ticks_per_action=3,
+        ticks_per_action=3,  # 3 ticks per cast
         items_per_action=1,
         materials_per_action=1,
         needs_hammer=False,
         needs_saw=False,
-        other_tool_slots=3,
+        other_tool_slots=3,  # Rune slots (astral, nature, earth or staff)
         activity_name="Plank Make Spell",
-        is_smithing=False,
-        uses_planks=False,
         notes="3 ticks per cast. Earth staff reduces rune slots needed."
     ),
 }
@@ -1060,14 +1010,23 @@ def calculate_gp_per_hour(
     chain_name: str,
     config: Dict
 ) -> Optional[Dict]:
+    """
+    Calculate GP/hr for a processing chain.
+    
+    Returns dict with:
+    - gp_per_hour: float
+    - items_per_hour: float
+    - trips_per_hour: float
+    - effective_inventory: int
+    - timing_used: ActivityTiming
+    - notes: str
+    """
+    
+    # Determine which timing to use
     timing_key = None
-    is_double_mould_chain = "(Double)" in chain_name
     
     if category == "Cannonballs":
-        if is_double_mould_chain:
-            timing_key = "Cannonballs_Double"
-        else:
-            timing_key = "Cannonballs_Single"
+        timing_key = "Cannonballs"
     elif category == "Keel Parts":
         if "dragon" in chain_name.lower():
             timing_key = "Dragon Keel Parts"
@@ -1095,123 +1054,106 @@ def calculate_gp_per_hour(
     
     timing = ACTIVITY_TIMINGS[timing_key]
     
+    # Get configuration
+    bank_preset = config.get("bank_speed", "Medium")
+    bank_time = BANK_PRESETS.get(bank_preset, 15.0)
     has_imcando_hammer = config.get("has_imcando_hammer", False)
     has_amys_saw = config.get("has_amys_saw", False)
-    has_smithing_outfit = config.get("has_smithing_outfit", False)
-    has_plank_sack = config.get("has_plank_sack", False)
-    use_stamina = config.get("use_stamina", True)
     
-    bank_location_name = config.get("bank_location", "Medium (Typical)")
-    bank_location = BANK_LOCATIONS.get(bank_location_name, BANK_LOCATIONS["Medium (Typical)"])
+    # Calculate tool slots used based on which equipped tools the player has
+    tool_slots_used = timing.other_tool_slots # None is default
     
-    effective_ticks = timing.ticks_per_action
-    if has_smithing_outfit and timing.is_smithing:
-        effective_ticks = timing.ticks_per_action - (SMITHING_OUTFIT_TICK_SAVE_CHANCE * 1)
-    
-    tool_slots_used = timing.other_tool_slots
-    
+    # Add hammer slot if needed and not equipped
     if timing.needs_hammer:
         if not has_imcando_hammer:
             tool_slots_used += 1
     
+    # Add saw slot if needed and not equipped
     if timing.needs_saw:
         if not has_amys_saw:
             tool_slots_used += 1
     
-    plank_sack_bonus = 0
-    if has_plank_sack and timing.uses_planks:
-        tool_slots_used += 1
-        plank_sack_bonus = PLANK_SACK_CAPACITY
-    
+    # Calculate effective inventory
     base_inventory = 28
     effective_inventory = base_inventory - tool_slots_used
     
+    # Special case: Plank Make with earth staff saves 1 rune slot
     if timing_key == "Planks_PlankMake" and config.get("use_earth_staff", False):
-        effective_inventory += 1
+        effective_inventory += 1  # Earth staff replaces earth runes
     
+    # Special case for cannonballs with double mould
     items_per_action = timing.items_per_action
     materials_per_action = timing.materials_per_action
     
+    if category == "Cannonballs" and config.get("double_ammo_mould", False):
+        items_per_action = 8
+        materials_per_action = 2
+    
+    # Calculate items per trip
+    # How many materials fit in inventory?
     materials_per_trip = effective_inventory
     
-    if has_plank_sack and timing.uses_planks:
-        materials_per_trip = effective_inventory + plank_sack_bonus
-    
+    # How many actions per trip?
     actions_per_trip = materials_per_trip // materials_per_action
     
+    # Items produced per trip
     items_per_trip = actions_per_trip * items_per_action
     
     if items_per_trip <= 0:
         return None
     
-    ticks_per_trip = actions_per_trip * effective_ticks
-    craft_time_seconds = ticks_per_trip * 0.6
+    # Time per trip
+    ticks_per_trip = actions_per_trip * timing.ticks_per_action
+    seconds_per_trip = (ticks_per_trip * 0.6) + bank_time
     
-    trip_overhead = bank_location.total_overhead
-    
-    if bank_location.stamina_dependent and use_stamina:
-        trip_overhead = bank_location.bank_time + (bank_location.travel_time * 0.7)
-    
-    seconds_per_trip = craft_time_seconds + trip_overhead
-    
+    # Special handling for sawmill (bulk instant conversion)
     if timing_key == "Planks_Sawmill":
-        sawmill_travel = config.get("sawmill_travel_time", bank_location.total_overhead)
+        # Sawmill converts all at once, time is just travel
+        # Assume ~20 seconds round trip for efficient sawmill
+        sawmill_travel = config.get("sawmill_travel_time", 20.0)
         seconds_per_trip = sawmill_travel
-        items_per_trip = effective_inventory
+        items_per_trip = effective_inventory  # 1:1 logs to planks
     
-    ancient_furnace_active = False
-    if config.get("ancient_furnace", False) and timing.is_smithing:
-        craft_time_seconds = craft_time_seconds / 2
-        seconds_per_trip = craft_time_seconds + trip_overhead
-        ancient_furnace_active = True
+    # Apply Ancient Furnace speed bonus (halves smithing time, not banking)
+    if config.get("ancient_furnace", False) and timing_key in [
+        "Cannonballs", "Keel Parts", "Dragon Keel Parts", 
+        "Large Keel Parts", "Large Dragon Keel Parts", "Nails"
+    ]:
+        craft_time = ticks_per_trip * 0.6
+        seconds_per_trip = (craft_time / 2) + bank_time
     
+    # Trips per hour
     trips_per_hour = 3600.0 / seconds_per_trip
     
+    # Items per hour
     items_per_hour = trips_per_hour * items_per_trip
     
+    # GP per hour
     gp_per_hour = items_per_hour * profit_per_item
     
+    # Build notes about tool savings
     tool_notes = []
     if timing.needs_hammer:
-        tool_notes.append(f"Hammer: {'equipped' if has_imcando_hammer else 'inventory'}")
+        tool_notes.append(f"Hammer: {'equipped' if has_imcando_hammer else 'in inventory'}")
     if timing.needs_saw:
-        tool_notes.append(f"Saw: {'equipped' if has_amys_saw else 'inventory'}")
-    if has_plank_sack and timing.uses_planks:
-        tool_notes.append(f"Plank sack: +{plank_sack_bonus} planks")
-    
-    bonus_notes = []
-    if has_smithing_outfit and timing.is_smithing:
-        bonus_notes.append("Smithing outfit: -15% avg ticks")
-    if ancient_furnace_active:
-        bonus_notes.append("Ancient Furnace: 2x speed")
-    if is_double_mould_chain:
-        bonus_notes.append("Double mould: 2 bars/action")
-    if has_plank_sack and timing.uses_planks:
-        bonus_notes.append(f"Plank sack: +{plank_sack_bonus} capacity")
+        tool_notes.append(f"Saw: {'equipped' if has_amys_saw else 'in inventory'}")
     
     return {
         "gp_per_hour": gp_per_hour,
         "items_per_hour": items_per_hour,
         "trips_per_hour": trips_per_hour,
         "items_per_trip": items_per_trip,
-        "materials_per_trip": materials_per_trip,
         "effective_inventory": effective_inventory,
         "seconds_per_trip": seconds_per_trip,
         "timing_key": timing_key,
         "timing": timing,
         "notes": timing.notes,
         "tool_notes": tool_notes,
-        "bonus_notes": bonus_notes,
         "tool_slots_saved": (1 if timing.needs_hammer and has_imcando_hammer else 0) + 
-                           (1 if timing.needs_saw and has_amys_saw else 0),
-        "bank_location": bank_location.name,
-        "bank_requirements": bank_location.requirements,
-        "effective_ticks": effective_ticks,
-        "is_double_mould": is_double_mould_chain,
-        "plank_sack_active": has_plank_sack and timing.uses_planks,
+                           (1 if timing.needs_saw and has_amys_saw else 0)
     }
 
-
+# Combine all items for easy lookup
 ALL_ITEMS = {
     **ALL_LOGS, **ALL_PLANKS, **HULL_PARTS, **LARGE_HULL_PARTS,
     **HULL_REPAIR_KITS, **ALL_ORES, **ALL_BARS, **KEEL_PARTS,
@@ -1220,12 +1162,21 @@ ALL_ITEMS = {
 }
 
 
+# ==========
+# ITEM ICONS
+# ==========
+
 def get_wiki_image_url(item_name: str) -> str:
+    """Generate OSRS Wiki image URL for an item"""
+    # Convert item name to wiki format: spaces to underscores, handle special chars
     formatted_name = item_name.replace(" ", "_").replace("'", "%27")
     return f"https://oldschool.runescape.wiki/images/{formatted_name}.png"
 
 
 def get_item_icon_url(item_name: str) -> str:
+    """Get item icon URL with common naming fixes"""
+    # Some items have different image names than their item names
+    # Note: Steel cannonball was renamed from "Cannonball" - wiki now uses "Steel_cannonball.png"
     name_fixes = {
         "Plank": "Plank",
         "Logs": "Logs",
@@ -1236,31 +1187,42 @@ def get_item_icon_url(item_name: str) -> str:
 
 
 def get_clean_item_name(chain_name: str) -> str:
+    """Extract clean item name from chain name for icon lookup"""
+    # Remove common suffixes
     clean = chain_name.replace(" processing", "").replace(" smithing", "")
     clean = clean.replace(" (Regular)", "").replace(" (Double)", "")
     return clean
 
 
 def get_output_item_name(chain_name: str) -> str:
+    """Get the output item name from a chain name for better icon matching"""
     clean = get_clean_item_name(chain_name)
     return clean
 
 
+# ==============
+# API CONNECTION
+# ==============
+
 class OSRSWikiConnection:
+    """Custom connection class for OSRS Wiki API"""
+    
     def __init__(self, base_url: str = API_BASE):
         self.base_url = base_url
         self._session = requests.Session()
         self._session.headers.update({
-            'User-Agent': 'OSRS-Sailing-Tracker/4.5 (Streamlit App)'
+            'User-Agent': 'OSRS-Sailing-Tracker/4.2 (Streamlit App)'
         })
     
     def fetch_mapping(self) -> Dict:
+        """Fetch item mappings"""
         response = self._session.get(f"{self.base_url}/mapping")
         response.raise_for_status()
         items = response.json()
         return {item['id']: item for item in items}
     
     def fetch_prices(self) -> Dict:
+        """Fetch latest prices"""
         response = self._session.get(f"{self.base_url}/latest")
         response.raise_for_status()
         return response.json().get('data', {})
@@ -1268,25 +1230,35 @@ class OSRSWikiConnection:
 
 @st.cache_resource
 def get_api_connection() -> OSRSWikiConnection:
+    """Get cached API connection instance"""
     return OSRSWikiConnection()
 
 
 @st.cache_data(ttl=300, show_spinner=False)
 def fetch_item_mapping(_conn: OSRSWikiConnection) -> Dict:
+    """Fetch all item mappings with caching"""
     return _conn.fetch_mapping()
 
 
 @st.cache_data(ttl=60, show_spinner=False)
 def fetch_latest_prices(_conn: OSRSWikiConnection) -> Dict:
+    """Fetch latest prices with caching"""
     return _conn.fetch_prices()
 
 
+# ===========
+# ITEM LOOKUP
+# ===========
+
 @st.cache_resource
 def get_id_lookup(_item_mapping_hash: str, item_mapping: Dict) -> 'ItemIDLookup':
+    """Get cached ItemIDLookup instance"""
     return ItemIDLookup(item_mapping)
 
 
 class ItemIDLookup:
+    """Dynamic item ID lookup system"""
+    
     def __init__(self, item_mapping: Dict):
         self.item_mapping = item_mapping
         self.name_to_id_cache = {}
@@ -1296,6 +1268,7 @@ class ItemIDLookup:
                 self.name_to_id_cache[item_data['name'].lower()] = item_id
     
     def find_id_by_name(self, item_name: str) -> Optional[int]:
+        """Find item ID by searching for name"""
         search_name = item_name.lower()
         
         if search_name in self.name_to_id_cache:
@@ -1308,6 +1281,7 @@ class ItemIDLookup:
         return None
     
     def get_or_find_id(self, item_id: Optional[int], item_name: str) -> Optional[int]:
+        """Get existing ID or find it by name"""
         if item_id:
             return item_id
         
@@ -1317,8 +1291,13 @@ class ItemIDLookup:
         return found_id
 
 
+# =================
+# PROCESSING CHAINS
+# =================
+
 @dataclass
 class ChainStep:
+    """Single step in processing chain"""
     item_id: Optional[int]
     item_name: str
     quantity: float = 1
@@ -1329,17 +1308,21 @@ class ChainStep:
 
 @dataclass
 class ProcessingChain:
+    """Complete processing chain"""
     name: str
     category: str
     steps: List[ChainStep] = field(default_factory=list)
     special_ratio: Optional[Dict] = field(default_factory=dict)
     
     def get_output_item_name(self) -> str:
+        """Get the final output item name"""
         if self.steps:
             return self.steps[-1].item_name
         return get_clean_item_name(self.name)
     
     def calculate(self, prices: Dict, config: Dict, id_lookup: ItemIDLookup) -> Dict:
+        """Calculate chain profitability"""
+        
         results = {
             "chain_name": self.name,
             "category": self.category,
@@ -1367,10 +1350,25 @@ class ProcessingChain:
         else:
             ratio = 5
         
+        if self.category == "Cannonballs" and len(self.steps) >= 2:
+            input_step = self.steps[0]
+            output_step = self.steps[-1]
+
+            if config.get("double_ammo_mould", False):
+                if output_step.item_name.endswith("cannonball"):
+                    output_step.quantity = 8
+                    input_step.quantity = 2
+            else:
+                if output_step.item_name.endswith("cannonball"):
+                    output_step.quantity = 4
+                    input_step.quantity = 1
+        
         num_steps = len(self.steps)
         needed = [0.0] * num_steps
         needed[-1] = final_quantity
 
+        # Standard cascading calculation - works for both linear and multi-input chains
+        # by propagating ratios backwards from output to inputs
         for idx in range(num_steps - 2, -1, -1):
             prev = self.steps[idx]
             nxt = self.steps[idx + 1]
@@ -1400,10 +1398,12 @@ class ProcessingChain:
                 total_value = unit_price * step_qty
                 results["output_value"] = total_value
             else:
+                # Check both per-step self_obtained and global self_collected config
                 is_free = step.is_self_obtained or config.get("self_collected", False)
                 unit_price = price_data.get("high", 0) if price_data and not is_free else 0
                 total_value = unit_price * step_qty
 
+                # Add ALL input costs (not just first step) - fixes multi-input recipes like repair kits
                 results["raw_material_cost"] += total_value
 
             processing_cost = 0
@@ -1443,6 +1443,8 @@ class ProcessingChain:
     
     def _calculate_processing_cost(self, step: ChainStep, quantity: float, 
                                   prices: Dict, config: Dict, id_lookup: ItemIDLookup) -> Tuple[float, str]:
+        """Calculate processing cost for a step"""
+        
         if step.custom_cost is not None:
             return step.custom_cost * quantity, f"Custom: {step.custom_cost} gp each"
         
@@ -1480,6 +1482,7 @@ class ProcessingChain:
 
 @st.cache_data(ttl=3600)
 def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
+    """Generate all systematic processing chains"""
     chains = {
         "Planks": [],
         "Hull Parts": [],
@@ -1491,6 +1494,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         "Cannonballs": [],
     }
     
+    # PLANK CHAINS
     plank_mappings = [
         (1511, "Logs", 960, "Plank"),
         (1521, "Oak logs", 8778, "Oak plank"),
@@ -1512,6 +1516,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Planks"].append(chain)
     
+    # HULL PARTS CHAINS
     hull_mappings = [
         (960, "Plank", 32041, "Wooden hull parts"),
         (8778, "Oak plank", 32044, "Oak hull parts"),
@@ -1533,6 +1538,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Hull Parts"].append(chain)
     
+    # LARGE HULL PARTS
     large_hull_mappings = [
         (32041, "Wooden hull parts", 32062, "Large wooden hull parts"),
         (32044, "Oak hull parts", 32065, "Large oak hull parts"),
@@ -1554,13 +1560,27 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Large Hull Parts"].append(chain)
     
+    # HULL REPAIR KITS - Correct recipes from OSRS Wiki
+    # Recipe: Planks + Tier-matched Nails + Swamp paste = Multiple kits
+    # Swamp paste ID: 1941
+    # Lower tiers (Wooden-Camphor): 2 planks + 10 nails = 2 kits
+    # Higher tiers (Ironwood-Rosewood): 1 plank + nails = 3 kits
+    
+    # Format: (plank_id, plank_name, nail_id, nail_name, paste_qty, plank_qty, nail_qty, output_qty, kit_id, kit_name)
     repair_kit_mappings = [
+        # Wooden: 2 planks + 10 bronze nails + 5 paste = 2 kits
         (960, "Plank", 4819, "Bronze nails", 5, 2, 10, 2, 31964, "Repair kit"),
+        # Oak: 2 planks + 10 iron nails + 5 paste = 2 kits
         (8778, "Oak plank", 4820, "Iron nails", 5, 2, 10, 2, 31967, "Oak repair kit"),
+        # Teak: 2 planks + 10 steel nails + 5 paste = 2 kits
         (8780, "Teak plank", 1539, "Steel nails", 5, 2, 10, 2, 31970, "Teak repair kit"),
+        # Mahogany: 2 planks + 10 mithril nails + 5 paste = 2 kits
         (8782, "Mahogany plank", 4822, "Mithril nails", 5, 2, 10, 2, 31973, "Mahogany repair kit"),
+        # Camphor: 2 planks + 10 adamant nails + 5 paste = 2 kits
         (31432, "Camphor plank", 4823, "Adamantite nails", 5, 2, 10, 2, 31976, "Camphor repair kit"),
+        # Ironwood: 1 plank + 10 rune nails + 5 paste = 3 kits
         (31435, "Ironwood plank", 4824, "Rune nails", 5, 1, 10, 3, 31979, "Ironwood repair kit"),
+        # Rosewood: 1 plank + 5 dragon nails + 5 paste = 3 kits
         (31438, "Rosewood plank", 31406, "Dragon nails", 5, 1, 5, 3, 31982, "Rosewood repair kit"),
     ]
     
@@ -1569,6 +1589,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
             name=kit_name,
             category="Hull Repair Kits"
         )
+        # Multi-input recipe: planks + nails + swamp paste = kits
         chain.steps = [
             ChainStep(plank_id, plank_name, plank_qty),
             ChainStep(nail_id, nail_name, nail_qty),
@@ -1577,6 +1598,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Hull Repair Kits"].append(chain)
     
+    # KEEL PARTS (5 bars each, except dragon which needs 2 sheets)
     keel_mappings = [
         (2349, "Bronze bar", 31999, "Bronze keel parts", 5),
         (2351, "Iron bar", 32002, "Iron keel parts", 5),
@@ -1584,7 +1606,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         (2359, "Mithril bar", 32008, "Mithril keel parts", 5),
         (2361, "Adamantite bar", 32011, "Adamant keel parts", 5),
         (2363, "Runite bar", 32014, "Rune keel parts", 5),
-        (31996, "Dragon metal sheet", 32017, "Dragon keel parts", 2),
+        (31996, "Dragon metal sheet", 32017, "Dragon keel parts", 2),  # 2 sheets per 1 keel part
     ]
     
     for bar_id, bar_name, keel_id, keel_name, qty in keel_mappings:
@@ -1598,6 +1620,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Keel Parts"].append(chain)
     
+    # LARGE KEEL PARTS
     large_keel_mappings = [
         (31999, "Bronze keel parts", 32020, "Large bronze keel parts", 5),
         (32002, "Iron keel parts", 32023, "Large iron keel parts", 5),
@@ -1621,6 +1644,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
             chain.special_ratio = {"conversion_ratio": 2}
         chains["Large Keel Parts"].append(chain)
     
+    # NAIL CHAINS
     nail_mappings = [
         (2349, "Bronze bar", 4819, "Bronze nails"),
         (2351, "Iron bar", 4820, "Iron nails"),
@@ -1643,6 +1667,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Nails"].append(chain)
     
+    # CANNONBALL CHAINS
     cannonball_mappings = [
         (2349, "Bronze bar", 31906, "Bronze cannonball"),
         (2351, "Iron bar", 31908, "Iron cannonball"),
@@ -1676,7 +1701,12 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
     return chains
 
 
+# =========
+# UTILITIES
+# =========
+
 def format_gp(value: float) -> str:
+    """Format GP values"""
     if value == float('inf'):
         return "Inf"
     
@@ -1694,6 +1724,7 @@ def format_gp(value: float) -> str:
 
 
 def render_item_with_icon(item_name: str, profit: Optional[float] = None, show_profit: bool = True) -> str:
+    """Render an item display with icon using HTML"""
     icon_url = get_item_icon_url(item_name)
     profit_html = ""
     if show_profit and profit is not None:
@@ -1715,6 +1746,7 @@ def render_item_with_icon(item_name: str, profit: Optional[float] = None, show_p
 
 
 def render_best_item_card(label: str, item_name: str, value: str) -> str:
+    """Render a best item card with icon that handles long names"""
     icon_url = get_item_icon_url(get_clean_item_name(item_name))
     return f"""
     <div style="background: linear-gradient(145deg, #8b7355 0%, #5c4d3a 100%);
@@ -1738,14 +1770,20 @@ def render_best_item_card(label: str, item_name: str, value: str) -> str:
 
 
 def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
+    """Create a bar chart of top profits with OSRS tier-based coloring"""
     sorted_results = sorted(results, key=lambda x: x.get("_profit_raw", 0), reverse=True)[:top_n]
     
     items = [r["Item"] for r in sorted_results]
     profits = [r["_profit_raw"] for r in sorted_results]
     categories = [r.get("Category", "Unknown") for r in sorted_results]
     
+    # Get clean item names for display
     display_names = [get_clean_item_name(name) for name in items]
+    
+    # Get tier info for hover
     tiers = [get_tier_from_name(name) for name in items]
+    
+    # Assign colors by material tier (dragon = red, rune = cyan, etc.)
     colors = [get_item_tier_color(items[i], profits[i]) for i in range(len(items))]
     
     fig = go.Figure(data=[
@@ -1770,7 +1808,7 @@ def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
             text="Top Profitable Chains",
             font=dict(color='#ffd700', size=16),
             subtitle=dict(
-                text=f"Top {len(sorted_results)} by profit - colored by tier",
+                text=f"Top {len(sorted_results)} by profit  -  colored by tier",
                 font=dict(color='#a08b6d', size=10)
             )
         ),
@@ -1797,6 +1835,7 @@ def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
 
 
 def create_category_pie(results: List[Dict]) -> go.Figure:
+    """Create a pie chart of profits by category with OSRS theming - fixed layout"""
     category_profits = {}
     category_counts = {}
     for r in results:
@@ -1805,9 +1844,11 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
         category_profits[cat] = category_profits.get(cat, 0) + profit
         category_counts[cat] = category_counts.get(cat, 0) + 1
     
+    # Sort by profit and separate small slices
     sorted_cats = sorted(category_profits.items(), key=lambda x: x[1], reverse=True)
     total_profit = sum(category_profits.values())
     
+    # Group categories under 2% into "Other"
     main_cats = []
     other_total = 0
     other_count = 0
@@ -1827,8 +1868,10 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
     values = [c[1] for c in main_cats]
     counts = [c[2] for c in main_cats]
     
+    # Use the global CATEGORY_COLORS for consistency
     colors = [CATEGORY_COLORS.get(label, '#8e44ad') for label in labels]
     
+    # Custom hover text with more info
     hover_text = [
         f"<b>{label}</b><br>"
         f"Total Profit: {format_gp(val)}<br>"
@@ -1853,10 +1896,11 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
             ),
             pull=[0.03 if i == 0 else 0 for i in range(len(labels))],
             insidetextorientation='horizontal',
-            sort=False
+            sort=False  # Keep our sorted order
         )
     ])
     
+    # Add center annotation
     fig.add_annotation(
         text=f"<b>Total</b><br>{format_gp(total_profit)}",
         x=0.5, y=0.5,
@@ -1881,24 +1925,31 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
 
 
 def create_profit_histogram(profits: List[float], results: List[Dict] = None, per_item: bool = False) -> go.Figure:
+    """Create an enhanced histogram with outlier handling for better visualization"""
+    # Calculate statistics on full data
     profits_arr = np.array(profits)
     median_val = np.median(profits_arr)
     q1 = np.percentile(profits_arr, 25)
     q3 = np.percentile(profits_arr, 75)
     iqr = q3 - q1
     
+    # Unit label for display
     unit_label = "GP/item" if per_item else "GP"
     
+    # Detect outliers using IQR method (3x IQR for extreme outliers)
     lower_fence = q1 - 3 * iqr
     upper_fence = q3 + 3 * iqr
     
+    # Separate main data from extreme outliers
     main_data = profits_arr[(profits_arr >= lower_fence) & (profits_arr <= upper_fence)]
     outliers = profits_arr[(profits_arr < lower_fence) | (profits_arr > upper_fence)]
     
+    # If outliers exist and distort the view significantly, use clipped data for histogram
     has_extreme_outliers = len(outliers) > 0 and (
-        len(main_data) >= len(profits_arr) * 0.75
+        len(main_data) >= len(profits_arr) * 0.75  # At least 75% of data is "normal"
     )
     
+    # Use main data for histogram if outliers are extreme
     if has_extreme_outliers and len(main_data) > 0:
         hist_data = main_data
         outlier_note = f"{len(outliers)} extreme outlier(s) excluded"
@@ -1906,25 +1957,31 @@ def create_profit_histogram(profits: List[float], results: List[Dict] = None, pe
         hist_data = profits_arr
         outlier_note = None
     
+    # Split into profitable/unprofitable
     profitable = hist_data[hist_data > 0]
     unprofitable = hist_data[hist_data <= 0]
     
+    # Calculate smart bin size based on the data we're actually showing
     if len(hist_data) > 1:
         hist_min, hist_max = hist_data.min(), hist_data.max()
         hist_range = hist_max - hist_min
         
+        # Aim for ~15-25 bins for good granularity
         target_bins = 20
         bin_size = hist_range / target_bins if hist_range > 0 else 1000
         
+        # Round bin size to a nice number
         if bin_size > 0:
             magnitude = 10 ** np.floor(np.log10(max(abs(bin_size), 1)))
             bin_size = np.ceil(bin_size / magnitude) * magnitude
-        bin_size = max(bin_size, 100)
+        bin_size = max(bin_size, 100)  # Minimum 100 GP bins
     else:
         bin_size = 10000
     
+    # Create simple figure (no subplot complexity)
     fig = go.Figure()
     
+    # Add profitable chains histogram
     if len(profitable) > 0:
         fig.add_trace(
             go.Histogram(
@@ -1939,6 +1996,7 @@ def create_profit_histogram(profits: List[float], results: List[Dict] = None, pe
             )
         )
     
+    # Add unprofitable chains histogram
     if len(unprofitable) > 0:
         fig.add_trace(
             go.Histogram(
@@ -1953,6 +2011,7 @@ def create_profit_histogram(profits: List[float], results: List[Dict] = None, pe
             )
         )
     
+    # Add vertical line at 0 for reference (break-even point)
     fig.add_vline(
         x=0, 
         line_dash="solid", 
@@ -1963,6 +2022,7 @@ def create_profit_histogram(profits: List[float], results: List[Dict] = None, pe
         annotation_font=dict(color='#f4e4bc', size=10)
     )
     
+    # Add median line (only if within displayed range)
     if not has_extreme_outliers or (lower_fence <= median_val <= upper_fence):
         fig.add_vline(
             x=median_val,
@@ -1974,11 +2034,12 @@ def create_profit_histogram(profits: List[float], results: List[Dict] = None, pe
             annotation_font=dict(color='#5dade2', size=10)
         )
     
+    # Build title with outlier note if applicable
     title_text = "Profit Distribution"
     subtitle_parts = [f"Showing {len(hist_data)} chains"]
     if outlier_note:
         subtitle_parts.append(outlier_note)
-    subtitle_text = " - ".join(subtitle_parts)
+    subtitle_text = "  -  ".join(subtitle_parts)
     
     fig.update_layout(
         title=dict(
@@ -2025,6 +2086,7 @@ def create_profit_histogram(profits: List[float], results: List[Dict] = None, pe
         margin=dict(l=55, r=25, t=70, b=50)
     )
     
+    # Add statistics box (shows full dataset stats for reference)
     stats_lines = [
         "<b>Stats</b>",
         f"Med: {format_gp(median_val)}",
@@ -2051,6 +2113,7 @@ def create_profit_histogram(profits: List[float], results: List[Dict] = None, pe
 
 
 def create_category_comparison(results: List[Dict]) -> go.Figure:
+    """Create an enhanced grouped bar chart comparing categories with more metrics"""
     category_stats = {}
     for r in results:
         cat = r.get("Category", "Unknown")
@@ -2060,6 +2123,7 @@ def create_category_comparison(results: List[Dict]) -> go.Figure:
         category_stats[cat]["profits"].append(profit)
         category_stats[cat]["count"] += 1
     
+    # Sort categories by best profit for better visual
     sorted_categories = sorted(
         category_stats.items(),
         key=lambda x: max(x[1]["profits"]),
@@ -2075,6 +2139,7 @@ def create_category_comparison(results: List[Dict]) -> go.Figure:
     
     fig = go.Figure()
     
+    # Add bars in order: Best (gold), Median (blue), Average (teal)
     fig.add_trace(go.Bar(
         name='Best Profit',
         x=categories,
@@ -2108,6 +2173,7 @@ def create_category_comparison(results: List[Dict]) -> go.Figure:
         hovertemplate='<b>%{x}</b><br>Avg: %{y:,.0f} GP<extra></extra>'
     ))
     
+    # Add subtle reference line at 0
     fig.add_hline(
         y=0,
         line_dash="solid",
@@ -2159,11 +2225,13 @@ def create_category_comparison(results: List[Dict]) -> go.Figure:
 
 
 def create_roi_scatter(results: List[Dict]) -> go.Figure:
+    """Create a scatter plot of ROI vs Profit with proper category legend"""
     data = [r for r in results if r.get("ROI %") is not None and r.get("ROI %") != float('inf')]
     
     if not data:
         return None
     
+    # Group data by category for separate traces (required for proper legend)
     categories_data = {}
     for r in data:
         cat = r.get("Category", "Unknown")
@@ -2173,10 +2241,12 @@ def create_roi_scatter(results: List[Dict]) -> go.Figure:
         categories_data[cat]["rois"].append(r["ROI %"])
         categories_data[cat]["names"].append(get_clean_item_name(r["Item"]))
     
+    # Fallback colors for unknown categories
     fallback_colors = ['#8e44ad', '#e74c3c', '#9b59b6', '#34495e']
     
     fig = go.Figure()
     
+    # Add one trace per category for proper legend
     for i, (cat, cat_data) in enumerate(categories_data.items()):
         color = CATEGORY_COLORS.get(cat, fallback_colors[i % len(fallback_colors)])
         
@@ -2201,22 +2271,28 @@ def create_roi_scatter(results: List[Dict]) -> go.Figure:
             )
         ))
     
+    # Find and annotate notable outliers (top 3 by profit, top 3 by ROI)
     all_profits = [r["_profit_raw"] for r in data]
     all_rois = [r["ROI %"] for r in data]
     
+    # Find notable points to annotate
     notable_indices = set()
     
+    # Top profit items
     sorted_by_profit = sorted(range(len(data)), key=lambda i: all_profits[i], reverse=True)
     for i in sorted_by_profit[:2]:
         notable_indices.add(i)
     
+    # Top ROI items (that aren't already noted)
     sorted_by_roi = sorted(range(len(data)), key=lambda i: all_rois[i], reverse=True)
     for i in sorted_by_roi[:2]:
         if len(notable_indices) < 4:
             notable_indices.add(i)
     
+    # Add annotations for notable items
     for idx in notable_indices:
         item_name = get_clean_item_name(data[idx]["Item"])
+        # Shorten name if too long
         display_name = item_name[:15] + "..." if len(item_name) > 15 else item_name
         
         fig.add_annotation(
@@ -2237,6 +2313,7 @@ def create_roi_scatter(results: List[Dict]) -> go.Figure:
             ay=-20
         )
     
+    # Add quadrant lines if data spans both positive and negative
     min_profit, max_profit = min(all_profits), max(all_profits)
     min_roi, max_roi = min(all_rois), max(all_rois)
     
@@ -2261,7 +2338,7 @@ def create_roi_scatter(results: List[Dict]) -> go.Figure:
             text="ROI vs Profit Analysis",
             font=dict(color='#ffd700', size=16),
             subtitle=dict(
-                text="Higher and further right = better investment",
+                text="Higher & further right = better investment",
                 font=dict(color='#a08b6d', size=11)
             )
         ),
@@ -2309,11 +2386,16 @@ def create_roi_scatter(results: List[Dict]) -> go.Figure:
     return fig
 
 
+# ========
+# MAIN APP
+# ========
+
 def main():
+    # Header with OSRS styling
     col1, col2 = st.columns([4, 1])
     with col1:
         st.title("OSRS Sailing Materials Tracker")
-        st.caption("v4.5 - Improved GP/hr with Plank Sack and Deepfin Point")
+        st.caption("*\"For the crafty sailor!\"*")
     with col2:
         st.link_button(
             "OSRS Wiki",
@@ -2321,6 +2403,7 @@ def main():
             use_container_width=True
         )
     
+    # Initialize connection and load data
     conn = get_api_connection()
     
     with st.spinner("Loading market data..."):
@@ -2330,8 +2413,10 @@ def main():
         id_lookup = get_id_lookup(mapping_hash, item_mapping)
         all_chains = generate_all_chains()
     
+    # Sync with URL parameters
     params = st.query_params
     
+    # Sidebar configuration with form
     with st.sidebar:
         st.header("Configuration")
         
@@ -2349,17 +2434,24 @@ def main():
             self_collected = st.toggle(
                 "Self-Collected Materials",
                 value=params.get("self_collected", "false") == "true",
-                help="Sets material cost to 0"
+                help="Check if you gathered/mined the raw materials yourself (sets material cost to 0)"
+            )
+            
+            use_double_mould = st.toggle(
+                "Double Ammo Mould",
+                value=params.get("double_mould", "false") == "true",
+                help="Makes 8 cannonballs per 2 bars (requires 2,000 Foundry rep)"
             )
             
             ancient_furnace = st.toggle(
                 "Ancient Furnace",
                 value=params.get("ancient_furnace", "false") == "true",
-                help="Halves smithing time (87 Sailing)"
+                help="Halves smithing time (87 Sailing req)"
             )
             
             st.divider()
             
+            # GP/hr Settings
             st.subheader("GP/hr Calculation")
             
             show_gp_hr = st.toggle(
@@ -2369,62 +2461,32 @@ def main():
             )
             
             if show_gp_hr:
-                bank_location_options = list(BANK_LOCATIONS.keys())
-                default_location = params.get("bank_location", "Medium (Typical)")
-                if default_location not in bank_location_options:
-                    default_location = "Medium (Typical)"
-                
-                bank_location = st.selectbox(
-                    "Bank Location",
-                    bank_location_options,
-                    index=bank_location_options.index(default_location),
-                    help="Select your banking location"
+                bank_speed = st.selectbox(
+                    "Bank Speed",
+                    ["Fast", "Medium", "Slow"],
+                    index=["Fast", "Medium", "Slow"].index(
+                        params.get("bank_speed", "Medium")
+                    ) if params.get("bank_speed") in ["Fast", "Medium", "Slow"] else 1,
+                    help="Fast: 8s (optimal setup), Medium: 15s (typical), Slow: 25s"
                 )
                 
-                selected_bank = BANK_LOCATIONS[bank_location]
-                st.caption(f"*{selected_bank.total_overhead:.0f}s overhead | Req: {selected_bank.requirements}*")
-                
-                use_stamina = True
-                if selected_bank.stamina_dependent:
-                    use_stamina = st.toggle(
-                        "Using Stamina Potions",
-                        value=params.get("use_stamina", "true") == "true",
-                        help="Reduces travel time by ~30%"
-                    )
-                
-                st.caption("**Equipment**")
+                st.caption("**Equipped Tools** (saves inventory slots)")
                 
                 has_imcando_hammer = st.toggle(
                     "Imcando Hammer",
                     value=params.get("imcando_hammer", "false") == "true",
-                    help="Equippable hammer (Below Ice Mountain)"
+                    help="Equippable hammer. Saves 1 slot for smithing activities."
                 )
                 
                 has_amys_saw = st.toggle(
                     "Amy's Saw",
                     value=params.get("amys_saw", "false") == "true",
-                    help="Equippable saw (Sailing reward)"
+                    help="Equippable saw. Saves 1 slot for hull crafting."
                 )
-                
-                has_plank_sack = st.toggle(
-                    "Plank Sack",
-                    value=params.get("plank_sack", "false") == "true",
-                    help="Holds 28 extra planks (Mahogany Homes)"
-                )
-                
-                has_smithing_outfit = st.toggle(
-                    "Smiths' Uniform",
-                    value=params.get("smithing_outfit", "false") == "true",
-                    help="15% chance to save 1 tick (Giants' Foundry)"
-                )
-                
             else:
-                bank_location = params.get("bank_location", "Medium (Typical)")
-                use_stamina = params.get("use_stamina", "true") == "true"
+                bank_speed = params.get("bank_speed", "Medium")
                 has_imcando_hammer = params.get("imcando_hammer", "false") == "true"
                 has_amys_saw = params.get("amys_saw", "false") == "true"
-                has_plank_sack = params.get("plank_sack", "false") == "true"
-                has_smithing_outfit = params.get("smithing_outfit", "false") == "true"
             
             st.divider()
             
@@ -2441,19 +2503,18 @@ def main():
             if submitted:
                 st.query_params["plank_method"] = plank_method
                 st.query_params["self_collected"] = str(self_collected).lower()
+                st.query_params["double_mould"] = str(use_double_mould).lower()
                 st.query_params["ancient_furnace"] = str(ancient_furnace).lower()
                 st.query_params["show_gp_hr"] = str(show_gp_hr).lower()
-                st.query_params["bank_location"] = bank_location
-                st.query_params["use_stamina"] = str(use_stamina).lower()
+                st.query_params["bank_speed"] = bank_speed
                 st.query_params["imcando_hammer"] = str(has_imcando_hammer).lower()
                 st.query_params["amys_saw"] = str(has_amys_saw).lower()
-                st.query_params["plank_sack"] = str(has_plank_sack).lower()
-                st.query_params["smithing_outfit"] = str(has_smithing_outfit).lower()
                 st.query_params["quantity"] = str(quantity)
                 st.toast("Settings applied!")
         
         st.divider()
         
+        # Stats display
         with st.container():
             st.subheader("Stats")
             stat_col1, stat_col2 = st.columns(2)
@@ -2462,30 +2523,32 @@ def main():
             with stat_col2:
                 st.metric("Prices", len(prices))
         
+        # Refresh button
         if st.button("Refresh Prices", use_container_width=True):
             st.cache_data.clear()
             st.toast("Prices refreshed!")
             st.rerun()
         
+        # Last update time
         st.caption(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
     
+    # Prepare config
     use_earth_staff = "Earth Staff" in plank_method
     show_gp_hr = params.get("show_gp_hr", "false") == "true"
     config = {
         "quantity": quantity,
         "use_earth_staff": use_earth_staff,
         "self_collected": self_collected,
+        "double_ammo_mould": use_double_mould,
         "ancient_furnace": ancient_furnace,
         "plank_method": plank_method,
         "show_gp_hr": show_gp_hr,
-        "bank_location": params.get("bank_location", "Medium (Typical)"),
-        "use_stamina": params.get("use_stamina", "true") == "true",
+        "bank_speed": params.get("bank_speed", "Medium"),
         "has_imcando_hammer": params.get("imcando_hammer", "false") == "true",
         "has_amys_saw": params.get("amys_saw", "false") == "true",
-        "has_plank_sack": params.get("plank_sack", "false") == "true",
-        "has_smithing_outfit": params.get("smithing_outfit", "false") == "true",
     }
     
+    # Main tabs
     tabs = st.tabs([
         "All Chains", 
         "Search Items", 
@@ -2494,6 +2557,7 @@ def main():
         "Analytics"
     ])
     
+    # Tab 1: All Processing Chains
     with tabs[0]:
         st.header("All Processing Chains")
         
@@ -2531,6 +2595,7 @@ def main():
                         "_output_name": output_name
                     }
                     
+                    # Calculate GP/hr if enabled
                     if show_gp_hr:
                         gp_hr_data = calculate_gp_per_hour(
                             profit_per_item, category, chain.name, config
@@ -2549,75 +2614,167 @@ def main():
             if results:
                 df = pd.DataFrame(results)
                 
+                # Sort by GP/hr if enabled, otherwise by profit
                 if show_gp_hr and "GP/hr" in df.columns:
                     df = df.sort_values("_gp_hr_raw", ascending=False, na_position='last')
                 else:
                     df = df.sort_values("_profit_raw", ascending=False)
                 
+                # Build column config
                 column_config = {
-                    "Icon": st.column_config.ImageColumn("Icon", width="small"),
+                    "Icon": st.column_config.ImageColumn(
+                        "Icon",
+                        width="small",
+                        help="Item icon from OSRS Wiki"
+                    ),
                     "Item": st.column_config.TextColumn("Item", width="medium"),
-                    "Input Cost": st.column_config.NumberColumn("Input Cost", format="%.0f gp"),
-                    "Process Cost": st.column_config.NumberColumn("Process Cost", format="%.0f gp"),
-                    "Total Cost": st.column_config.NumberColumn("Total Cost", format="%.0f gp"),
-                    "Output": st.column_config.NumberColumn("Output Value", format="%.0f gp"),
-                    "Tax": st.column_config.NumberColumn("GE Tax", format="%.0f gp"),
-                    "Net Profit": st.column_config.NumberColumn("Net Profit", format="%.0f gp"),
-                    "Per Item": st.column_config.NumberColumn("Per Item", format="%.1f gp"),
-                    "ROI %": st.column_config.ProgressColumn("ROI %", format="%.1f%%", min_value=-100, max_value=100),
+                    "Input Cost": st.column_config.NumberColumn(
+                        "Input Cost",
+                        format="%.0f gp"
+                    ),
+                    "Process Cost": st.column_config.NumberColumn(
+                        "Process Cost",
+                        format="%.0f gp"
+                    ),
+                    "Total Cost": st.column_config.NumberColumn(
+                        "Total Cost",
+                        format="%.0f gp"
+                    ),
+                    "Output": st.column_config.NumberColumn(
+                        "Output Value",
+                        format="%.0f gp"
+                    ),
+                    "Tax": st.column_config.NumberColumn(
+                        "GE Tax",
+                        format="%.0f gp"
+                    ),
+                    "Net Profit": st.column_config.NumberColumn(
+                        "Net Profit",
+                        format="%.0f gp",
+                        help="Profit after all costs and GE tax"
+                    ),
+                    "Per Item": st.column_config.NumberColumn(
+                        "Per Item",
+                        format="%.1f gp"
+                    ),
+                    "ROI %": st.column_config.ProgressColumn(
+                        "ROI %",
+                        format="%.1f%%",
+                        min_value=-100,
+                        max_value=100,
+                        help="Return on Investment percentage"
+                    ),
                     "_profit_raw": None,
                     "_profitable": None,
                     "_output_name": None
                 }
                 
+                # Add GP/hr columns if enabled
                 if show_gp_hr:
-                    column_config["GP/hr"] = st.column_config.NumberColumn("GP/hr", format="%.0f")
-                    column_config["Items/hr"] = st.column_config.NumberColumn("Items/hr", format="%.0f")
+                    column_config["GP/hr"] = st.column_config.NumberColumn(
+                        "GP/hr",
+                        format="%.0f",
+                        help="Estimated gold per hour"
+                    )
+                    column_config["Items/hr"] = st.column_config.NumberColumn(
+                        "Items/hr",
+                        format="%.0f",
+                        help="Items crafted per hour"
+                    )
                     column_config["_gp_hr_raw"] = None
                 
-                st.dataframe(df, use_container_width=True, hide_index=True, column_config=column_config)
+                # Display with enhanced column config including icons
+                st.dataframe(
+                    df,
+                    use_container_width=True,
+                    hide_index=True,
+                    column_config=column_config
+                )
                 
+                # Summary metrics with improved best item display
                 profitable = sum(1 for r in results if r["_profit_raw"] > 0)
                 best_profit = max(results, key=lambda x: x["_profit_raw"])
                 total_profit = sum(r["_profit_raw"] for r in results if r["_profit_raw"] > 0)
                 
                 if show_gp_hr:
+                    # Show GP/hr focused metrics
                     gp_hr_results = [r for r in results if r.get("_gp_hr_raw", 0) > 0]
                     best_gp_hr = max(gp_hr_results, key=lambda x: x.get("_gp_hr_raw", 0)) if gp_hr_results else None
                     
                     col1, col2, col3, col4 = st.columns(4)
                     with col1:
-                        st.metric("Profitable Chains", f"{profitable}/{len(results)}", delta=f"{(profitable/len(results)*100):.0f}%")
+                        st.metric(
+                            "Profitable Chains",
+                            f"{profitable}/{len(results)}",
+                            delta=f"{(profitable/len(results)*100):.0f}%"
+                        )
                     with col2:
                         if best_gp_hr:
-                            st.markdown(render_best_item_card("Best GP/hr", get_clean_item_name(best_gp_hr["Item"]), format_gp(best_gp_hr["_gp_hr_raw"]) + "/hr"), unsafe_allow_html=True)
+                            st.markdown(
+                                render_best_item_card(
+                                    "Best GP/hr",
+                                    get_clean_item_name(best_gp_hr["Item"]),
+                                    format_gp(best_gp_hr["_gp_hr_raw"]) + "/hr"
+                                ),
+                                unsafe_allow_html=True
+                            )
                     with col3:
-                        st.markdown(render_best_item_card("Best Profit", get_clean_item_name(best_profit["Item"]), format_gp(best_profit["Net Profit"])), unsafe_allow_html=True)
+                        st.markdown(
+                            render_best_item_card(
+                                "Best Profit",
+                                get_clean_item_name(best_profit["Item"]),
+                                format_gp(best_profit["Net Profit"])
+                            ),
+                            unsafe_allow_html=True
+                        )
                     with col4:
                         st.metric("Total Potential", format_gp(total_profit))
                 else:
                     col1, col2, col3, col4 = st.columns(4)
                     with col1:
-                        st.metric("Profitable Chains", f"{profitable}/{len(results)}", delta=f"{(profitable/len(results)*100):.0f}%")
+                        st.metric(
+                            "Profitable Chains",
+                            f"{profitable}/{len(results)}",
+                            delta=f"{(profitable/len(results)*100):.0f}%"
+                        )
                     with col2:
-                        st.markdown(render_best_item_card("Best Item", get_clean_item_name(best_profit["Item"]), format_gp(best_profit["Net Profit"])), unsafe_allow_html=True)
+                        # Custom HTML card for best item with icon
+                        st.markdown(
+                            render_best_item_card(
+                                "Best Item",
+                                get_clean_item_name(best_profit["Item"]),
+                                format_gp(best_profit["Net Profit"])
+                            ),
+                            unsafe_allow_html=True
+                        )
                     with col3:
-                        st.metric("Best Profit", format_gp(best_profit["Net Profit"]), delta="per batch")
+                        st.metric(
+                            "Best Profit",
+                            format_gp(best_profit["Net Profit"]),
+                            delta="per batch"
+                        )
                     with col4:
                         st.metric("Total Potential", format_gp(total_profit))
                 
+                # Expandable details
                 with st.expander("View Chain Details", expanded=False):
-                    selected_item = st.selectbox("Select item for details", [r["Item"] for r in results])
+                    selected_item = st.selectbox(
+                        "Select item for details",
+                        [r["Item"] for r in results]
+                    )
                     
+                    # Find the chain
                     for chain in chains:
                         if chain.name == selected_item:
                             result = chain.calculate(prices, config, id_lookup)
                             
+                            # Show item icon alongside title
                             output_name = result.get("output_item_name", chain.name)
                             icon_url = get_item_icon_url(output_name)
                             st.markdown(f"""
                             <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-                                <img src="{icon_url}" style="width: 48px; height: 48px; image-rendering: pixelated;" onerror="this.style.display='none'">
+                                <img src="{icon_url}" style="width: 48px; height: 48px; image-rendering: pixelated;"
+                                     onerror="this.style.display='none'">
                                 <h3 style="margin: 0; color: #ffd700;">Chain: {chain.name}</h3>
                             </div>
                             """, unsafe_allow_html=True)
@@ -2645,11 +2802,16 @@ def main():
                                 <div style="display: flex; align-items: center; gap: 12px; padding: 12px;
                                             background: {bg_color}; border-radius: 8px; margin: 8px 0;
                                             border: 1px solid #5c4d3a;">
-                                    <img src="{step_icon_url}" style="width: 36px; height: 36px; image-rendering: pixelated;" onerror="this.style.display='none'">
+                                    <img src="{step_icon_url}" style="width: 36px; height: 36px; image-rendering: pixelated;"
+                                         onerror="this.style.display='none'">
                                     <div style="flex: 1;">
-                                        <div style="color: #ffd700; font-weight: 600;">{icon} Step {i+1}: {step['name']}{self_note}</div>
+                                        <div style="color: #ffd700; font-weight: 600;">
+                                            {icon} Step {i+1}: {step['name']}{self_note}
+                                        </div>
                                         <div style="color: #f4e4bc; font-size: 0.9rem;">
-                                            Qty: {step['quantity']:,.0f} | Unit: {format_gp(step['unit_price'])} | Total: {format_gp(step['total_value'])}
+                                            Qty: {step['quantity']:,.0f} | 
+                                            Unit: {format_gp(step['unit_price'])} | 
+                                            Total: {format_gp(step['total_value'])}
                                             {f" | {step['processing_notes']}" if step['processing_notes'] else ""}
                                         </div>
                                     </div>
@@ -2659,44 +2821,46 @@ def main():
                             if result["missing_prices"]:
                                 st.warning(f"Missing prices for: {', '.join(result['missing_prices'])}")
                             
+                            # Show GP/hr breakdown if enabled
                             if show_gp_hr:
-                                gp_hr_data = calculate_gp_per_hour(result["profit_per_item"], category, chain.name, config)
+                                gp_hr_data = calculate_gp_per_hour(
+                                    result["profit_per_item"], category, chain.name, config
+                                )
                                 if gp_hr_data:
                                     st.markdown("---")
-                                    st.markdown("##### GP/hr Breakdown")
+                                    st.markdown("##### GP/hr Calculation")
+                                    
+                                    # Tool info
+                                    tool_info = []
+                                    if gp_hr_data.get("tool_notes"):
+                                        tool_info = gp_hr_data["tool_notes"]
                                     
                                     col1, col2 = st.columns(2)
                                     with col1:
-                                        tool_info = gp_hr_data.get("tool_notes", [])
-                                        tool_status = " | ".join(tool_info) if tool_info else "None needed"
-                                        
                                         st.markdown(f"""
                                         <div style="background: rgba(93,173,226,0.15); padding: 12px; border-radius: 8px; border: 1px solid #5c4d3a;">
-                                            <div style="color: #5dade2; font-weight: 600; margin-bottom: 8px;">Efficiency</div>
+                                            <div style="color: #5dade2; font-weight: 600; margin-bottom: 8px;">Efficiency Stats</div>
                                             <div style="color: #f4e4bc; font-size: 0.9rem; line-height: 1.6;">
-                                                <strong>Location:</strong> {gp_hr_data['bank_location']}<br>
-                                                <strong>Inventory:</strong> {gp_hr_data['effective_inventory']} slots<br>
-                                                <strong>Materials/trip:</strong> {gp_hr_data['materials_per_trip']:,.0f}<br>
-                                                <strong>Items/trip:</strong> {gp_hr_data['items_per_trip']:,.0f}<br>
-                                                <strong>Seconds/trip:</strong> {gp_hr_data['seconds_per_trip']:.1f}s<br>
-                                                <strong>Ticks/action:</strong> {gp_hr_data['effective_ticks']:.2f}
+                                                <strong>Effective inventory:</strong> {gp_hr_data['effective_inventory']} slots<br>
+                                                <strong>Items per trip:</strong> {gp_hr_data['items_per_trip']:,.0f}<br>
+                                                <strong>Seconds per trip:</strong> {gp_hr_data['seconds_per_trip']:.1f}s<br>
+                                                <strong>Trips per hour:</strong> {gp_hr_data['trips_per_hour']:.1f}
                                             </div>
                                         </div>
                                         """, unsafe_allow_html=True)
                                     
                                     with col2:
-                                        bonus_notes = gp_hr_data.get('bonus_notes', [])
-                                        bonuses = " | ".join(bonus_notes) if bonus_notes else "None"
+                                        slots_saved = gp_hr_data.get('tool_slots_saved', 0)
+                                        tool_status = " | ".join(tool_info) if tool_info else "No equipped tools"
                                         
                                         st.markdown(f"""
                                         <div style="background: rgba(212,175,55,0.15); padding: 12px; border-radius: 8px; border: 1px solid #5c4d3a;">
-                                            <div style="color: #d4af37; font-weight: 600; margin-bottom: 8px;">Output</div>
+                                            <div style="color: #d4af37; font-weight: 600; margin-bottom: 8px;">Hourly Output</div>
                                             <div style="color: #f4e4bc; font-size: 0.9rem; line-height: 1.6;">
                                                 <strong>Items/hr:</strong> {gp_hr_data['items_per_hour']:,.0f}<br>
                                                 <strong>GP/hr:</strong> {format_gp(gp_hr_data['gp_per_hour'])}<br>
-                                                <strong>Trips/hr:</strong> {gp_hr_data['trips_per_hour']:.1f}<br>
                                                 <strong>Tools:</strong> {tool_status}<br>
-                                                <strong>Bonuses:</strong> {bonuses}
+                                                <strong>Slots saved:</strong> {slots_saved}
                                             </div>
                                         </div>
                                         """, unsafe_allow_html=True)
@@ -2706,15 +2870,27 @@ def main():
                             
                             break
     
+    # Tab 2: Item Search
     with tabs[1]:
         st.header("Item Database Search")
         
-        search = st.text_input("Search items by name:", placeholder="Try 'rosewood', 'dragon', or 'hull'...", key="item_search")
+        search = st.text_input(
+            "Search items by name:",
+            placeholder="Try 'rosewood', 'dragon', or 'hull'...",
+            key="item_search"
+        )
         
         if search:
             with st.spinner("Searching..."):
-                local_matches = [(id, name) for id, name in ALL_ITEMS.items() if search.lower() in name.lower()]
-                api_matches = [(id, item['name']) for id, item in item_mapping.items() if search.lower() in item['name'].lower()][:50]
+                local_matches = [
+                    (id, name) for id, name in ALL_ITEMS.items()
+                    if search.lower() in name.lower()
+                ]
+                
+                api_matches = [
+                    (id, item['name']) for id, item in item_mapping.items()
+                    if search.lower() in item['name'].lower()
+                ][:50]
                 
                 if local_matches or api_matches:
                     data = []
@@ -2759,7 +2935,7 @@ def main():
                             "Icon": st.column_config.ImageColumn("Icon", width="small"),
                             "ID": st.column_config.NumberColumn("ID", format="%d"),
                             "Name": st.column_config.TextColumn("Name", width="medium"),
-                            "Sailing": st.column_config.CheckboxColumn("Sailing"),
+                            "Sailing": st.column_config.CheckboxColumn("Sailing", help="Sailing item"),
                             "Buy": st.column_config.NumberColumn("Buy Price", format="%d gp"),
                             "Sell": st.column_config.NumberColumn("Sell Price", format="%d gp"),
                             "Margin": st.column_config.NumberColumn("Margin", format="%d gp"),
@@ -2771,6 +2947,7 @@ def main():
                 else:
                     st.info(f"No items found matching '{search}'")
     
+    # Tab 3: Sailing-specific items
     with tabs[2]:
         st.header("Sailing-Specific Items")
         
@@ -2784,7 +2961,11 @@ def main():
             "Ship Cannonballs": [31906, 31908, 31910, 31912, 31914, 31916],
         }
         
-        selected_cat = st.selectbox("Category", list(sailing_categories.keys()), key="sailing_category")
+        selected_cat = st.selectbox(
+            "Category",
+            list(sailing_categories.keys()),
+            key="sailing_category"
+        )
         
         item_ids = sailing_categories[selected_cat]
         
@@ -2832,10 +3013,11 @@ def main():
                     "Sell": st.column_config.NumberColumn("Sell Price", format="%d gp"),
                     "Margin": st.column_config.NumberColumn("Margin", format="%d gp"),
                     "ROI %": st.column_config.NumberColumn("ROI", format="%.1f%%"),
-                    "Status": st.column_config.CheckboxColumn("Active")
+                    "Status": st.column_config.CheckboxColumn("Active", help="Has GE prices")
                 }
             )
             
+            # Category stats
             active = sum(1 for d in data if d['Status'])
             col1, col2 = st.columns(2)
             with col1:
@@ -2845,6 +3027,7 @@ def main():
                     avg_margin = sum(d['Margin'] for d in data if d['Margin']) / active
                     st.metric("Avg Margin", format_gp(avg_margin))
     
+    # Tab 4: Best Profits
     with tabs[3]:
         st.header("Most Profitable Chains")
         
@@ -2868,6 +3051,7 @@ def main():
                         })
         
         if all_results:
+            # Filter controls
             col1, col2 = st.columns(2)
             with col1:
                 show_profitable_only = st.toggle("Show profitable only", value=True)
@@ -2878,6 +3062,7 @@ def main():
             if show_profitable_only:
                 filtered_results = [r for r in all_results if r["_profit_raw"] > 0]
             
+            # Sort and limit
             filtered_results.sort(key=lambda x: x["_profit_raw"], reverse=True)
             top_results = filtered_results[:top_n]
             
@@ -2892,14 +3077,26 @@ def main():
                         "Icon": st.column_config.ImageColumn("Icon", width="small"),
                         "Category": st.column_config.TextColumn("Category"),
                         "Item": st.column_config.TextColumn("Item", width="medium"),
-                        "Profit": st.column_config.NumberColumn("Net Profit", format="%.0f gp"),
-                        "Per Item": st.column_config.NumberColumn("Per Item", format="%.1f gp"),
-                        "ROI %": st.column_config.ProgressColumn("ROI %", format="%.1f%%", min_value=-100, max_value=100),
+                        "Profit": st.column_config.NumberColumn(
+                            "Net Profit",
+                            format="%.0f gp"
+                        ),
+                        "Per Item": st.column_config.NumberColumn(
+                            "Per Item",
+                            format="%.1f gp"
+                        ),
+                        "ROI %": st.column_config.ProgressColumn(
+                            "ROI %",
+                            format="%.1f%%",
+                            min_value=-100,
+                            max_value=100
+                        ),
                         "_profit_raw": None,
                         "_output_name": None
                     }
                 )
                 
+                # Best by category with icons
                 st.subheader("Best in Each Category")
                 
                 category_bests = {}
@@ -2910,6 +3107,7 @@ def main():
                             category_bests[cat] = result
                 
                 if category_bests:
+                    # Use a table with icons
                     best_data = []
                     for cat, best in category_bests.items():
                         best_data.append({
@@ -2936,29 +3134,46 @@ def main():
             else:
                 st.warning("No profitable chains found with current settings.")
     
+    # Tab 5: Analytics
     with tabs[4]:
         st.header("Profit Analytics")
         
+        # Filter controls - more prominent
         st.markdown("##### Analysis Filters")
         filter_col1, filter_col2, filter_col3 = st.columns(3)
         with filter_col1:
-            exclude_dragon = st.toggle("Exclude Dragon Items", value=True, help="Dragon items are extreme outliers")
+            exclude_dragon = st.toggle(
+                "Exclude Dragon Items",
+                value=True,  # Default ON - dragon items are extreme outliers
+                help="Dragon items have profits 100x higher than other items, making charts unreadable"
+            )
         with filter_col2:
-            use_per_item = st.toggle("Show Per-Item Profit", value=False)
+            use_per_item = st.toggle(
+                "Show Per-Item Profit",
+                value=False,
+                help="Show profit per single item instead of per batch"
+            )
         with filter_col3:
-            filter_outliers = st.toggle("Filter Statistical Outliers", value=False, help="Remove values beyond 1.5x IQR")
+            filter_outliers = st.toggle(
+                "Filter Statistical Outliers",
+                value=False,
+                help="Remove values beyond 1.5x IQR (standard outlier detection)"
+            )
         
+        # Calculate all for charts
         all_results_for_charts = []
         quantity = config.get("quantity", 1)
         
         for category, chains in all_chains.items():
             for chain in chains:
+                # Skip dragon items if filter is on
                 if exclude_dragon and "dragon" in chain.name.lower():
                     continue
                     
                 result = chain.calculate(prices, config, id_lookup)
                 if "error" not in result:
                     profit = result["net_profit"]
+                    # Apply per-item conversion if requested
                     if use_per_item and quantity > 0:
                         profit = profit / quantity
                     
@@ -2969,6 +3184,7 @@ def main():
                         "_profit_raw": profit
                     })
         
+        # Apply statistical outlier filtering if requested
         if filter_outliers and len(all_results_for_charts) > 4:
             profits = [r["_profit_raw"] for r in all_results_for_charts]
             q1 = np.percentile(profits, 25)
@@ -2978,7 +3194,10 @@ def main():
             upper_bound = q3 + 1.5 * iqr
             
             original_count = len(all_results_for_charts)
-            all_results_for_charts = [r for r in all_results_for_charts if lower_bound <= r["_profit_raw"] <= upper_bound]
+            all_results_for_charts = [
+                r for r in all_results_for_charts 
+                if lower_bound <= r["_profit_raw"] <= upper_bound
+            ]
             filtered_count = original_count - len(all_results_for_charts)
             if filtered_count > 0:
                 st.caption(f"*{filtered_count} statistical outliers hidden*")
@@ -2986,6 +3205,7 @@ def main():
         if all_results_for_charts:
             profitable_results = [r for r in all_results_for_charts if r["_profit_raw"] > 0]
             
+            # Row 1: Top profits and category comparison (better use of space)
             col1, col2 = st.columns(2)
             
             with col1:
@@ -2997,6 +3217,7 @@ def main():
                 fig = create_category_comparison(all_results_for_charts)
                 st.plotly_chart(fig, use_container_width=True)
             
+            # Row 2: ROI scatter and pie chart
             col1, col2 = st.columns(2)
             
             with col1:
@@ -3011,12 +3232,14 @@ def main():
                     fig = create_category_pie(profitable_results)
                     st.plotly_chart(fig, use_container_width=True)
             
+            # Row 3: Profit distribution histogram
             profit_label = "Per-Item Profit" if use_per_item else f"Batch Profit (qty: {quantity})"
             st.subheader(f"Distribution Analysis as {profit_label}")
             profits = [r["_profit_raw"] for r in all_results_for_charts]
             fig = create_profit_histogram(profits, per_item=use_per_item)
             st.plotly_chart(fig, use_container_width=True)
             
+            # Summary stats
             st.subheader("Voyage Summary")
             col1, col2, col3, col4 = st.columns(4)
             
