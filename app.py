@@ -2781,7 +2781,7 @@ def main():
             "Keel Parts": list(KEEL_PARTS.keys()) + list(LARGE_KEEL_PARTS.keys()),
             "Metals": [31716, 31719, 32889, 32892, 31996],
             "Dragon Items": [31406, 32017, 32038, 31916],
-            "Ship Cannonballs": [31906, 31908, 31910, 31912, 31914, 31916],
+            "Ship Cannonballs": [31906, 31908, 2, 31910, 31912, 31914, 31916],
         }
         
         selected_cat = st.selectbox("Category", list(sailing_categories.keys()), key="sailing_category")
