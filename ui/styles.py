@@ -221,63 +221,25 @@ hr {
     border-color: var(--gold) !important;
 }
 
-/* Custom item cards */
-.item-card {
-    background: linear-gradient(145deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
-    border: 2px solid var(--gold-dark);
-    border-radius: 10px;
-    padding: 12px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.item-card img {
-    width: 36px;
-    height: 36px;
-    image-rendering: pixelated;
-}
-
-.item-card .item-name {
-    color: var(--parchment);
-    font-family: 'Cinzel', serif;
-    font-size: 0.95rem;
-}
-
-.item-card .item-profit {
-    color: var(--gold);
-    font-family: 'Crimson Text', serif;
-    font-weight: 600;
-}
-
-/* Best item display */
-.best-item-display {
-    background: linear-gradient(145deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
-    border: 2px solid var(--gold-dark);
-    border-radius: 10px;
-    padding: 15px;
-    text-align: center;
-}
-
-.best-item-display img {
-    width: 48px;
-    height: 48px;
-    image-rendering: pixelated;
-    margin-bottom: 8px;
-}
-
-.best-item-display .label {
-    color: var(--gold);
-    font-family: 'Cinzel', serif;
+/* Timing warning style - NEW for estimated timing indicators */
+.timing-warning {
+    background: linear-gradient(145deg, #5c4d3a 0%, #3d3228 100%);
+    border: 2px solid #b8860b;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin: 4px 0;
+    color: #ffd700;
     font-size: 0.85rem;
-    margin-bottom: 4px;
 }
 
-.best-item-display .value {
-    color: var(--parchment);
-    font-family: 'Crimson Text', serif;
-    font-size: 1rem;
-    word-wrap: break-word;
+.timing-verified {
+    background: linear-gradient(145deg, #2E8B57 0%, #1d5c38 100%);
+    border: 2px solid #3CB371;
+    border-radius: 6px;
+    padding: 4px 8px;
+    color: #90EE90;
+    font-size: 0.75rem;
+    display: inline-block;
 }
 
 /* Mobile responsiveness */
@@ -322,49 +284,6 @@ hr {
     .stApp h1 { font-size: 1.5rem !important; }
     .stApp h2 { font-size: 1.25rem !important; }
     .stApp h3 { font-size: 1.1rem !important; }
-    
-    [data-testid="stDataFrame"]::before {
-        content: 'scroll horizontally';
-        display: block;
-        text-align: center;
-        font-size: 0.7rem;
-        color: var(--gold-dark);
-        padding: 4px;
-        opacity: 0.7;
-    }
-}
-
-@media screen and (max-width: 480px) {
-    [data-testid="stDataFrame"] {
-        font-size: 0.75rem;
-    }
-    
-    [data-testid="stMetric"] label {
-        font-size: 0.8rem !important;
-    }
-    
-    [data-testid="stMetric"] [data-testid="stMetricValue"] {
-        font-size: 1rem !important;
-    }
-}
-
-/* Scrollbar styling */
-[data-testid="stDataFrame"]::-webkit-scrollbar {
-    height: 8px;
-}
-
-[data-testid="stDataFrame"]::-webkit-scrollbar-track {
-    background: var(--driftwood-dark);
-    border-radius: 4px;
-}
-
-[data-testid="stDataFrame"]::-webkit-scrollbar-thumb {
-    background: var(--gold-dark);
-    border-radius: 4px;
-}
-
-[data-testid="stDataFrame"]::-webkit-scrollbar-thumb:hover {
-    background: var(--gold);
 }
 </style>
 

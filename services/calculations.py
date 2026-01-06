@@ -6,9 +6,12 @@ Calculates gold per hour estimates based on:
 - Bank location overhead
 - Equipment bonuses (Imcando Hammer, Amy's Saw, etc.)
 - Ancient Furnace (2x smithing speed)
+
+IMPORTANT: Some timing data is estimated (see timings.py for verification status).
+Functions will include warnings when using estimated timings.
 """
 
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 try:
     from ..data import (
@@ -16,6 +19,9 @@ try:
         BANK_LOCATIONS,
         PLANK_SACK_CAPACITY,
         SMITHING_OUTFIT_TICK_SAVE_CHANCE,
+        ANCIENT_FURNACE_MULTIPLIER,
+        get_timing_info,
+        TimingVerification,
     )
 except ImportError:
     from data import (
@@ -23,6 +29,9 @@ except ImportError:
         BANK_LOCATIONS,
         PLANK_SACK_CAPACITY,
         SMITHING_OUTFIT_TICK_SAVE_CHANCE,
+        ANCIENT_FURNACE_MULTIPLIER,
+        get_timing_info,
+        TimingVerification,
     )
 
 
@@ -62,6 +71,8 @@ def calculate_gp_per_hour(
             'effective_ticks': float,
             'is_double_mould': bool,
             'plank_sack_active': bool,
+            'timing_verified': bool,      # NEW: Whether timing is wiki-verified
+            'timing_warnings': list,      # NEW: Any warnings about estimated data
         }
     """
     # Determine which activity timing to use
@@ -70,8 +81,15 @@ def calculate_gp_per_hour(
     if not timing_key or timing_key not in ACTIVITY_TIMINGS:
         return None
     
-    timing = ACTIVITY_TIMINGS[timing_key]
+    # Get timing with verification info
+    timing_info = get_timing_info(timing_key)
+    timing = timing_info["timing"]
     is_double_mould_chain = "(Double)" in chain_name
+    
+    # Track warnings
+    timing_warnings: List[str] = []
+    if timing_info["warning"]:
+        timing_warnings.append(timing_info["warning"])
     
     # Get equipment settings
     has_imcando_hammer = config.get("has_imcando_hammer", False)
@@ -145,10 +163,10 @@ def calculate_gp_per_hour(
         seconds_per_trip = sawmill_travel
         items_per_trip = effective_inventory
     
-    # Ancient Furnace bonus (2x speed for smithing)
+    # Ancient Furnace bonus (2x speed for smithing/cannonballs)
     ancient_furnace_active = False
     if config.get("ancient_furnace", False) and timing.is_smithing:
-        craft_time_seconds = craft_time_seconds / 2
+        craft_time_seconds = craft_time_seconds * ANCIENT_FURNACE_MULTIPLIER
         seconds_per_trip = craft_time_seconds + trip_overhead
         ancient_furnace_active = True
     
@@ -160,19 +178,19 @@ def calculate_gp_per_hour(
     # Build notes
     tool_notes = []
     if timing.needs_hammer:
-        tool_notes.append(f"Hammer: {'equipped' if has_imcando_hammer else 'inventory'}")
+        tool_notes.append(f"Hammer: {'equipped (Imcando)' if has_imcando_hammer else 'inventory'}")
     if timing.needs_saw:
-        tool_notes.append(f"Saw: {'equipped' if has_amys_saw else 'inventory'}")
+        tool_notes.append(f"Saw: {'equipped (Amy\\'s)' if has_amys_saw else 'inventory'}")
     if has_plank_sack and timing.uses_planks:
         tool_notes.append(f"Plank sack: +{plank_sack_bonus} planks")
     
     bonus_notes = []
     if has_smithing_outfit and timing.is_smithing:
-        bonus_notes.append("Smithing outfit: -15% avg ticks")
+        bonus_notes.append("Smiths' Uniform: -15% avg ticks")
     if ancient_furnace_active:
-        bonus_notes.append("Ancient Furnace: 2x speed")
+        bonus_notes.append("Ancient Furnace: 2x speed (87 Sailing)")
     if is_double_mould_chain:
-        bonus_notes.append("Double mould: 2 bars/action")
+        bonus_notes.append("Double ammo mould: 2 bars/action")
     if has_plank_sack and timing.uses_planks:
         bonus_notes.append(f"Plank sack: +{plank_sack_bonus} capacity")
     
@@ -196,6 +214,9 @@ def calculate_gp_per_hour(
         "effective_ticks": effective_ticks,
         "is_double_mould": is_double_mould_chain,
         "plank_sack_active": has_plank_sack and timing.uses_planks,
+        # New timing verification fields
+        "timing_verified": timing_info["is_verified"],
+        "timing_warnings": timing_warnings,
     }
 
 
@@ -232,3 +253,31 @@ def _get_timing_key(category: str, chain_name: str, config: Dict) -> Optional[st
         return "Planks_Sawmill"
     
     return None
+
+
+def get_estimated_hourly_rates(category: str) -> Dict[str, float]:
+    """
+    Get estimated hourly rates for a category (for reference).
+    
+    Based on verified wiki data where available.
+    
+    Returns:
+        Dict with activity names and their items/hour rates
+    """
+    rates = {
+        "Cannonballs": {
+            "Regular furnace (single mould)": 1600,
+            "Regular furnace (double mould)": 3200,
+            "Ancient Furnace (single mould)": 3200,
+            "Ancient Furnace (double mould)": 9000,  # ~9,000/hr verified
+        },
+        "Plank Make": {
+            "Manual casting": 1850,  # Verified
+            "Auto-cast (AFK)": 1000,  # Verified
+        },
+        "Smithing": {
+            "Standard (5 ticks)": 1200,  # items/hr base
+            "With Smiths' Uniform (avg 4.15 ticks)": 1450,
+        }
+    }
+    return rates.get(category, {})

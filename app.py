@@ -1,25 +1,39 @@
 """
 OSRS Sailing Materials Tracker
-Version 4.6 - Modular Architecture
+Version 4.7 - Jan '26
 
 A comprehensive Streamlit application for tracking Old School RuneScape 
 Sailing skill materials with real-time Grand Exchange prices.
+
+Key improvements from research report:
+- Single /latest API call for all prices (no per-item loops)
+- Custom User-Agent header (required by API)
+- Timing verification system (wiki-verified vs estimated)
+- Optional osrs-prices package support
+- 5-minute minimum poll interval respected
 """
 
 import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from typing import Dict
+from typing import Dict, Optional
 
 # Local imports
-from config import APP_TITLE, APP_ICON, CACHE_TTL_PRICES, CACHE_TTL_MAPPING, CACHE_TTL_CHAINS
-from data import ALL_ITEMS, BANK_LOCATIONS
+from config import (
+    APP_TITLE, APP_ICON, APP_VERSION,
+    CACHE_TTL_PRICES, CACHE_TTL_MAPPING, CACHE_TTL_CHAINS
+)
+from data import ALL_ITEMS, BANK_LOCATIONS, ACTIVITY_TIMINGS, SAILING_ITEMS
+from data.timings import get_timing_info, TimingVerification
 from models import generate_all_chains
-from services import OSRSWikiConnection, ItemIDLookup, calculate_gp_per_hour
+from services import get_api_connection, ItemIDLookup, calculate_gp_per_hour
 from ui import (
     OSRS_CSS,
     render_best_item_card,
+    render_timing_warning,
+    render_verified_badge,
+    render_gp_hr_card,
     create_profit_chart,
     create_category_pie,
     create_profit_histogram,
@@ -45,20 +59,25 @@ st.markdown(OSRS_CSS, unsafe_allow_html=True)
 # =============================================================================
 
 @st.cache_resource
-def get_api_connection() -> OSRSWikiConnection:
+def get_cached_api_connection():
     """Get a singleton API connection."""
-    return OSRSWikiConnection()
+    return get_api_connection()
 
 
 @st.cache_data(ttl=CACHE_TTL_MAPPING, show_spinner=False)
-def fetch_item_mapping(_conn: OSRSWikiConnection) -> Dict:
+def fetch_item_mapping(_conn) -> Dict:
     """Fetch and cache item mappings."""
     return _conn.fetch_mapping()
 
 
 @st.cache_data(ttl=CACHE_TTL_PRICES, show_spinner=False)
-def fetch_latest_prices(_conn: OSRSWikiConnection) -> Dict:
-    """Fetch and cache latest prices."""
+def fetch_latest_prices(_conn) -> Dict:
+    """
+    Fetch and cache latest prices.
+    
+    Per research: call /latest ONCE to get all ~3,700 items.
+    Never loop individual item requests.
+    """
     return _conn.fetch_prices()
 
 
@@ -75,6 +94,33 @@ def get_all_chains() -> Dict:
 
 
 # =============================================================================
+# HELPER FUNCTIONS
+# =============================================================================
+
+def get_timing_warnings_for_category(category: str) -> list:
+    """Get any timing warnings for a category."""
+    warnings = []
+    
+    # Check if this category uses estimated timings
+    if category in ["Hull Parts", "Large Hull Parts"]:
+        timing_info = get_timing_info("Hull Parts")
+        if timing_info and timing_info.get("verification") == TimingVerification.ESTIMATED:
+            warnings.append(timing_info.get("warning", "Timing is estimated"))
+    
+    return warnings
+
+
+def display_timing_status(timing_key: str) -> None:
+    """Display timing verification status inline."""
+    info = get_timing_info(timing_key)
+    if info:
+        if info["verification"] == TimingVerification.VERIFIED:
+            st.markdown(render_verified_badge(), unsafe_allow_html=True)
+        elif info["verification"] == TimingVerification.ESTIMATED:
+            st.warning(f"⚠️ {info['warning']}", icon="⚠️")
+
+
+# =============================================================================
 # MAIN APPLICATION
 # =============================================================================
 
@@ -85,7 +131,7 @@ def main():
     col1, col2 = st.columns([4, 1])
     with col1:
         st.title(APP_TITLE)
-        st.caption("*\"For the crafty sailor!\"*")
+        st.caption(f'*"For the crafty sailor!"* — v{APP_VERSION}')
     with col2:
         st.link_button(
             "OSRS Wiki",
@@ -94,7 +140,7 @@ def main():
         )
     
     # Load data
-    conn = get_api_connection()
+    conn = get_cached_api_connection()
     
     with st.spinner("Loading market data..."):
         item_mapping = fetch_item_mapping(conn)
@@ -121,7 +167,8 @@ def main():
                 ["Sawmill", "Plank Make", "Plank Make (Earth Staff)"],
                 index=["Sawmill", "Plank Make", "Plank Make (Earth Staff)"].index(
                     params.get("plank_method", "Sawmill")
-                ) if params.get("plank_method") in ["Sawmill", "Plank Make", "Plank Make (Earth Staff)"] else 0
+                ) if params.get("plank_method") in ["Sawmill", "Plank Make", "Plank Make (Earth Staff)"] else 0,
+                help="Plank Make: 3 ticks/cast manual, 6 ticks auto (wiki verified)"
             )
             
             self_collected = st.toggle(
@@ -133,7 +180,7 @@ def main():
             ancient_furnace = st.toggle(
                 "Ancient Furnace",
                 value=params.get("ancient_furnace", "false") == "true",
-                help="Halves smithing time (87 Sailing)"
+                help="2x speed for cannonballs (87 Sailing, wiki verified)"
             )
             
             st.divider()
@@ -175,13 +222,13 @@ def main():
                 has_imcando_hammer = st.toggle(
                     "Imcando Hammer",
                     value=params.get("imcando_hammer", "false") == "true",
-                    help="Equippable hammer (Below Ice Mountain)"
+                    help="Equippable hammer (Ruins of Camdozaal)"
                 )
                 
                 has_amys_saw = st.toggle(
                     "Amy's Saw",
                     value=params.get("amys_saw", "false") == "true",
-                    help="Equippable saw (Sailing reward)"
+                    help="Equippable saw (500 Carpenter points)"
                 )
                 
                 has_plank_sack = st.toggle(
@@ -193,7 +240,7 @@ def main():
                 has_smithing_outfit = st.toggle(
                     "Smiths' Uniform",
                     value=params.get("smithing_outfit", "false") == "true",
-                    help="15% chance to save 1 tick (Giants' Foundry)"
+                    help="15% chance to save 1 tick (Giants' Foundry, wiki verified)"
                 )
             else:
                 bank_location = params.get("bank_location", "Medium (Typical)")
@@ -233,19 +280,24 @@ def main():
         
         # Stats
         with st.container():
-            st.subheader("Stats")
+            st.subheader("📊 Data Status")
             stat_col1, stat_col2 = st.columns(2)
             with stat_col1:
                 st.metric("Items", len(ALL_ITEMS))
             with stat_col2:
                 st.metric("Prices", len(prices))
+            
+            # Show Sailing-specific items
+            sailing_count = len(SAILING_ITEMS) if 'SAILING_ITEMS' in dir() else "N/A"
+            st.caption(f"Sailing items tracked: {sailing_count}")
         
-        if st.button("Refresh Prices", use_container_width=True):
+        if st.button("🔄 Refresh Prices", use_container_width=True):
             st.cache_data.clear()
             st.toast("Prices refreshed!")
             st.rerun()
         
         st.caption(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
+        st.caption("*API: prices.runescape.wiki (5-min refresh)*")
     
     # Build config dict
     use_earth_staff = "Earth Staff" in plank_method
@@ -271,11 +323,11 @@ def main():
     # ==========================================================================
     
     tabs = st.tabs([
-        "All Chains", 
-        "Search Items", 
-        "Sailing Items",
-        "Best Profits",
-        "Analytics"
+        "📋 All Chains", 
+        "🔍 Search Items", 
+        "⛵ Sailing Items",
+        "💰 Best Profits",
+        "📈 Analytics"
     ])
     
     # --------------------------------------------------------------------------
@@ -284,11 +336,29 @@ def main():
     with tabs[0]:
         st.header("All Processing Chains")
         
+        # Show timing data info
+        with st.expander("ℹ️ About Timing Data", expanded=False):
+            st.markdown("""
+            **Wiki-Verified Timings:**
+            - Smithing: 5 ticks/action (can be 4 with Smiths' Uniform)
+            - Cannonball smelting: 8 ticks/bar (4 with Ancient Furnace)
+            - Plank Make: 3 ticks manual, 6 ticks auto
+            - Nails: 15 per bar output
+            
+            **Estimated (not in wiki):**
+            - Hull parts crafting: ~4 ticks (undocumented)
+            """)
+        
         category = st.selectbox(
             "Select Category",
             list(all_chains.keys()),
             key="chain_category"
         )
+        
+        # Show timing warnings for category
+        timing_warnings = get_timing_warnings_for_category(category)
+        if timing_warnings:
+            st.markdown(render_timing_warning(timing_warnings), unsafe_allow_html=True)
         
         chains = all_chains[category]
         show_gp_hr_display = config.get("show_gp_hr", False)
@@ -326,10 +396,12 @@ def main():
                             row["GP/hr"] = gp_hr_data["gp_per_hour"]
                             row["Items/hr"] = gp_hr_data["items_per_hour"]
                             row["_gp_hr_raw"] = gp_hr_data["gp_per_hour"]
+                            row["_timing_verified"] = gp_hr_data.get("timing_verified", True)
                         else:
                             row["GP/hr"] = None
                             row["Items/hr"] = None
                             row["_gp_hr_raw"] = 0
+                            row["_timing_verified"] = True
                     
                     results.append(row)
             
@@ -361,6 +433,7 @@ def main():
                     column_config["GP/hr"] = st.column_config.NumberColumn("GP/hr", format="%.0f")
                     column_config["Items/hr"] = st.column_config.NumberColumn("Items/hr", format="%.0f")
                     column_config["_gp_hr_raw"] = None
+                    column_config["_timing_verified"] = None
                 
                 st.dataframe(df, use_container_width=True, hide_index=True, column_config=column_config)
                 
@@ -448,6 +521,11 @@ def main():
     # --------------------------------------------------------------------------
     with tabs[2]:
         st.header("Sailing Items")
+        
+        st.markdown("""
+        These are all tracked Sailing-related items. Item IDs verified via the 
+        `/mapping` endpoint as recommended by the research report.
+        """)
         
         data = []
         for item_id, name in ALL_ITEMS.items():

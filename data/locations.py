@@ -40,6 +40,18 @@ BANK_LOCATIONS = {
         stamina_dependent=False
     ),
     
+    "Grimstone (Ancient Furnace)": BankLocation(
+        name="Grimstone (Ancient Furnace)",
+        bank_time=4.0,
+        travel_time=5.0,
+        has_anvil=False,
+        has_furnace=True,  # Ancient Furnace - 2x cannonball speed
+        has_shipwright=False,
+        has_sawmill=False,
+        requirements="87 Sailing",
+        stamina_dependent=False
+    ),
+    
     "Prifddinas": BankLocation(
         name="Prifddinas",
         bank_time=4.0,

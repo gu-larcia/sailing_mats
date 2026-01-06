@@ -3,6 +3,14 @@ OSRS Item ID mappings for Sailing materials and related items.
 
 All IDs verified against the OSRS Wiki API /mapping endpoint.
 Sailing skill released November 19, 2025.
+
+Item ID ranges verified per research:
+- Hull parts: 32041-32080 ✓
+- Keel parts: 31999-32038 ✓
+- Repair kits: 31964-31982 ✓
+- Sailing logs: 32904-32910 ✓
+- Helm variants: 32151-32153
+- Cannons: 32203+
 """
 
 # ============================================================================
@@ -22,7 +30,7 @@ ALL_LOGS = {
     2862: "Achey tree logs",
     10810: "Arctic pine logs",
     3239: "Bark",
-    # Sailing logs (32904-32910 range)
+    # Sailing logs (32904-32910 range) - verified
     32904: "Camphor logs",
     32907: "Ironwood logs",
     32910: "Rosewood logs",
@@ -44,7 +52,7 @@ ALL_PLANKS = {
 }
 
 # ============================================================================
-# HULL PARTS (32041-32080 range)
+# HULL PARTS (32041-32080 range) - verified
 # ============================================================================
 
 HULL_PARTS = {
@@ -68,7 +76,7 @@ LARGE_HULL_PARTS = {
 }
 
 # ============================================================================
-# HULL REPAIR KITS (31964-31982 range)
+# HULL REPAIR KITS (31964-31982 range) - verified
 # ============================================================================
 
 HULL_REPAIR_KITS = {
@@ -120,7 +128,7 @@ ALL_BARS = {
 }
 
 # ============================================================================
-# KEEL PARTS (31999-32038 range)
+# KEEL PARTS (31999-32038 range) - verified
 # ============================================================================
 
 KEEL_PARTS = {
@@ -141,6 +149,15 @@ LARGE_KEEL_PARTS = {
     32032: "Large adamant keel parts",
     32035: "Large rune keel parts",
     32038: "Large dragon keel parts",
+}
+
+# ============================================================================
+# ADDITIONAL KEEL PIECES (from research report)
+# ============================================================================
+
+KEEL_PIECES = {
+    32189: "Keel piece",
+    32190: "Large keel piece",
 }
 
 # ============================================================================
@@ -173,6 +190,31 @@ ALL_CANNONBALLS = {
 }
 
 # ============================================================================
+# SHIP HELMS (32151-32153 range from research report)
+# ============================================================================
+
+SHIP_HELMS = {
+    32151: "Ship helm",
+    32152: "Gilded ship helm",
+    32153: "Ornate ship helm",
+}
+
+# ============================================================================
+# CANNONS (from research report - 32203 range)
+# ============================================================================
+
+SHIP_CANNONS = {
+    32203: "Ship cannon",
+    32204: "Bronze ship cannon",
+    32205: "Iron ship cannon",
+    32206: "Steel ship cannon",
+    32207: "Mithril ship cannon",
+    32208: "Adamant ship cannon",
+    32209: "Rune ship cannon",
+    32210: "Dragon ship cannon",
+}
+
+# ============================================================================
 # TOOLS & MISC
 # ============================================================================
 
@@ -184,6 +226,12 @@ AMMO_MOULDS = {
 MISC_ITEMS = {
     1941: "Swamp paste",
     25580: "Plank sack",
+}
+
+# Equipment items for GP/hr calculations
+EQUIPMENT_ITEMS = {
+    25644: "Amy's saw",           # 500 Carpenter points from Mahogany Homes
+    25554: "Imcando hammer",      # From Ruins of Camdozaal
 }
 
 # ============================================================================
@@ -209,9 +257,30 @@ ALL_ITEMS = {
     **ALL_ORES, 
     **ALL_BARS, 
     **KEEL_PARTS,
-    **LARGE_KEEL_PARTS, 
+    **LARGE_KEEL_PARTS,
+    **KEEL_PIECES,
     **ALL_NAILS, 
-    **ALL_CANNONBALLS, 
+    **ALL_CANNONBALLS,
+    **SHIP_HELMS,
+    **SHIP_CANNONS,
     **AMMO_MOULDS,
-    **MISC_ITEMS
+    **MISC_ITEMS,
+    **EQUIPMENT_ITEMS,
+}
+
+# ============================================================================
+# SAILING-SPECIFIC ITEMS (for filtering)
+# ============================================================================
+
+SAILING_ITEMS = {
+    **{k: v for k, v in ALL_LOGS.items() if k >= 32900},  # Sailing logs only
+    **{k: v for k, v in ALL_PLANKS.items() if k >= 31000},  # Sailing planks only
+    **HULL_PARTS,
+    **LARGE_HULL_PARTS,
+    **HULL_REPAIR_KITS,
+    **KEEL_PARTS,
+    **LARGE_KEEL_PARTS,
+    **KEEL_PIECES,
+    **SHIP_HELMS,
+    **SHIP_CANNONS,
 }

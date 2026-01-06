@@ -26,6 +26,11 @@ class ProcessingChain:
     A complete processing chain from raw materials to finished product.
     
     Example: Bronze bar -> Bronze keel parts
+    
+    Ratios verified per research:
+    - Hull/Keel parts: 5:1 standard, 2:1 dragon
+    - Nails: 15 per bar
+    - Cannonballs: 4 per bar (8 with double mould)
     """
     name: str
     category: str
@@ -86,7 +91,7 @@ class ProcessingChain:
         
         final_quantity = config.get("quantity", 1)
         
-        # Handle special dragon ratio (2:1 instead of 5:1)
+        # Handle special dragon ratio (2:1 instead of 5:1) - VERIFIED
         if self.special_ratio and "dragon" in self.name.lower():
             ratio = self.special_ratio.get("conversion_ratio", 5)
         else:
