@@ -1,4 +1,4 @@
-"""Core data models for processing chains."""
+"""Processing chain models."""
 
 from .dataclasses import ChainStep, ProcessingChain
 from .chains import generate_all_chains

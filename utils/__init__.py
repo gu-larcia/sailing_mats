@@ -1,4 +1,4 @@
-"""Utility functions for formatting and colors."""
+"""Formatting and color utilities."""
 
 from .formatting import (
     format_gp,
@@ -18,13 +18,11 @@ from .colors import (
 )
 
 __all__ = [
-    # Formatting
     'format_gp',
     'get_clean_item_name',
     'get_output_item_name',
     'get_wiki_image_url',
     'get_item_icon_url',
-    # Colors
     'METAL_COLORS',
     'WOOD_COLORS',
     'CATEGORY_COLORS',

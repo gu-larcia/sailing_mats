@@ -1,39 +1,18 @@
-"""
-OSRS Sailing Materials Tracker
-Version 4.7 - Jan '26
-
-A comprehensive Streamlit application for tracking Old School RuneScape 
-Sailing skill materials with real-time Grand Exchange prices.
-
-Key improvements from research report:
-- Single /latest API call for all prices (no per-item loops)
-- Custom User-Agent header (required by API)
-- Timing verification system (wiki-verified vs estimated)
-- Optional osrs-prices package support
-- 5-minute minimum poll interval respected
-"""
+"""OSRS Sailing Materials Tracker v4.6"""
 
 import streamlit as st
 import pandas as pd
 import numpy as np
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict
 
-# Local imports
-from config import (
-    APP_TITLE, APP_ICON, APP_VERSION,
-    CACHE_TTL_PRICES, CACHE_TTL_MAPPING, CACHE_TTL_CHAINS
-)
-from data import ALL_ITEMS, BANK_LOCATIONS, ACTIVITY_TIMINGS, SAILING_ITEMS
-from data.timings import get_timing_info, TimingVerification
+from config import APP_TITLE, APP_ICON, CACHE_TTL_PRICES, CACHE_TTL_MAPPING, CACHE_TTL_CHAINS
+from data import ALL_ITEMS, BANK_LOCATIONS
 from models import generate_all_chains
-from services import get_api_connection, ItemIDLookup, calculate_gp_per_hour
+from services import OSRSWikiConnection, ItemIDLookup, calculate_gp_per_hour
 from ui import (
     OSRS_CSS,
     render_best_item_card,
-    render_timing_warning,
-    render_verified_badge,
-    render_gp_hr_card,
     create_profit_chart,
     create_category_pie,
     create_profit_histogram,
@@ -42,7 +21,6 @@ from ui import (
 )
 from utils import format_gp, get_clean_item_name, get_item_icon_url
 
-# Page configuration
 st.set_page_config(
     page_title=APP_TITLE,
     page_icon=APP_ICON,
@@ -50,88 +28,39 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Apply custom CSS
 st.markdown(OSRS_CSS, unsafe_allow_html=True)
 
 
-# =============================================================================
-# CACHED RESOURCES
-# =============================================================================
-
 @st.cache_resource
-def get_cached_api_connection():
-    """Get a singleton API connection."""
-    return get_api_connection()
+def get_api_connection() -> OSRSWikiConnection:
+    return OSRSWikiConnection()
 
 
 @st.cache_data(ttl=CACHE_TTL_MAPPING, show_spinner=False)
-def fetch_item_mapping(_conn) -> Dict:
-    """Fetch and cache item mappings."""
+def fetch_item_mapping(_conn: OSRSWikiConnection) -> Dict:
     return _conn.fetch_mapping()
 
 
 @st.cache_data(ttl=CACHE_TTL_PRICES, show_spinner=False)
-def fetch_latest_prices(_conn) -> Dict:
-    """
-    Fetch and cache latest prices.
-    
-    Per research: call /latest ONCE to get all ~3,700 items.
-    Never loop individual item requests.
-    """
+def fetch_latest_prices(_conn: OSRSWikiConnection) -> Dict:
     return _conn.fetch_prices()
 
 
 @st.cache_resource
 def get_id_lookup(_mapping_hash: str, item_mapping: Dict) -> ItemIDLookup:
-    """Get a cached ItemIDLookup instance."""
     return ItemIDLookup(item_mapping)
 
 
 @st.cache_data(ttl=CACHE_TTL_CHAINS)
 def get_all_chains() -> Dict:
-    """Get all processing chains (cached for 1 hour)."""
     return generate_all_chains()
 
 
-# =============================================================================
-# HELPER FUNCTIONS
-# =============================================================================
-
-def get_timing_warnings_for_category(category: str) -> list:
-    """Get any timing warnings for a category."""
-    warnings = []
-    
-    # Check if this category uses estimated timings
-    if category in ["Hull Parts", "Large Hull Parts"]:
-        timing_info = get_timing_info("Hull Parts")
-        if timing_info and timing_info.get("verification") == TimingVerification.ESTIMATED:
-            warnings.append(timing_info.get("warning", "Timing is estimated"))
-    
-    return warnings
-
-
-def display_timing_status(timing_key: str) -> None:
-    """Display timing verification status inline."""
-    info = get_timing_info(timing_key)
-    if info:
-        if info["verification"] == TimingVerification.VERIFIED:
-            st.markdown(render_verified_badge(), unsafe_allow_html=True)
-        elif info["verification"] == TimingVerification.ESTIMATED:
-            st.warning(f"⚠️ {info['warning']}", icon="⚠️")
-
-
-# =============================================================================
-# MAIN APPLICATION
-# =============================================================================
-
 def main():
-    """Main application entry point."""
-    
-    # Header
     col1, col2 = st.columns([4, 1])
     with col1:
         st.title(APP_TITLE)
-        st.caption(f'*"For the crafty sailor!"* — v{APP_VERSION}')
+        st.caption("*\"For the crafty sailor!\"*")
     with col2:
         st.link_button(
             "OSRS Wiki",
@@ -139,8 +68,7 @@ def main():
             use_container_width=True
         )
     
-    # Load data
-    conn = get_cached_api_connection()
+    conn = get_api_connection()
     
     with st.spinner("Loading market data..."):
         item_mapping = fetch_item_mapping(conn)
@@ -149,12 +77,7 @@ def main():
         id_lookup = get_id_lookup(mapping_hash, item_mapping)
         all_chains = get_all_chains()
     
-    # Get URL parameters
     params = st.query_params
-    
-    # ==========================================================================
-    # SIDEBAR CONFIGURATION
-    # ==========================================================================
     
     with st.sidebar:
         st.header("Configuration")
@@ -167,8 +90,7 @@ def main():
                 ["Sawmill", "Plank Make", "Plank Make (Earth Staff)"],
                 index=["Sawmill", "Plank Make", "Plank Make (Earth Staff)"].index(
                     params.get("plank_method", "Sawmill")
-                ) if params.get("plank_method") in ["Sawmill", "Plank Make", "Plank Make (Earth Staff)"] else 0,
-                help="Plank Make: 3 ticks/cast manual, 6 ticks auto (wiki verified)"
+                ) if params.get("plank_method") in ["Sawmill", "Plank Make", "Plank Make (Earth Staff)"] else 0
             )
             
             self_collected = st.toggle(
@@ -180,7 +102,7 @@ def main():
             ancient_furnace = st.toggle(
                 "Ancient Furnace",
                 value=params.get("ancient_furnace", "false") == "true",
-                help="2x speed for cannonballs (87 Sailing, wiki verified)"
+                help="Halves smithing time (87 Sailing)"
             )
             
             st.divider()
@@ -190,7 +112,7 @@ def main():
             show_gp_hr = st.toggle(
                 "Show GP/hr",
                 value=params.get("show_gp_hr", "false") == "true",
-                help="Calculate and display gold per hour estimates"
+                help="Show gold per hour estimates"
             )
             
             if show_gp_hr:
@@ -203,7 +125,7 @@ def main():
                     "Bank Location",
                     bank_location_options,
                     index=bank_location_options.index(default_location),
-                    help="Select your banking location"
+                    help="Banking location"
                 )
                 
                 selected_bank = BANK_LOCATIONS[bank_location]
@@ -214,7 +136,7 @@ def main():
                     use_stamina = st.toggle(
                         "Using Stamina Potions",
                         value=params.get("use_stamina", "true") == "true",
-                        help="Reduces travel time by ~30%"
+                        help="~30% travel time reduction"
                     )
                 
                 st.caption("**Equipment**")
@@ -222,25 +144,25 @@ def main():
                 has_imcando_hammer = st.toggle(
                     "Imcando Hammer",
                     value=params.get("imcando_hammer", "false") == "true",
-                    help="Equippable hammer (Ruins of Camdozaal)"
+                    help="Equipped hammer (Below Ice Mountain)"
                 )
                 
                 has_amys_saw = st.toggle(
                     "Amy's Saw",
                     value=params.get("amys_saw", "false") == "true",
-                    help="Equippable saw (500 Carpenter points)"
+                    help="Equipped saw (Sailing reward)"
                 )
                 
                 has_plank_sack = st.toggle(
                     "Plank Sack",
                     value=params.get("plank_sack", "false") == "true",
-                    help="Holds 28 extra planks (Mahogany Homes)"
+                    help="+28 planks (Mahogany Homes)"
                 )
                 
                 has_smithing_outfit = st.toggle(
                     "Smiths' Uniform",
                     value=params.get("smithing_outfit", "false") == "true",
-                    help="15% chance to save 1 tick (Giants' Foundry, wiki verified)"
+                    help="15% tick save (Giants' Foundry)"
                 )
             else:
                 bank_location = params.get("bank_location", "Medium (Typical)")
@@ -278,28 +200,21 @@ def main():
         
         st.divider()
         
-        # Stats
         with st.container():
-            st.subheader("📊 Data Status")
+            st.subheader("Stats")
             stat_col1, stat_col2 = st.columns(2)
             with stat_col1:
                 st.metric("Items", len(ALL_ITEMS))
             with stat_col2:
                 st.metric("Prices", len(prices))
-            
-            # Show Sailing-specific items
-            sailing_count = len(SAILING_ITEMS) if 'SAILING_ITEMS' in dir() else "N/A"
-            st.caption(f"Sailing items tracked: {sailing_count}")
         
-        if st.button("🔄 Refresh Prices", use_container_width=True):
+        if st.button("Refresh Prices", use_container_width=True):
             st.cache_data.clear()
             st.toast("Prices refreshed!")
             st.rerun()
         
         st.caption(f"Last updated: {datetime.now().strftime('%H:%M:%S')}")
-        st.caption("*API: prices.runescape.wiki (5-min refresh)*")
     
-    # Build config dict
     use_earth_staff = "Earth Staff" in plank_method
     show_gp_hr_active = params.get("show_gp_hr", "false") == "true"
     
@@ -318,47 +233,23 @@ def main():
         "has_smithing_outfit": params.get("smithing_outfit", "false") == "true",
     }
     
-    # ==========================================================================
-    # MAIN TABS
-    # ==========================================================================
-    
     tabs = st.tabs([
-        "📋 All Chains", 
-        "🔍 Search Items", 
-        "⛵ Sailing Items",
-        "💰 Best Profits",
-        "📈 Analytics"
+        "All Chains", 
+        "Search Items", 
+        "Sailing Items",
+        "Best Profits",
+        "Analytics"
     ])
     
-    # --------------------------------------------------------------------------
-    # TAB 1: ALL CHAINS
-    # --------------------------------------------------------------------------
+    # Tab 1: All Chains
     with tabs[0]:
         st.header("All Processing Chains")
-        
-        # Show timing data info
-        with st.expander("ℹ️ About Timing Data", expanded=False):
-            st.markdown("""
-            **Wiki-Verified Timings:**
-            - Smithing: 5 ticks/action (can be 4 with Smiths' Uniform)
-            - Cannonball smelting: 8 ticks/bar (4 with Ancient Furnace)
-            - Plank Make: 3 ticks manual, 6 ticks auto
-            - Nails: 15 per bar output
-            
-            **Estimated (not in wiki):**
-            - Hull parts crafting: ~4 ticks (undocumented)
-            """)
         
         category = st.selectbox(
             "Select Category",
             list(all_chains.keys()),
             key="chain_category"
         )
-        
-        # Show timing warnings for category
-        timing_warnings = get_timing_warnings_for_category(category)
-        if timing_warnings:
-            st.markdown(render_timing_warning(timing_warnings), unsafe_allow_html=True)
         
         chains = all_chains[category]
         show_gp_hr_display = config.get("show_gp_hr", False)
@@ -396,12 +287,10 @@ def main():
                             row["GP/hr"] = gp_hr_data["gp_per_hour"]
                             row["Items/hr"] = gp_hr_data["items_per_hour"]
                             row["_gp_hr_raw"] = gp_hr_data["gp_per_hour"]
-                            row["_timing_verified"] = gp_hr_data.get("timing_verified", True)
                         else:
                             row["GP/hr"] = None
                             row["Items/hr"] = None
                             row["_gp_hr_raw"] = 0
-                            row["_timing_verified"] = True
                     
                     results.append(row)
             
@@ -433,11 +322,9 @@ def main():
                     column_config["GP/hr"] = st.column_config.NumberColumn("GP/hr", format="%.0f")
                     column_config["Items/hr"] = st.column_config.NumberColumn("Items/hr", format="%.0f")
                     column_config["_gp_hr_raw"] = None
-                    column_config["_timing_verified"] = None
                 
                 st.dataframe(df, use_container_width=True, hide_index=True, column_config=column_config)
                 
-                # Summary stats
                 profitable = sum(1 for r in results if r["_profit_raw"] > 0)
                 best_profit = max(results, key=lambda x: x["_profit_raw"])
                 total_profit = sum(r["_profit_raw"] for r in results if r["_profit_raw"] > 0)
@@ -468,9 +355,7 @@ def main():
                         if best_profit["ROI %"]:
                             st.metric("Best ROI", f"{best_profit['ROI %']:.1f}%")
     
-    # --------------------------------------------------------------------------
-    # TAB 2: SEARCH ITEMS
-    # --------------------------------------------------------------------------
+    # Tab 2: Search Items
     with tabs[1]:
         st.header("Search Items")
         
@@ -514,18 +399,11 @@ def main():
                 )
                 st.caption(f"Showing {min(50, len(matching_items))} of {len(matching_items)} results")
             else:
-                st.info("No items found matching your search.")
+                st.info("No items found.")
     
-    # --------------------------------------------------------------------------
-    # TAB 3: SAILING ITEMS
-    # --------------------------------------------------------------------------
+    # Tab 3: Sailing Items
     with tabs[2]:
         st.header("Sailing Items")
-        
-        st.markdown("""
-        These are all tracked Sailing-related items. Item IDs verified via the 
-        `/mapping` endpoint as recommended by the research report.
-        """)
         
         data = []
         for item_id, name in ALL_ITEMS.items():
@@ -569,15 +447,13 @@ def main():
                     avg_margin = sum(d['Margin'] for d in data if d['Margin']) / active
                     st.metric("Avg Margin", format_gp(avg_margin))
     
-    # --------------------------------------------------------------------------
-    # TAB 4: BEST PROFITS
-    # --------------------------------------------------------------------------
+    # Tab 4: Best Profits
     with tabs[3]:
         st.header("Most Profitable Chains")
         
         all_results = []
         
-        with st.spinner("Calculating all chains..."):
+        with st.spinner("Calculating..."):
             for cat, cat_chains in all_chains.items():
                 for chain in cat_chains:
                     result = chain.calculate(prices, config, id_lookup)
@@ -629,20 +505,18 @@ def main():
             else:
                 st.warning("No profitable chains found with current settings.")
     
-    # --------------------------------------------------------------------------
-    # TAB 5: ANALYTICS
-    # --------------------------------------------------------------------------
+    # Tab 5: Analytics
     with tabs[4]:
         st.header("Profit Analytics")
         
-        st.markdown("##### Analysis Filters")
+        st.markdown("##### Filters")
         filter_col1, filter_col2, filter_col3 = st.columns(3)
         with filter_col1:
             exclude_dragon = st.toggle("Exclude Dragon Items", value=True, help="Dragon items are extreme outliers")
         with filter_col2:
             use_per_item = st.toggle("Show Per-Item Profit", value=False)
         with filter_col3:
-            filter_outliers = st.toggle("Filter Statistical Outliers", value=False, help="Remove values beyond 1.5x IQR")
+            filter_outliers = st.toggle("Filter Outliers", value=False, help="Remove values beyond 1.5x IQR")
         
         all_results_for_charts = []
         quantity_val = config.get("quantity", 1)
@@ -677,7 +551,7 @@ def main():
             all_results_for_charts = [r for r in all_results_for_charts if lower_bound <= r["_profit_raw"] <= upper_bound]
             filtered_count = original_count - len(all_results_for_charts)
             if filtered_count > 0:
-                st.caption(f"*{filtered_count} statistical outliers hidden*")
+                st.caption(f"*{filtered_count} outliers hidden*")
         
         if all_results_for_charts:
             profitable_results = [r for r in all_results_for_charts if r["_profit_raw"] > 0]
@@ -700,22 +574,20 @@ def main():
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
                 else:
-                    st.info("Not enough ROI data for scatter plot")
+                    st.info("Not enough ROI data")
             
             with col2:
                 if profitable_results:
                     fig = create_category_pie(profitable_results)
                     st.plotly_chart(fig, use_container_width=True)
             
-            # Distribution histogram
             profit_label = "Per-Item Profit" if use_per_item else f"Batch Profit (qty: {quantity_val})"
-            st.subheader(f"Distribution Analysis as {profit_label}")
+            st.subheader(f"Distribution: {profit_label}")
             profits = [r["_profit_raw"] for r in all_results_for_charts]
             fig = create_profit_histogram(profits, per_item=use_per_item)
             st.plotly_chart(fig, use_container_width=True)
             
-            # Summary stats
-            st.subheader("Voyage Summary")
+            st.subheader("Summary")
             col1, col2, col3, col4 = st.columns(4)
             
             with col1:

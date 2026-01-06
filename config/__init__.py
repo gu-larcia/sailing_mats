@@ -9,8 +9,6 @@ from .settings import (
     CACHE_TTL_CHAINS,
     DEFAULT_CONFIG,
     URL_PARAMS,
-    API_USER_AGENT,
-    API_POLL_INTERVAL,
 )
 
 __all__ = [
@@ -22,6 +20,4 @@ __all__ = [
     'CACHE_TTL_CHAINS',
     'DEFAULT_CONFIG',
     'URL_PARAMS',
-    'API_USER_AGENT',
-    'API_POLL_INTERVAL',
 ]

@@ -1,21 +1,9 @@
 """
-OSRS Item ID mappings for Sailing materials and related items.
+Item ID mappings for Sailing materials.
 
-All IDs verified against the OSRS Wiki API /mapping endpoint.
-Sailing skill released November 19, 2025.
-
-Item ID ranges verified per research:
-- Hull parts: 32041-32080 ✓
-- Keel parts: 31999-32038 ✓
-- Repair kits: 31964-31982 ✓
-- Sailing logs: 32904-32910 ✓
-- Helm variants: 32151-32153
-- Cannons: 32203+
+IDs from OSRS Wiki API /mapping endpoint.
+Sailing released November 19, 2025.
 """
-
-# ============================================================================
-# LOGS
-# ============================================================================
 
 ALL_LOGS = {
     1511: "Logs",
@@ -30,30 +18,20 @@ ALL_LOGS = {
     2862: "Achey tree logs",
     10810: "Arctic pine logs",
     3239: "Bark",
-    # Sailing logs (32904-32910 range) - verified
     32904: "Camphor logs",
     32907: "Ironwood logs",
     32910: "Rosewood logs",
 }
-
-# ============================================================================
-# PLANKS
-# ============================================================================
 
 ALL_PLANKS = {
     960: "Plank",
     8778: "Oak plank",
     8780: "Teak plank",
     8782: "Mahogany plank",
-    # Sailing planks
     31432: "Camphor plank",
     31435: "Ironwood plank",
     31438: "Rosewood plank",
 }
-
-# ============================================================================
-# HULL PARTS (32041-32080 range) - verified
-# ============================================================================
 
 HULL_PARTS = {
     32041: "Wooden hull parts",
@@ -75,10 +53,6 @@ LARGE_HULL_PARTS = {
     32080: "Large rosewood hull parts",
 }
 
-# ============================================================================
-# HULL REPAIR KITS (31964-31982 range) - verified
-# ============================================================================
-
 HULL_REPAIR_KITS = {
     31964: "Repair kit",
     31967: "Oak repair kit",
@@ -88,10 +62,6 @@ HULL_REPAIR_KITS = {
     31979: "Ironwood repair kit",
     31982: "Rosewood repair kit",
 }
-
-# ============================================================================
-# ORES & BARS
-# ============================================================================
 
 ALL_ORES = {
     436: "Copper ore",
@@ -104,10 +74,8 @@ ALL_ORES = {
     449: "Adamantite ore",
     451: "Runite ore",
     21341: "Amethyst",
-    # Sailing ores
     31716: "Lead ore",
     31719: "Nickel ore",
-    # Rune essence
     1436: "Rune essence",
     1440: "Pure essence",
 }
@@ -121,15 +89,10 @@ ALL_BARS = {
     2359: "Mithril bar",
     2361: "Adamantite bar",
     2363: "Runite bar",
-    # Sailing bars
     32889: "Lead bar",
     32892: "Cupronickel bar",
     31996: "Dragon metal sheet",
 }
-
-# ============================================================================
-# KEEL PARTS (31999-32038 range) - verified
-# ============================================================================
 
 KEEL_PARTS = {
     31999: "Bronze keel parts",
@@ -151,19 +114,6 @@ LARGE_KEEL_PARTS = {
     32038: "Large dragon keel parts",
 }
 
-# ============================================================================
-# ADDITIONAL KEEL PIECES (from research report)
-# ============================================================================
-
-KEEL_PIECES = {
-    32189: "Keel piece",
-    32190: "Large keel piece",
-}
-
-# ============================================================================
-# NAILS
-# ============================================================================
-
 ALL_NAILS = {
     4819: "Bronze nails",
     4820: "Iron nails",
@@ -175,48 +125,15 @@ ALL_NAILS = {
     31406: "Dragon nails",
 }
 
-# ============================================================================
-# CANNONBALLS
-# ============================================================================
-
 ALL_CANNONBALLS = {
-    2: "Steel cannonball",  # Original cannonball
+    2: "Steel cannonball",
     31906: "Bronze cannonball",
     31908: "Iron cannonball",
     31910: "Mithril cannonball",
     31912: "Adamant cannonball",
     31914: "Rune cannonball",
-    31916: "Dragon cannonball",  # Drop-only, cannot be smithed
+    31916: "Dragon cannonball",  # Drop only
 }
-
-# ============================================================================
-# SHIP HELMS (32151-32153 range from research report)
-# ============================================================================
-
-SHIP_HELMS = {
-    32151: "Ship helm",
-    32152: "Gilded ship helm",
-    32153: "Ornate ship helm",
-}
-
-# ============================================================================
-# CANNONS (from research report - 32203 range)
-# ============================================================================
-
-SHIP_CANNONS = {
-    32203: "Ship cannon",
-    32204: "Bronze ship cannon",
-    32205: "Iron ship cannon",
-    32206: "Steel ship cannon",
-    32207: "Mithril ship cannon",
-    32208: "Adamant ship cannon",
-    32209: "Rune ship cannon",
-    32210: "Dragon ship cannon",
-}
-
-# ============================================================================
-# TOOLS & MISC
-# ============================================================================
 
 AMMO_MOULDS = {
     4: "Ammo mould",
@@ -228,25 +145,12 @@ MISC_ITEMS = {
     25580: "Plank sack",
 }
 
-# Equipment items for GP/hr calculations
-EQUIPMENT_ITEMS = {
-    25644: "Amy's saw",           # 500 Carpenter points from Mahogany Homes
-    25554: "Imcando hammer",      # From Ruins of Camdozaal
-}
-
-# ============================================================================
-# RUNES (for Plank Make spell)
-# ============================================================================
-
+# For Plank Make spell
 RUNE_IDS = {
     "Astral rune": 9075,
     "Nature rune": 561,
     "Earth rune": 557,
 }
-
-# ============================================================================
-# COMBINED ITEM DICTIONARY
-# ============================================================================
 
 ALL_ITEMS = {
     **ALL_LOGS, 
@@ -257,30 +161,9 @@ ALL_ITEMS = {
     **ALL_ORES, 
     **ALL_BARS, 
     **KEEL_PARTS,
-    **LARGE_KEEL_PARTS,
-    **KEEL_PIECES,
+    **LARGE_KEEL_PARTS, 
     **ALL_NAILS, 
-    **ALL_CANNONBALLS,
-    **SHIP_HELMS,
-    **SHIP_CANNONS,
+    **ALL_CANNONBALLS, 
     **AMMO_MOULDS,
-    **MISC_ITEMS,
-    **EQUIPMENT_ITEMS,
-}
-
-# ============================================================================
-# SAILING-SPECIFIC ITEMS (for filtering)
-# ============================================================================
-
-SAILING_ITEMS = {
-    **{k: v for k, v in ALL_LOGS.items() if k >= 32900},  # Sailing logs only
-    **{k: v for k, v in ALL_PLANKS.items() if k >= 31000},  # Sailing planks only
-    **HULL_PARTS,
-    **LARGE_HULL_PARTS,
-    **HULL_REPAIR_KITS,
-    **KEEL_PARTS,
-    **LARGE_KEEL_PARTS,
-    **KEEL_PIECES,
-    **SHIP_HELMS,
-    **SHIP_CANNONS,
+    **MISC_ITEMS
 }

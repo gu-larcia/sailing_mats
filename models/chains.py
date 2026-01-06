@@ -1,36 +1,11 @@
-"""
-Processing chain generation for all Sailing materials.
-
-Generates all possible processing chains for:
-- Planks (log -> plank)
-- Hull Parts (plank -> hull parts)
-- Large Hull Parts (hull parts -> large hull parts)
-- Hull Repair Kits (planks + nails + swamp paste -> kit)
-- Keel Parts (bar -> keel parts)
-- Large Keel Parts (keel parts -> large keel parts)
-- Nails (bar -> nails)
-- Cannonballs (bar -> cannonballs)
-
-RATIOS VERIFIED FROM RESEARCH:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✓ Hull/Keel parts: 5:1 standard ratio
-✓ Dragon items: 2:1 ratio (dragon metal sheets)
-✓ Nails: 15 per bar
-✓ Cannonballs: 4 per bar (8 with double mould)
-✓ Repair kits: 2 planks + 10 nails + 5 swamp paste → 2 kits
-"""
+"""Processing chain generation."""
 
 from typing import Dict, List
 from .dataclasses import ProcessingChain, ChainStep
 
 
 def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
-    """
-    Generate all processing chains for Sailing materials.
-    
-    Returns:
-        Dict mapping category name to list of ProcessingChain objects
-    """
+    """Generate all processing chains. Returns category -> chain list."""
     chains = {
         "Planks": [],
         "Hull Parts": [],
@@ -42,9 +17,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         "Cannonballs": [],
     }
     
-    # ========================================================================
-    # PLANKS (log -> plank via Sawmill or Plank Make)
-    # ========================================================================
+    # Planks: log -> plank
     plank_mappings = [
         (1511, "Logs", 960, "Plank"),
         (1521, "Oak logs", 8778, "Oak plank"),
@@ -66,9 +39,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Planks"].append(chain)
     
-    # ========================================================================
-    # HULL PARTS (5 planks -> 1 hull part) - VERIFIED 5:1 ratio
-    # ========================================================================
+    # Hull Parts: 5 planks -> 1 part
     hull_mappings = [
         (960, "Plank", 32041, "Wooden hull parts"),
         (8778, "Oak plank", 32044, "Oak hull parts"),
@@ -85,14 +56,12 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
             category="Hull Parts"
         )
         chain.steps = [
-            ChainStep(plank_id, plank_name, 5),  # 5:1 ratio - VERIFIED
+            ChainStep(plank_id, plank_name, 5),
             ChainStep(hull_id, hull_name, 1)
         ]
         chains["Hull Parts"].append(chain)
     
-    # ========================================================================
-    # LARGE HULL PARTS (5 hull parts -> 1 large hull part) - VERIFIED 5:1
-    # ========================================================================
+    # Large Hull Parts: 5 parts -> 1 large
     large_hull_mappings = [
         (32041, "Wooden hull parts", 32062, "Large wooden hull parts"),
         (32044, "Oak hull parts", 32065, "Large oak hull parts"),
@@ -109,19 +78,14 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
             category="Large Hull Parts"
         )
         chain.steps = [
-            ChainStep(hull_id, hull_name, 5),  # 5:1 ratio - VERIFIED
+            ChainStep(hull_id, hull_name, 5),
             ChainStep(large_id, large_name, 1)
         ]
         chains["Large Hull Parts"].append(chain)
     
-    # ========================================================================
-    # HULL REPAIR KITS (planks + nails + swamp paste -> kits)
-    # VERIFIED from research:
-    # - Basic: 2 planks + 10 bronze nails + 5 swamp paste → 2 kits
-    # - Higher tiers require Shipwrights' Workbench
-    # ========================================================================
+    # Hull Repair Kits: planks + nails + swamp paste -> kits
+    # (plank_id, plank_name, nail_id, nail_name, paste_qty, plank_qty, nail_qty, output_qty, kit_id, kit_name)
     repair_kit_mappings = [
-        # (plank_id, plank_name, nail_id, nail_name, paste_qty, plank_qty, nail_qty, output_qty, kit_id, kit_name)
         (960, "Plank", 4819, "Bronze nails", 5, 2, 10, 2, 31964, "Repair kit"),
         (8778, "Oak plank", 4820, "Iron nails", 5, 2, 10, 2, 31967, "Oak repair kit"),
         (8780, "Teak plank", 1539, "Steel nails", 5, 2, 10, 2, 31970, "Teak repair kit"),
@@ -144,19 +108,15 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Hull Repair Kits"].append(chain)
     
-    # ========================================================================
-    # KEEL PARTS (5 bars -> 1 keel part) - VERIFIED
-    # Dragon: 2 sheets -> 1 part (VERIFIED 2:1 ratio)
-    # ========================================================================
+    # Keel Parts: 5 bars -> 1 part (dragon: 2 sheets -> 1)
     keel_mappings = [
-        # (bar_id, bar_name, keel_id, keel_name, input_qty)
         (2349, "Bronze bar", 31999, "Bronze keel parts", 5),
         (2351, "Iron bar", 32002, "Iron keel parts", 5),
         (2353, "Steel bar", 32005, "Steel keel parts", 5),
         (2359, "Mithril bar", 32008, "Mithril keel parts", 5),
         (2361, "Adamantite bar", 32011, "Adamant keel parts", 5),
         (2363, "Runite bar", 32014, "Rune keel parts", 5),
-        (31996, "Dragon metal sheet", 32017, "Dragon keel parts", 2),  # 2:1 ratio - VERIFIED
+        (31996, "Dragon metal sheet", 32017, "Dragon keel parts", 2),
     ]
     
     for bar_id, bar_name, keel_id, keel_name, qty in keel_mappings:
@@ -170,10 +130,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Keel Parts"].append(chain)
     
-    # ========================================================================
-    # LARGE KEEL PARTS (5 parts -> 1 large) - VERIFIED
-    # Dragon: 2 -> 1 (VERIFIED 2:1 ratio)
-    # ========================================================================
+    # Large Keel Parts: 5 parts -> 1 large (dragon: 2 -> 1)
     large_keel_mappings = [
         (31999, "Bronze keel parts", 32020, "Large bronze keel parts", 5),
         (32002, "Iron keel parts", 32023, "Large iron keel parts", 5),
@@ -181,7 +138,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         (32008, "Mithril keel parts", 32029, "Large mithril keel parts", 5),
         (32011, "Adamant keel parts", 32032, "Large adamant keel parts", 5),
         (32014, "Rune keel parts", 32035, "Large rune keel parts", 5),
-        (32017, "Dragon keel parts", 32038, "Large dragon keel parts", 2),  # 2:1 - VERIFIED
+        (32017, "Dragon keel parts", 32038, "Large dragon keel parts", 2),
     ]
     
     for keel_id, keel_name, large_id, large_name, qty in large_keel_mappings:
@@ -197,9 +154,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
             chain.special_ratio = {"conversion_ratio": 2}
         chains["Large Keel Parts"].append(chain)
     
-    # ========================================================================
-    # NAILS (1 bar -> 15 nails) - VERIFIED 15:1 ratio
-    # ========================================================================
+    # Nails: 1 bar -> 15 nails
     nail_mappings = [
         (2349, "Bronze bar", 4819, "Bronze nails"),
         (2351, "Iron bar", 4820, "Iron nails"),
@@ -218,15 +173,12 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         processing = "Dragon Forge" if "Dragon" in nail_name else "Smithing"
         chain.steps = [
             ChainStep(bar_id, bar_name, 1),
-            ChainStep(nail_id, nail_name, 15, processing_method=processing)  # 15:1 - VERIFIED
+            ChainStep(nail_id, nail_name, 15, processing_method=processing)
         ]
         chains["Nails"].append(chain)
     
-    # ========================================================================
-    # CANNONBALLS (1 bar -> 4 balls) - VERIFIED
-    # Double mould: 2 bars -> 8 balls (same time as single)
-    # Note: Dragon cannonballs are drop-only and cannot be smithed
-    # ========================================================================
+    # Cannonballs: 1 bar -> 4 balls (double: 2 bars -> 8)
+    # Dragon cannonballs are drop-only
     cannonball_mappings = [
         (2349, "Bronze bar", 31906, "Bronze cannonball"),
         (2351, "Iron bar", 31908, "Iron cannonball"),
@@ -237,25 +189,25 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
     ]
     
     for bar_id, bar_name, ball_id, ball_name in cannonball_mappings:
-        # Regular ammo mould (1 bar -> 4 balls) - VERIFIED
+        # Single mould
         chain = ProcessingChain(
             name=f"{ball_name} (Regular)",
             category="Cannonballs"
         )
         chain.steps = [
             ChainStep(bar_id, bar_name, 1),
-            ChainStep(ball_id, ball_name, 4)  # 4:1 - VERIFIED
+            ChainStep(ball_id, ball_name, 4)
         ]
         chains["Cannonballs"].append(chain)
         
-        # Double ammo mould (2 bars -> 8 balls per action) - VERIFIED
+        # Double mould
         chain_double = ProcessingChain(
             name=f"{ball_name} (Double)",
             category="Cannonballs"
         )
         chain_double.steps = [
             ChainStep(bar_id, bar_name, 2),
-            ChainStep(ball_id, ball_name, 8)  # 8:2 (same as 4:1) - VERIFIED
+            ChainStep(ball_id, ball_name, 8)
         ]
         chains["Cannonballs"].append(chain_double)
     

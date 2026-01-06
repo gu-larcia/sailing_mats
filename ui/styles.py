@@ -1,12 +1,4 @@
-"""
-OSRS-themed CSS styles for Streamlit.
-
-Theme inspired by:
-- Parchment sidebar (like in-game interfaces)
-- Ocean-dark background (nautical theme for Sailing)
-- Gold accents on headers and buttons
-- Cinzel & Crimson Text fonts for medieval RPG feel
-"""
+"""OSRS-themed CSS for Streamlit."""
 
 OSRS_CSS = """
 <style>
@@ -31,12 +23,10 @@ OSRS_CSS = """
     --dragon-red: #c0392b;
 }
 
-/* Main app background */
 .stApp {
     background: linear-gradient(180deg, #1a2a3a 0%, #0d1a24 50%, #1a2a3a 100%);
 }
 
-/* Sidebar styling */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, var(--parchment) 0%, var(--parchment-dark) 100%);
     border-right: 4px solid var(--driftwood);
@@ -53,7 +43,6 @@ OSRS_CSS = """
     color: var(--driftwood-dark) !important;
 }
 
-/* Headers */
 .stApp h1, .stApp h2, .stApp h3 {
     font-family: 'Cinzel', serif !important;
     color: var(--gold) !important;
@@ -65,7 +54,6 @@ OSRS_CSS = """
     padding-bottom: 10px;
 }
 
-/* Tabs */
 .stTabs [data-baseweb="tab-list"] {
     background: linear-gradient(180deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
     border-radius: 8px 8px 0 0;
@@ -94,7 +82,6 @@ OSRS_CSS = """
     padding: 20px;
 }
 
-/* Metrics */
 [data-testid="stMetric"] {
     background: linear-gradient(145deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
     border: 2px solid var(--gold-dark);
@@ -114,7 +101,6 @@ OSRS_CSS = """
     font-size: 1.1rem !important;
 }
 
-/* DataFrames */
 [data-testid="stDataFrame"] {
     border: 3px solid var(--driftwood);
     border-radius: 8px;
@@ -122,7 +108,6 @@ OSRS_CSS = """
     overflow-y: visible !important;
 }
 
-/* Buttons */
 .stButton > button {
     font-family: 'Cinzel', serif !important;
     background: linear-gradient(180deg, var(--gold) 0%, var(--gold-dark) 100%);
@@ -140,7 +125,6 @@ OSRS_CSS = """
     box-shadow: 0 4px 8px rgba(0,0,0,0.4);
 }
 
-/* Forms */
 [data-testid="stForm"] {
     background: linear-gradient(180deg, rgba(139,115,85,0.2) 0%, rgba(92,77,58,0.2) 100%);
     border: 2px solid var(--driftwood);
@@ -148,7 +132,6 @@ OSRS_CSS = """
     padding: 15px;
 }
 
-/* Select boxes */
 .stSelectbox > div > div {
     background: var(--parchment-light) !important;
     border: 2px solid var(--driftwood) !important;
@@ -166,14 +149,12 @@ OSRS_CSS = """
     color: var(--driftwood-dark) !important;
 }
 
-/* Inputs */
 [data-testid="stSidebar"] input {
     background: var(--parchment-light) !important;
     border: 2px solid var(--driftwood) !important;
     color: var(--driftwood-dark) !important;
 }
 
-/* Expanders */
 .streamlit-expanderHeader {
     font-family: 'Cinzel', serif !important;
     background: linear-gradient(180deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
@@ -182,7 +163,6 @@ OSRS_CSS = """
     color: var(--gold) !important;
 }
 
-/* Link buttons */
 .stLinkButton > a {
     font-family: 'Cinzel', serif !important;
     background: linear-gradient(180deg, var(--ocean) 0%, var(--ocean-dark) 100%);
@@ -190,20 +170,17 @@ OSRS_CSS = """
     border: 2px solid var(--ocean-light);
 }
 
-/* Captions */
 .stCaption {
     font-family: 'Crimson Text', serif !important;
     color: var(--parchment-dark) !important;
     font-style: italic;
 }
 
-/* Alerts */
 .stAlert {
     font-family: 'Crimson Text', serif;
     border-radius: 6px;
 }
 
-/* Toasts */
 [data-testid="stToast"] {
     background: linear-gradient(180deg, var(--parchment) 0%, var(--parchment-dark) 100%);
     border: 2px solid var(--gold-dark);
@@ -211,38 +188,71 @@ OSRS_CSS = """
     font-family: 'Crimson Text', serif;
 }
 
-/* Dividers */
 hr {
     border-color: var(--driftwood) !important;
 }
 
-/* Spinners */
 .stSpinner > div {
     border-color: var(--gold) !important;
 }
 
-/* Timing warning style - NEW for estimated timing indicators */
-.timing-warning {
-    background: linear-gradient(145deg, #5c4d3a 0%, #3d3228 100%);
-    border: 2px solid #b8860b;
-    border-radius: 6px;
-    padding: 8px 12px;
-    margin: 4px 0;
-    color: #ffd700;
+.item-card {
+    background: linear-gradient(145deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
+    border: 2px solid var(--gold-dark);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.item-card img {
+    width: 36px;
+    height: 36px;
+    image-rendering: pixelated;
+}
+
+.item-card .item-name {
+    color: var(--parchment);
+    font-family: 'Cinzel', serif;
+    font-size: 0.95rem;
+}
+
+.item-card .item-profit {
+    color: var(--gold);
+    font-family: 'Crimson Text', serif;
+    font-weight: 600;
+}
+
+.best-item-display {
+    background: linear-gradient(145deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
+    border: 2px solid var(--gold-dark);
+    border-radius: 10px;
+    padding: 15px;
+    text-align: center;
+}
+
+.best-item-display img {
+    width: 48px;
+    height: 48px;
+    image-rendering: pixelated;
+    margin-bottom: 8px;
+}
+
+.best-item-display .label {
+    color: var(--gold);
+    font-family: 'Cinzel', serif;
     font-size: 0.85rem;
+    margin-bottom: 4px;
 }
 
-.timing-verified {
-    background: linear-gradient(145deg, #2E8B57 0%, #1d5c38 100%);
-    border: 2px solid #3CB371;
-    border-radius: 6px;
-    padding: 4px 8px;
-    color: #90EE90;
-    font-size: 0.75rem;
-    display: inline-block;
+.best-item-display .value {
+    color: var(--parchment);
+    font-family: 'Crimson Text', serif;
+    font-size: 1rem;
+    word-wrap: break-word;
 }
 
-/* Mobile responsiveness */
 @media screen and (max-width: 768px) {
     .stApp {
         padding: 0.5rem;
@@ -284,11 +294,52 @@ hr {
     .stApp h1 { font-size: 1.5rem !important; }
     .stApp h2 { font-size: 1.25rem !important; }
     .stApp h3 { font-size: 1.1rem !important; }
+    
+    [data-testid="stDataFrame"]::before {
+        content: 'scroll horizontally';
+        display: block;
+        text-align: center;
+        font-size: 0.7rem;
+        color: var(--gold-dark);
+        padding: 4px;
+        opacity: 0.7;
+    }
+}
+
+@media screen and (max-width: 480px) {
+    [data-testid="stDataFrame"] {
+        font-size: 0.75rem;
+    }
+    
+    [data-testid="stMetric"] label {
+        font-size: 0.8rem !important;
+    }
+    
+    [data-testid="stMetric"] [data-testid="stMetricValue"] {
+        font-size: 1rem !important;
+    }
+}
+
+[data-testid="stDataFrame"]::-webkit-scrollbar {
+    height: 8px;
+}
+
+[data-testid="stDataFrame"]::-webkit-scrollbar-track {
+    background: var(--driftwood-dark);
+    border-radius: 4px;
+}
+
+[data-testid="stDataFrame"]::-webkit-scrollbar-thumb {
+    background: var(--gold-dark);
+    border-radius: 4px;
+}
+
+[data-testid="stDataFrame"]::-webkit-scrollbar-thumb:hover {
+    background: var(--gold);
 }
 </style>
 
 <script>
-// Disable autocomplete on all inputs
 document.addEventListener('DOMContentLoaded', function() {
     const inputs = document.querySelectorAll('input');
     inputs.forEach(input => input.setAttribute('autocomplete', 'off'));

@@ -1,19 +1,14 @@
-"""
-Application configuration and constants.
-"""
+"""Application settings."""
 
-# App metadata
-APP_VERSION = "4.7"  # Bumped for research-based improvements
+APP_VERSION = "4.6"
 APP_TITLE = "OSRS Sailing Materials Tracker"
 APP_ICON = "https://oldschool.runescape.wiki/images/Sailing_icon.png"
 
-# Cache TTLs (in seconds)
-# Research confirmed: don't poll faster than 5-minute data refresh
-CACHE_TTL_PRICES = 60       # Price data refreshes every minute
-CACHE_TTL_MAPPING = 300     # Item mappings refresh every 5 minutes
-CACHE_TTL_CHAINS = 3600     # Chain definitions refresh every hour
+# Cache TTLs (seconds)
+CACHE_TTL_PRICES = 60
+CACHE_TTL_MAPPING = 300
+CACHE_TTL_CHAINS = 3600
 
-# Default configuration values
 DEFAULT_CONFIG = {
     "quantity": 1,
     "plank_method": "Sawmill",
@@ -29,7 +24,7 @@ DEFAULT_CONFIG = {
     "use_earth_staff": False,
 }
 
-# URL parameter mappings
+# Maps URL param names to config keys
 URL_PARAMS = {
     "plank_method": "plank_method",
     "self_collected": "self_collected",
@@ -43,7 +38,3 @@ URL_PARAMS = {
     "smithing_outfit": "has_smithing_outfit",
     "quantity": "quantity",
 }
-
-# API Configuration
-API_USER_AGENT = "OSRS-Sailing-Tracker/4.7 (Streamlit App)"
-API_POLL_INTERVAL = 300  # 5 minutes minimum between refreshes (per research)

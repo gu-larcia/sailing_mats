@@ -1,9 +1,6 @@
-"""
-OSRS-authentic color system for material tiers.
-Colors match in-game metal and wood tiers.
-"""
+"""OSRS tier colors."""
 
-# Metal tier colors (matches in-game appearance)
+# Metal tiers (match in-game appearance)
 METAL_COLORS = {
     'bronze': '#CD7F32',
     'iron': '#5C5C5C',
@@ -15,7 +12,7 @@ METAL_COLORS = {
     'dragon': '#DC143C',
 }
 
-# Wood tier colors (Sailing woods matched to metal equivalents)
+# Wood tiers (Sailing woods mapped to metal equivalents)
 WOOD_COLORS = {
     'wooden': '#DEB887',
     'oak': '#C19A6B',
@@ -26,12 +23,11 @@ WOOD_COLORS = {
     'yew': '#8B4513',
     'magic': '#4B0082',
     'redwood': '#A52A2A',
-    'camphor': '#2E8B57',    # Adamant equivalent
-    'ironwood': '#00CED1',   # Rune equivalent
-    'rosewood': '#DC143C',   # Dragon equivalent
+    'camphor': '#2E8B57',
+    'ironwood': '#00CED1',
+    'rosewood': '#DC143C',
 }
 
-# Category colors for charts
 CATEGORY_COLORS = {
     'Planks': '#C19A6B',
     'Hull Parts': '#8B7355',
@@ -44,7 +40,6 @@ CATEGORY_COLORS = {
     'Other': '#7f8c8d',
 }
 
-# Chart theme colors
 CHART_COLORS = {
     'gold': '#d4af37',
     'gold_dark': '#b8860b',
@@ -58,13 +53,10 @@ CHART_COLORS = {
 
 
 def get_item_tier_color(item_name: str, profit: float = 0) -> str:
-    """
-    Get the appropriate OSRS tier color for an item based on its name.
-    Falls back to gold/red based on profit if no tier match.
-    """
+    """Return tier color based on item name. Falls back to gold/red by profit."""
     name_lower = item_name.lower()
     
-    # Check metal tiers first
+    # Metal tiers
     if 'dragon' in name_lower:
         return METAL_COLORS['dragon']
     elif 'rune ' in name_lower or 'rune_' in name_lower or 'runite' in name_lower:
@@ -83,7 +75,7 @@ def get_item_tier_color(item_name: str, profit: float = 0) -> str:
     elif 'bronze' in name_lower:
         return METAL_COLORS['bronze']
     
-    # Check wood tiers
+    # Wood tiers
     if 'rosewood' in name_lower:
         return WOOD_COLORS['rosewood']
     elif 'ironwood' in name_lower:
@@ -100,20 +92,17 @@ def get_item_tier_color(item_name: str, profit: float = 0) -> str:
         if not any(wood in name_lower for wood in ['oak', 'teak', 'mahogany', 'camphor', 'ironwood', 'rosewood']):
             return WOOD_COLORS['wooden']
     
-    # Default based on profit
     return CHART_COLORS['gold'] if profit >= 0 else CHART_COLORS['dragon_red']
 
 
 def get_tier_from_name(item_name: str) -> str:
-    """Extract the tier name from an item name for display/grouping."""
+    """Extract tier name from item name."""
     name_lower = item_name.lower()
     
-    # Check metals
     for tier in ['dragon', 'rune', 'adamant', 'mithril', 'steel', 'iron', 'bronze']:
         if tier in name_lower and not (tier == 'iron' and 'ironwood' in name_lower):
             return tier.capitalize()
     
-    # Check woods
     for tier in ['rosewood', 'ironwood', 'camphor', 'mahogany', 'teak', 'oak', 'wooden']:
         if tier in name_lower:
             return tier.capitalize()

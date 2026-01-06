@@ -1,18 +1,14 @@
-"""
-Bank location data for GP/hr calculations.
-
-Times are in seconds and represent typical efficient banking.
-"""
+"""Bank location data. Times in seconds."""
 
 from dataclasses import dataclass
 
 
 @dataclass
 class BankLocation:
-    """A location where materials can be banked and processed."""
+    """Bank location with travel overhead."""
     name: str
-    bank_time: float      # Seconds to bank
-    travel_time: float    # Seconds to travel to processing station
+    bank_time: float
+    travel_time: float
     has_anvil: bool
     has_furnace: bool
     has_shipwright: bool
@@ -22,11 +18,9 @@ class BankLocation:
     
     @property
     def total_overhead(self) -> float:
-        """Total time overhead per trip (bank + travel)."""
         return self.bank_time + self.travel_time
 
 
-# All bank locations with their properties
 BANK_LOCATIONS = {
     "Deepfin Point": BankLocation(
         name="Deepfin Point",
@@ -37,18 +31,6 @@ BANK_LOCATIONS = {
         has_shipwright=True,
         has_sawmill=False,
         requirements="67 Sailing",
-        stamina_dependent=False
-    ),
-    
-    "Grimstone (Ancient Furnace)": BankLocation(
-        name="Grimstone (Ancient Furnace)",
-        bank_time=4.0,
-        travel_time=5.0,
-        has_anvil=False,
-        has_furnace=True,  # Ancient Furnace - 2x cannonball speed
-        has_shipwright=False,
-        has_sawmill=False,
-        requirements="87 Sailing",
         stamina_dependent=False
     ),
     
@@ -148,7 +130,6 @@ BANK_LOCATIONS = {
         stamina_dependent=False
     ),
     
-    # Generic presets for easy selection
     "Fast (Optimal)": BankLocation(
         name="Fast (Optimal)",
         bank_time=4.0,

@@ -1,17 +1,8 @@
-"""
-Formatting utilities for GP values and item names.
-"""
+"""GP and item name formatting."""
 
 
 def format_gp(value: float) -> str:
-    """
-    Format a gold piece value with appropriate suffix (K/M).
-    
-    Examples:
-        format_gp(1500) -> "1.5K"
-        format_gp(2500000) -> "2.50M"
-        format_gp(-500) -> "-500"
-    """
+    """Format GP value with K/M suffix."""
     if value == float('inf'):
         return "Inf"
     
@@ -29,36 +20,25 @@ def format_gp(value: float) -> str:
 
 
 def get_clean_item_name(chain_name: str) -> str:
-    """
-    Clean a processing chain name to get the base item name.
-    Removes suffixes like " processing", " smithing", "(Regular)", "(Double)".
-    """
+    """Remove processing suffixes from chain name."""
     clean = chain_name.replace(" processing", "").replace(" smithing", "")
     clean = clean.replace(" (Regular)", "").replace(" (Double)", "")
     return clean
 
 
 def get_output_item_name(chain_name: str) -> str:
-    """Get the output item name from a chain name."""
+    """Alias for get_clean_item_name."""
     return get_clean_item_name(chain_name)
 
 
 def get_wiki_image_url(item_name: str) -> str:
-    """
-    Generate the OSRS Wiki image URL for an item.
-    
-    Example:
-        get_wiki_image_url("Bronze bar") -> "https://oldschool.runescape.wiki/images/Bronze_bar.png"
-    """
+    """Generate OSRS Wiki image URL for item."""
     formatted_name = item_name.replace(" ", "_").replace("'", "%27")
     return f"https://oldschool.runescape.wiki/images/{formatted_name}.png"
 
 
 def get_item_icon_url(item_name: str) -> str:
-    """
-    Get the icon URL for an item, with name fixes for special cases.
-    """
-    # Some items have different wiki image names
+    """Get icon URL with name corrections for special cases."""
     name_fixes = {
         "Plank": "Plank",
         "Logs": "Logs",
