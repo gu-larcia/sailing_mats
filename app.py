@@ -1,4 +1,10 @@
-"""OSRS Sailing Materials Tracker v4.6"""
+"""
+OSRS Sailing Materials Tracker
+Version 4.7 - Textile & Coral Update
+
+Tracks Old School RuneScape Sailing materials with real-time GE prices.
+v4.7 adds textile processing chains (yarns, bolts) and coral products.
+"""
 
 import streamlit as st
 import pandas as pd
@@ -33,34 +39,41 @@ st.markdown(OSRS_CSS, unsafe_allow_html=True)
 
 @st.cache_resource
 def get_api_connection() -> OSRSWikiConnection:
+    """Singleton API connection."""
     return OSRSWikiConnection()
 
 
 @st.cache_data(ttl=CACHE_TTL_MAPPING, show_spinner=False)
 def fetch_item_mapping(_conn: OSRSWikiConnection) -> Dict:
+    """Cached item mappings."""
     return _conn.fetch_mapping()
 
 
 @st.cache_data(ttl=CACHE_TTL_PRICES, show_spinner=False)
 def fetch_latest_prices(_conn: OSRSWikiConnection) -> Dict:
+    """Cached latest prices."""
     return _conn.fetch_prices()
 
 
 @st.cache_resource
 def get_id_lookup(_mapping_hash: str, item_mapping: Dict) -> ItemIDLookup:
+    """Cached ItemIDLookup instance."""
     return ItemIDLookup(item_mapping)
 
 
 @st.cache_data(ttl=CACHE_TTL_CHAINS)
 def get_all_chains() -> Dict:
+    """Cached processing chains."""
     return generate_all_chains()
 
 
 def main():
+    """Main entry point."""
+    
     col1, col2 = st.columns([4, 1])
     with col1:
         st.title(APP_TITLE)
-        st.caption("*\"For the crafty sailor!\"*")
+        st.caption("*\"For the crafty sailor!\"* — v4.7 Textile & Coral Update")
     with col2:
         st.link_button(
             "OSRS Wiki",
@@ -112,7 +125,7 @@ def main():
             show_gp_hr = st.toggle(
                 "Show GP/hr",
                 value=params.get("show_gp_hr", "false") == "true",
-                help="Show gold per hour estimates"
+                help="Calculate and display gold per hour estimates"
             )
             
             if show_gp_hr:
@@ -125,7 +138,7 @@ def main():
                     "Bank Location",
                     bank_location_options,
                     index=bank_location_options.index(default_location),
-                    help="Banking location"
+                    help="Select your banking location"
                 )
                 
                 selected_bank = BANK_LOCATIONS[bank_location]
@@ -136,7 +149,7 @@ def main():
                     use_stamina = st.toggle(
                         "Using Stamina Potions",
                         value=params.get("use_stamina", "true") == "true",
-                        help="~30% travel time reduction"
+                        help="Reduces travel time by ~30%"
                     )
                 
                 st.caption("**Equipment**")
@@ -144,25 +157,25 @@ def main():
                 has_imcando_hammer = st.toggle(
                     "Imcando Hammer",
                     value=params.get("imcando_hammer", "false") == "true",
-                    help="Equipped hammer (Below Ice Mountain)"
+                    help="Equippable hammer (Below Ice Mountain)"
                 )
                 
                 has_amys_saw = st.toggle(
                     "Amy's Saw",
                     value=params.get("amys_saw", "false") == "true",
-                    help="Equipped saw (Sailing reward)"
+                    help="Equippable saw (Sailing reward)"
                 )
                 
                 has_plank_sack = st.toggle(
                     "Plank Sack",
                     value=params.get("plank_sack", "false") == "true",
-                    help="+28 planks (Mahogany Homes)"
+                    help="Holds 28 extra planks (Mahogany Homes)"
                 )
                 
                 has_smithing_outfit = st.toggle(
                     "Smiths' Uniform",
                     value=params.get("smithing_outfit", "false") == "true",
-                    help="15% tick save (Giants' Foundry)"
+                    help="15% chance to save 1 tick (Giants' Foundry)"
                 )
             else:
                 bank_location = params.get("bank_location", "Medium (Typical)")
@@ -237,6 +250,7 @@ def main():
         "All Chains", 
         "Search Items", 
         "Sailing Items",
+        "Textiles & Coral",
         "Best Profits",
         "Analytics"
     ])
@@ -399,7 +413,7 @@ def main():
                 )
                 st.caption(f"Showing {min(50, len(matching_items))} of {len(matching_items)} results")
             else:
-                st.info("No items found.")
+                st.info("No items found matching your search.")
     
     # Tab 3: Sailing Items
     with tabs[2]:
@@ -447,13 +461,113 @@ def main():
                     avg_margin = sum(d['Margin'] for d in data if d['Margin']) / active
                     st.metric("Avg Margin", format_gp(avg_margin))
     
-    # Tab 4: Best Profits
+    # Tab 4: Textiles & Coral (NEW)
     with tabs[3]:
+        st.header("Textiles & Coral")
+        st.caption("*New in v4.7: Sail-making textiles and coral-based potions*")
+        
+        textile_coral_cats = ["Yarns", "Bolts", "Full Textile Chains", "Coral Products"]
+        
+        selected_cat = st.selectbox(
+            "Select Category",
+            textile_coral_cats,
+            key="textile_coral_cat"
+        )
+        
+        if selected_cat in all_chains:
+            chains = all_chains[selected_cat]
+            
+            if chains:
+                results = []
+                for chain in chains:
+                    result = chain.calculate(prices, config, id_lookup)
+                    if "error" not in result:
+                        profit = result["net_profit"]
+                        profit_per_item = result["profit_per_item"]
+                        output_name = result.get("output_item_name", chain.name)
+                        
+                        row = {
+                            "Icon": get_item_icon_url(output_name),
+                            "Item": chain.name,
+                            "Input Cost": result["raw_material_cost"],
+                            "Process Cost": result["processing_costs"],
+                            "Output": result["output_value"],
+                            "Net Profit": profit,
+                            "Per Item": profit_per_item,
+                            "_profit_raw": profit,
+                        }
+                        
+                        if config.get("show_gp_hr", False):
+                            gp_hr_data = calculate_gp_per_hour(
+                                profit_per_item, selected_cat, chain.name, config
+                            )
+                            if gp_hr_data:
+                                row["GP/hr"] = gp_hr_data["gp_per_hour"]
+                                row["_gp_hr_raw"] = gp_hr_data["gp_per_hour"]
+                        
+                        results.append(row)
+                
+                if results:
+                    df = pd.DataFrame(results)
+                    df = df.sort_values("_profit_raw", ascending=False)
+                    
+                    column_config = {
+                        "Icon": st.column_config.ImageColumn("Icon", width="small"),
+                        "Item": st.column_config.TextColumn("Item", width="medium"),
+                        "Input Cost": st.column_config.NumberColumn("Input Cost", format="%.0f gp"),
+                        "Process Cost": st.column_config.NumberColumn("Process Cost", format="%.0f gp"),
+                        "Output": st.column_config.NumberColumn("Output Value", format="%.0f gp"),
+                        "Net Profit": st.column_config.NumberColumn("Net Profit", format="%.0f gp"),
+                        "Per Item": st.column_config.NumberColumn("Per Item", format="%.1f gp"),
+                        "_profit_raw": None,
+                    }
+                    
+                    if "GP/hr" in df.columns:
+                        column_config["GP/hr"] = st.column_config.NumberColumn("GP/hr", format="%.0f")
+                        column_config["_gp_hr_raw"] = None
+                    
+                    st.dataframe(df, use_container_width=True, hide_index=True, column_config=column_config)
+                    
+                    profitable = sum(1 for r in results if r["_profit_raw"] > 0)
+                    st.metric("Profitable Chains", f"{profitable}/{len(results)}")
+        
+        st.divider()
+        st.subheader("Processing Reference")
+        
+        with st.expander("Textile Processing Chains"):
+            st.markdown("""
+            **Spinning Wheel** (1 raw → 1 yarn):
+            - Flax → Linen yarn (12 Crafting)
+            - Hemp → Hemp yarn (39 Crafting)
+            - Cotton boll → Cotton yarn (73 Crafting)
+            
+            **Loom** (2 yarn → 1 bolt):
+            - 2 Linen yarn → Bolt of linen (12 Crafting)
+            - 2 Hemp yarn → Bolt of canvas (39 Crafting)
+            - 2 Cotton yarn → Bolt of cotton (73 Crafting)
+            """)
+        
+        with st.expander("Coral Products"):
+            st.markdown("""
+            **From Elkhorn Coral:**
+            - Anti-odour salt (49 Herblore): 1 coral + 5 Crab paste → 15 salt
+            - Haemostatic dressing (56 Herblore): coral + Squid paste + Cotton yarn
+            
+            **From Pillar Coral:**
+            - Super fishing potion (62 Herblore): coral + Haddock eye → +6 Fishing
+            - Super hunter potion (67 Herblore): coral + Crab paste → +6 Hunter
+            
+            **From Umbral Coral:**
+            - Armadyl brew (89 Herblore): coral + Rainbow crab paste
+            """)
+    
+    # Tab 5: Best Profits
+    with tabs[4]:
         st.header("Most Profitable Chains")
         
         all_results = []
         
-        with st.spinner("Calculating..."):
+        with st.spinner("Calculating all chains..."):
             for cat, cat_chains in all_chains.items():
                 for chain in cat_chains:
                     result = chain.calculate(prices, config, id_lookup)
@@ -505,18 +619,18 @@ def main():
             else:
                 st.warning("No profitable chains found with current settings.")
     
-    # Tab 5: Analytics
-    with tabs[4]:
+    # Tab 6: Analytics
+    with tabs[5]:
         st.header("Profit Analytics")
         
-        st.markdown("##### Filters")
+        st.markdown("##### Analysis Filters")
         filter_col1, filter_col2, filter_col3 = st.columns(3)
         with filter_col1:
             exclude_dragon = st.toggle("Exclude Dragon Items", value=True, help="Dragon items are extreme outliers")
         with filter_col2:
             use_per_item = st.toggle("Show Per-Item Profit", value=False)
         with filter_col3:
-            filter_outliers = st.toggle("Filter Outliers", value=False, help="Remove values beyond 1.5x IQR")
+            filter_outliers = st.toggle("Filter Statistical Outliers", value=False, help="Remove values beyond 1.5x IQR")
         
         all_results_for_charts = []
         quantity_val = config.get("quantity", 1)
@@ -551,7 +665,7 @@ def main():
             all_results_for_charts = [r for r in all_results_for_charts if lower_bound <= r["_profit_raw"] <= upper_bound]
             filtered_count = original_count - len(all_results_for_charts)
             if filtered_count > 0:
-                st.caption(f"*{filtered_count} outliers hidden*")
+                st.caption(f"*{filtered_count} statistical outliers hidden*")
         
         if all_results_for_charts:
             profitable_results = [r for r in all_results_for_charts if r["_profit_raw"] > 0]
@@ -574,7 +688,7 @@ def main():
                 if fig:
                     st.plotly_chart(fig, use_container_width=True)
                 else:
-                    st.info("Not enough ROI data")
+                    st.info("Not enough ROI data for scatter plot")
             
             with col2:
                 if profitable_results:
@@ -582,12 +696,12 @@ def main():
                     st.plotly_chart(fig, use_container_width=True)
             
             profit_label = "Per-Item Profit" if use_per_item else f"Batch Profit (qty: {quantity_val})"
-            st.subheader(f"Distribution: {profit_label}")
+            st.subheader(f"Distribution Analysis as {profit_label}")
             profits = [r["_profit_raw"] for r in all_results_for_charts]
             fig = create_profit_histogram(profits, per_item=use_per_item)
             st.plotly_chart(fig, use_container_width=True)
             
-            st.subheader("Summary")
+            st.subheader("Voyage Summary")
             col1, col2, col3, col4 = st.columns(4)
             
             with col1:

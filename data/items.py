@@ -1,9 +1,15 @@
 """
-Item ID mappings for Sailing materials.
+OSRS Item ID mappings for Sailing materials and related items.
 
-IDs from OSRS Wiki API /mapping endpoint.
-Sailing released November 19, 2025.
+All IDs verified against the OSRS Wiki API /mapping endpoint.
+Sailing skill released November 19, 2025.
+
+v4.7 additions: Textile seeds, yarns, bolts, coral frags, and coral items.
 """
+
+# ============================================================================
+# LOGS
+# ============================================================================
 
 ALL_LOGS = {
     1511: "Logs",
@@ -18,20 +24,30 @@ ALL_LOGS = {
     2862: "Achey tree logs",
     10810: "Arctic pine logs",
     3239: "Bark",
+    # Sailing logs (32904-32910 range)
     32904: "Camphor logs",
     32907: "Ironwood logs",
     32910: "Rosewood logs",
 }
+
+# ============================================================================
+# PLANKS
+# ============================================================================
 
 ALL_PLANKS = {
     960: "Plank",
     8778: "Oak plank",
     8780: "Teak plank",
     8782: "Mahogany plank",
+    # Sailing planks
     31432: "Camphor plank",
     31435: "Ironwood plank",
     31438: "Rosewood plank",
 }
+
+# ============================================================================
+# HULL PARTS (32041-32080 range)
+# ============================================================================
 
 HULL_PARTS = {
     32041: "Wooden hull parts",
@@ -53,6 +69,10 @@ LARGE_HULL_PARTS = {
     32080: "Large rosewood hull parts",
 }
 
+# ============================================================================
+# HULL REPAIR KITS (31964-31982 range)
+# ============================================================================
+
 HULL_REPAIR_KITS = {
     31964: "Repair kit",
     31967: "Oak repair kit",
@@ -62,6 +82,10 @@ HULL_REPAIR_KITS = {
     31979: "Ironwood repair kit",
     31982: "Rosewood repair kit",
 }
+
+# ============================================================================
+# ORES & BARS
+# ============================================================================
 
 ALL_ORES = {
     436: "Copper ore",
@@ -74,8 +98,10 @@ ALL_ORES = {
     449: "Adamantite ore",
     451: "Runite ore",
     21341: "Amethyst",
+    # Sailing ores
     31716: "Lead ore",
     31719: "Nickel ore",
+    # Rune essence
     1436: "Rune essence",
     1440: "Pure essence",
 }
@@ -89,10 +115,15 @@ ALL_BARS = {
     2359: "Mithril bar",
     2361: "Adamantite bar",
     2363: "Runite bar",
+    # Sailing bars
     32889: "Lead bar",
     32892: "Cupronickel bar",
     31996: "Dragon metal sheet",
 }
+
+# ============================================================================
+# KEEL PARTS (31999-32038 range)
+# ============================================================================
 
 KEEL_PARTS = {
     31999: "Bronze keel parts",
@@ -114,6 +145,10 @@ LARGE_KEEL_PARTS = {
     32038: "Large dragon keel parts",
 }
 
+# ============================================================================
+# NAILS
+# ============================================================================
+
 ALL_NAILS = {
     4819: "Bronze nails",
     4820: "Iron nails",
@@ -125,15 +160,23 @@ ALL_NAILS = {
     31406: "Dragon nails",
 }
 
+# ============================================================================
+# CANNONBALLS
+# ============================================================================
+
 ALL_CANNONBALLS = {
-    2: "Steel cannonball",
+    2: "Steel cannonball",  # Original cannonball
     31906: "Bronze cannonball",
     31908: "Iron cannonball",
     31910: "Mithril cannonball",
     31912: "Adamant cannonball",
     31914: "Rune cannonball",
-    31916: "Dragon cannonball",  # Drop only
+    31916: "Dragon cannonball",  # Drop-only, cannot be smithed
 }
+
+# ============================================================================
+# TOOLS & MISC
+# ============================================================================
 
 AMMO_MOULDS = {
     4: "Ammo mould",
@@ -143,14 +186,111 @@ AMMO_MOULDS = {
 MISC_ITEMS = {
     1941: "Swamp paste",
     25580: "Plank sack",
+    227: "Vial of water",
 }
 
-# For Plank Make spell
+# ============================================================================
+# RUNES (for Plank Make spell)
+# ============================================================================
+
 RUNE_IDS = {
     "Astral rune": 9075,
     "Nature rune": 561,
     "Earth rune": 557,
 }
+
+# ============================================================================
+# TEXTILE SEEDS (Sailing v4.7)
+# ============================================================================
+
+TEXTILE_SEEDS = {
+    31541: "Flax seed",
+    31543: "Hemp seed",
+    31545: "Cotton seed",
+}
+
+# ============================================================================
+# RAW TEXTILES (Sailing v4.7)
+# ============================================================================
+
+RAW_TEXTILES = {
+    1779: "Flax",           # Pre-existing, now farmable
+    31457: "Hemp",
+    31460: "Cotton boll",
+}
+
+# ============================================================================
+# YARNS (Sailing v4.7)
+# Spinning wheel: 1 raw material -> 1 yarn
+# ============================================================================
+
+YARNS = {
+    31463: "Linen yarn",    # From flax, 12 Crafting
+    31466: "Hemp yarn",     # From hemp, 39 Crafting
+    31469: "Cotton yarn",   # From cotton boll, 73 Crafting
+}
+
+# ============================================================================
+# BOLTS OF CLOTH (Sailing v4.7)
+# Loom: 2 yarn -> 1 bolt
+# ============================================================================
+
+BOLTS = {
+    31472: "Bolt of linen",     # From 2 linen yarn, 12 Crafting
+    31475: "Bolt of canvas",    # From 2 hemp yarn, 39 Crafting
+    31478: "Bolt of cotton",    # From 2 cotton yarn, 73 Crafting
+}
+
+# ============================================================================
+# CORAL FRAGS (Sailing v4.7)
+# Planted in coral nursery patches
+# ============================================================================
+
+CORAL_FRAGS = {
+    31511: "Elkhorn frag",  # 28 Farming
+    31513: "Pillar frag",   # 52 Farming
+    31515: "Umbral frag",   # 77 Farming
+}
+
+# ============================================================================
+# CORAL (Sailing v4.7)
+# Harvested from coral nursery patches
+# ============================================================================
+
+CORAL = {
+    31481: "Elkhorn coral",
+    31484: "Pillar coral",
+    31487: "Umbral coral",
+}
+
+# ============================================================================
+# CORAL CRAFTED ITEMS (Sailing v4.7)
+# ============================================================================
+
+CORAL_PRODUCTS = {
+    31712: "Anti-odour salt",           # 15 per craft from Elkhorn
+    31599: "Haemostatic dressing (1)",  # From Elkhorn potion chain
+    31605: "Super fishing potion (3)",  # From Pillar coral
+    31626: "Super hunter potion (4)",   # From Pillar coral
+    31650: "Armadyl brew (4)",          # From Umbral coral
+    31659: "Armadyl brew (1)",          # 1-dose variant
+}
+
+# ============================================================================
+# HERBLORE INTERMEDIATES (Sailing v4.7)
+# ============================================================================
+
+HERBLORE_INTERMEDIATES = {
+    # Paste items used in coral crafting
+    31700: "Crab paste",
+    31703: "Squid paste",
+    31706: "Rainbow crab paste",
+    31709: "Haddock eye",
+}
+
+# ============================================================================
+# COMBINED ITEM DICTIONARY
+# ============================================================================
 
 ALL_ITEMS = {
     **ALL_LOGS, 
@@ -165,5 +305,14 @@ ALL_ITEMS = {
     **ALL_NAILS, 
     **ALL_CANNONBALLS, 
     **AMMO_MOULDS,
-    **MISC_ITEMS
+    **MISC_ITEMS,
+    # v4.7 additions
+    **TEXTILE_SEEDS,
+    **RAW_TEXTILES,
+    **YARNS,
+    **BOLTS,
+    **CORAL_FRAGS,
+    **CORAL,
+    **CORAL_PRODUCTS,
+    **HERBLORE_INTERMEDIATES,
 }
