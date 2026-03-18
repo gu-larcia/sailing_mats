@@ -1,8 +1,7 @@
 """Application settings."""
 
-APP_VERSION = "5.0"
-APP_TITLE = "OSRS Market Tracker"
-APP_SUBTITLE = "Sailing Materials & Beyond"
+APP_VERSION = "4.6"
+APP_TITLE = "OSRS Sailing Materials Tracker"
 APP_ICON = "https://oldschool.runescape.wiki/images/Sailing_icon.png"
 
 # Cache TTLs (seconds)
@@ -38,20 +37,4 @@ URL_PARAMS = {
     "plank_sack": "has_plank_sack",
     "smithing_outfit": "has_smithing_outfit",
     "quantity": "quantity",
-}
-
-# Item groups that can be tracked (extensible)
-ITEM_GROUPS = {
-    "sailing": "Sailing Materials",
-    "logs": "Logs",
-    "planks": "Planks",
-    "hull_parts": "Hull Parts",
-    "large_hull_parts": "Large Hull Parts",
-    "hull_repair_kits": "Hull Repair Kits",
-    "ores": "Ores",
-    "bars": "Bars",
-    "keel_parts": "Keel Parts",
-    "large_keel_parts": "Large Keel Parts",
-    "nails": "Nails",
-    "cannonballs": "Cannonballs",
 }
