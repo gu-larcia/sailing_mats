@@ -1,178 +1,213 @@
-"""OSRS-themed CSS for Streamlit."""
+"""Dark OSRS-themed CSS for Streamlit — inspired by osrsplayercount.com."""
 
 OSRS_CSS = """
 <style>
+@font-face {
+    font-family: 'RuneScape';
+    src: url('https://raw.githubusercontent.com/runelite/runelite/master/runelite-client/src/main/resources/net/runelite/client/ui/runescape.ttf') format('truetype');
+    font-display: swap;
+}
+
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
 
 :root {
-    --parchment: #f4e4bc;
-    --parchment-dark: #e8d5a3;
-    --parchment-light: #faf3e0;
-    --driftwood: #8b7355;
-    --driftwood-dark: #5c4d3a;
-    --driftwood-light: #a08b6d;
+    --bg-primary: #1b1b1b;
+    --bg-secondary: #2b2b2b;
+    --bg-card: #3a3124;
+    --bg-card-dark: #2e2720;
+    --border-primary: #383023;
+    --border-gold: #5a4a2a;
+    --text-yellow: #ffff00;
+    --text-orange: #ff981f;
+    --text-green: #00ff00;
+    --text-lime: #90c040;
+    --text-gray: #aaaaaa;
+    --text-light: #d4c5a0;
+    --text-white: #e8dcc8;
     --gold: #ffd700;
     --gold-dark: #d4af37;
-    --gold-light: #ffec80;
-    --ocean-dark: #1a3a4a;
-    --ocean: #2d5a6b;
-    --ocean-light: #3d7a8c;
     --copper: #b87333;
-    --bronze: #cd7f32;
-    --rune-blue: #5dade2;
     --dragon-red: #c0392b;
+    --rune-blue: #5dade2;
+    --shadow: rgba(0, 0, 0, 0.6);
 }
 
+/* ===== App Background ===== */
 .stApp {
-    background: linear-gradient(180deg, #1a2a3a 0%, #0d1a24 50%, #1a2a3a 100%);
+    background: var(--bg-primary);
 }
 
+/* ===== Sidebar ===== */
 [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, var(--parchment) 0%, var(--parchment-dark) 100%);
-    border-right: 4px solid var(--driftwood);
+    background: linear-gradient(180deg, #2e2720 0%, #1e1a15 100%);
+    border-right: 3px solid var(--border-gold);
 }
 
 [data-testid="stSidebar"] * {
-    color: var(--driftwood-dark) !important;
+    color: var(--text-light) !important;
 }
 
 [data-testid="stSidebar"] .stMarkdown h1,
 [data-testid="stSidebar"] .stMarkdown h2,
 [data-testid="stSidebar"] .stMarkdown h3 {
-    font-family: 'Cinzel', serif !important;
-    color: var(--driftwood-dark) !important;
+    font-family: 'RuneScape', 'Cinzel', serif !important;
+    color: var(--text-orange) !important;
+    text-shadow: 1px 1px 0 #000;
 }
 
+[data-testid="stSidebar"] input {
+    background: var(--bg-secondary) !important;
+    border: 2px solid var(--border-gold) !important;
+    color: var(--text-light) !important;
+}
+
+[data-testid="stSidebar"] .stSelectbox label {
+    color: var(--text-light) !important;
+}
+
+/* ===== Headers ===== */
 .stApp h1, .stApp h2, .stApp h3 {
-    font-family: 'Cinzel', serif !important;
-    color: var(--gold) !important;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    font-family: 'RuneScape', 'Cinzel', serif !important;
+    color: var(--text-yellow) !important;
+    text-shadow: 1px 1px 0 #000, 2px 2px 4px rgba(0,0,0,0.5);
 }
 
 .stApp h1 {
-    border-bottom: 3px solid var(--gold-dark);
+    border-bottom: 3px solid var(--border-gold);
     padding-bottom: 10px;
 }
 
+/* ===== Tabs ===== */
 .stTabs [data-baseweb="tab-list"] {
-    background: linear-gradient(180deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
+    background: var(--bg-card-dark);
     border-radius: 8px 8px 0 0;
     padding: 5px;
     gap: 4px;
+    border: 1px solid var(--border-gold);
+    border-bottom: none;
 }
 
 .stTabs [data-baseweb="tab"] {
-    font-family: 'Cinzel', serif !important;
-    color: var(--parchment) !important;
+    font-family: 'RuneScape', 'Cinzel', serif !important;
+    color: var(--text-light) !important;
     background: transparent;
     border-radius: 6px 6px 0 0;
     padding: 10px 20px;
+    text-shadow: 1px 1px 0 #000;
 }
 
 .stTabs [aria-selected="true"] {
-    background: linear-gradient(180deg, var(--gold-dark) 0%, var(--copper) 100%) !important;
-    color: var(--driftwood-dark) !important;
+    background: linear-gradient(180deg, var(--border-gold) 0%, var(--bg-card) 100%) !important;
+    color: var(--text-yellow) !important;
 }
 
 .stTabs [data-baseweb="tab-panel"] {
-    background: linear-gradient(180deg, rgba(244,228,188,0.1) 0%, rgba(244,228,188,0.05) 100%);
-    border: 2px solid var(--driftwood);
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-gold);
     border-top: none;
     border-radius: 0 0 8px 8px;
     padding: 20px;
 }
 
+/* ===== Metrics ===== */
 [data-testid="stMetric"] {
-    background: linear-gradient(145deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
-    border: 2px solid var(--gold-dark);
+    background: var(--bg-card);
+    border: 2px solid var(--border-gold);
     border-radius: 10px;
     padding: 15px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.4), 0 2px 4px var(--shadow);
 }
 
 [data-testid="stMetric"] label {
-    font-family: 'Cinzel', serif !important;
-    color: var(--gold) !important;
+    font-family: 'RuneScape', 'Cinzel', serif !important;
+    color: var(--text-orange) !important;
+    text-shadow: 1px 1px 0 #000;
 }
 
 [data-testid="stMetric"] [data-testid="stMetricValue"] {
-    font-family: 'Crimson Text', serif !important;
-    color: var(--parchment) !important;
+    font-family: 'RuneScape', 'Crimson Text', serif !important;
+    color: var(--text-green) !important;
     font-size: 1.1rem !important;
+    text-shadow: 1px 1px 0 #000;
 }
 
+[data-testid="stMetric"] [data-testid="stMetricDelta"] svg {
+    display: none;
+}
+
+/* ===== DataFrames ===== */
 [data-testid="stDataFrame"] {
-    border: 3px solid var(--driftwood);
+    border: 3px solid var(--border-gold);
     border-radius: 8px;
     overflow-x: auto !important;
     overflow-y: visible !important;
 }
 
+/* ===== Buttons ===== */
 .stButton > button {
-    font-family: 'Cinzel', serif !important;
-    background: linear-gradient(180deg, var(--gold) 0%, var(--gold-dark) 100%);
-    color: var(--driftwood-dark) !important;
-    border: 2px solid var(--copper);
+    font-family: 'RuneScape', 'Cinzel', serif !important;
+    background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-card-dark) 100%);
+    color: var(--text-orange) !important;
+    border: 2px solid var(--border-gold);
     border-radius: 6px;
     font-weight: 600;
-    box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 2px 4px var(--shadow);
     transition: all 0.2s ease;
+    text-shadow: 1px 1px 0 #000;
 }
 
 .stButton > button:hover {
-    background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 100%);
+    background: linear-gradient(180deg, var(--border-gold) 0%, var(--bg-card) 100%);
+    color: var(--text-yellow) !important;
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+    box-shadow: 0 4px 8px var(--shadow);
 }
 
+/* ===== Forms ===== */
 [data-testid="stForm"] {
-    background: linear-gradient(180deg, rgba(139,115,85,0.2) 0%, rgba(92,77,58,0.2) 100%);
-    border: 2px solid var(--driftwood);
+    background: linear-gradient(180deg, rgba(58,49,36,0.3) 0%, rgba(46,39,32,0.3) 100%);
+    border: 2px solid var(--border-gold);
     border-radius: 8px;
     padding: 15px;
 }
 
+/* ===== Select boxes ===== */
 .stSelectbox > div > div {
-    background: var(--parchment-light) !important;
-    border: 2px solid var(--driftwood) !important;
+    background: var(--bg-secondary) !important;
+    border: 2px solid var(--border-gold) !important;
 }
 
 .stSelectbox > div > div > div {
-    color: var(--driftwood-dark) !important;
+    color: var(--text-light) !important;
 }
 
 .stSelectbox label {
-    color: var(--parchment) !important;
+    color: var(--text-light) !important;
 }
 
-[data-testid="stSidebar"] .stSelectbox label {
-    color: var(--driftwood-dark) !important;
-}
-
-[data-testid="stSidebar"] input {
-    background: var(--parchment-light) !important;
-    border: 2px solid var(--driftwood) !important;
-    color: var(--driftwood-dark) !important;
-}
-
+/* ===== Expanders ===== */
 .streamlit-expanderHeader {
-    font-family: 'Cinzel', serif !important;
-    background: linear-gradient(180deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
-    border: 2px solid var(--gold-dark);
+    font-family: 'RuneScape', 'Cinzel', serif !important;
+    background: var(--bg-card-dark);
+    border: 2px solid var(--border-gold);
     border-radius: 6px;
-    color: var(--gold) !important;
+    color: var(--text-orange) !important;
+    text-shadow: 1px 1px 0 #000;
 }
 
+/* ===== Link Buttons ===== */
 .stLinkButton > a {
-    font-family: 'Cinzel', serif !important;
-    background: linear-gradient(180deg, var(--ocean) 0%, var(--ocean-dark) 100%);
-    color: var(--parchment) !important;
-    border: 2px solid var(--ocean-light);
+    font-family: 'RuneScape', 'Cinzel', serif !important;
+    background: linear-gradient(180deg, var(--bg-card) 0%, var(--bg-card-dark) 100%);
+    color: var(--text-lime) !important;
+    border: 2px solid var(--border-gold);
+    text-shadow: 1px 1px 0 #000;
 }
 
+/* ===== Captions & Alerts ===== */
 .stCaption {
     font-family: 'Crimson Text', serif !important;
-    color: var(--parchment-dark) !important;
+    color: var(--text-gray) !important;
     font-style: italic;
 }
 
@@ -181,29 +216,33 @@ OSRS_CSS = """
     border-radius: 6px;
 }
 
+/* ===== Toasts ===== */
 [data-testid="stToast"] {
-    background: linear-gradient(180deg, var(--parchment) 0%, var(--parchment-dark) 100%);
-    border: 2px solid var(--gold-dark);
-    color: var(--driftwood-dark);
+    background: var(--bg-card);
+    border: 2px solid var(--border-gold);
+    color: var(--text-light);
     font-family: 'Crimson Text', serif;
+    text-shadow: 1px 1px 0 #000;
 }
 
 hr {
-    border-color: var(--driftwood) !important;
+    border-color: var(--border-gold) !important;
 }
 
 .stSpinner > div {
-    border-color: var(--gold) !important;
+    border-color: var(--text-orange) !important;
 }
 
+/* ===== Custom Item Cards ===== */
 .item-card {
-    background: linear-gradient(145deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
-    border: 2px solid var(--gold-dark);
+    background: var(--bg-card);
+    border: 2px solid var(--border-gold);
     border-radius: 10px;
     padding: 12px;
     display: flex;
     align-items: center;
     gap: 12px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .item-card img {
@@ -213,23 +252,26 @@ hr {
 }
 
 .item-card .item-name {
-    color: var(--parchment);
-    font-family: 'Cinzel', serif;
+    color: var(--text-yellow);
+    font-family: 'RuneScape', 'Cinzel', serif;
     font-size: 0.95rem;
+    text-shadow: 1px 1px 0 #000;
 }
 
 .item-card .item-profit {
-    color: var(--gold);
-    font-family: 'Crimson Text', serif;
+    color: var(--text-green);
+    font-family: 'RuneScape', 'Crimson Text', serif;
     font-weight: 600;
+    text-shadow: 1px 1px 0 #000;
 }
 
 .best-item-display {
-    background: linear-gradient(145deg, var(--driftwood) 0%, var(--driftwood-dark) 100%);
-    border: 2px solid var(--gold-dark);
+    background: var(--bg-card);
+    border: 2px solid var(--border-gold);
     border-radius: 10px;
     padding: 15px;
     text-align: center;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .best-item-display img {
@@ -240,67 +282,102 @@ hr {
 }
 
 .best-item-display .label {
-    color: var(--gold);
-    font-family: 'Cinzel', serif;
+    color: var(--text-orange);
+    font-family: 'RuneScape', 'Cinzel', serif;
     font-size: 0.85rem;
     margin-bottom: 4px;
+    text-shadow: 1px 1px 0 #000;
 }
 
 .best-item-display .value {
-    color: var(--parchment);
-    font-family: 'Crimson Text', serif;
+    color: var(--text-yellow);
+    font-family: 'RuneScape', 'Crimson Text', serif;
     font-size: 1rem;
     word-wrap: break-word;
+    text-shadow: 1px 1px 0 #000;
 }
 
+/* ===== Live Stats Header ===== */
+.live-stat {
+    background: var(--bg-card);
+    border: 2px solid var(--border-gold);
+    border-radius: 8px;
+    padding: 12px 16px;
+    text-align: center;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.live-stat .stat-label {
+    color: var(--text-orange);
+    font-family: 'RuneScape', 'Cinzel', serif;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 0 #000;
+}
+
+.live-stat .stat-value {
+    color: var(--text-green);
+    font-family: 'RuneScape', 'Cinzel', serif;
+    font-size: 1.4rem;
+    text-shadow: 1px 1px 0 #000;
+}
+
+.live-stat .stat-sub {
+    color: var(--text-gray);
+    font-family: 'Crimson Text', serif;
+    font-size: 0.75rem;
+}
+
+/* ===== Responsive ===== */
 @media screen and (max-width: 768px) {
     .stApp {
         padding: 0.5rem;
     }
-    
+
     [data-testid="stSidebar"] {
         min-width: 250px;
     }
-    
+
     [data-testid="stDataFrame"] {
         font-size: 0.85rem;
     }
-    
+
     [data-testid="stMetric"] {
         padding: 10px;
     }
-    
+
     .js-plotly-plot, .plotly {
         max-width: 100% !important;
         overflow-x: auto;
     }
-    
+
     .stButton > button {
         min-height: 44px;
         padding: 10px 16px;
     }
-    
+
     .stTabs [data-baseweb="tab-list"] {
         overflow-x: auto;
         flex-wrap: nowrap;
         -webkit-overflow-scrolling: touch;
     }
-    
+
     .stTabs [data-baseweb="tab"] {
         flex-shrink: 0;
         padding: 8px 12px;
     }
-    
+
     .stApp h1 { font-size: 1.5rem !important; }
     .stApp h2 { font-size: 1.25rem !important; }
     .stApp h3 { font-size: 1.1rem !important; }
-    
+
     [data-testid="stDataFrame"]::before {
         content: 'scroll horizontally';
         display: block;
         text-align: center;
         font-size: 0.7rem;
-        color: var(--gold-dark);
+        color: var(--text-gray);
         padding: 4px;
         opacity: 0.7;
     }
@@ -310,32 +387,40 @@ hr {
     [data-testid="stDataFrame"] {
         font-size: 0.75rem;
     }
-    
+
     [data-testid="stMetric"] label {
         font-size: 0.8rem !important;
     }
-    
+
     [data-testid="stMetric"] [data-testid="stMetricValue"] {
         font-size: 1rem !important;
     }
 }
 
+/* Responsive font scaling for ultra-wide */
+@media screen and (min-width: 1921px) {
+    .stApp {
+        font-size: calc(16px + 0.5vw);
+    }
+}
+
+/* ===== Scrollbars ===== */
 [data-testid="stDataFrame"]::-webkit-scrollbar {
     height: 8px;
 }
 
 [data-testid="stDataFrame"]::-webkit-scrollbar-track {
-    background: var(--driftwood-dark);
+    background: var(--bg-card-dark);
     border-radius: 4px;
 }
 
 [data-testid="stDataFrame"]::-webkit-scrollbar-thumb {
-    background: var(--gold-dark);
+    background: var(--border-gold);
     border-radius: 4px;
 }
 
 [data-testid="stDataFrame"]::-webkit-scrollbar-thumb:hover {
-    background: var(--gold);
+    background: var(--gold-dark);
 }
 </style>
 
