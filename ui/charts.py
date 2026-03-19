@@ -40,7 +40,7 @@ def _dark_layout(**overrides) -> dict:
         paper_bgcolor=_BG_PAPER,
         plot_bgcolor=_BG_PLOT,
         font=dict(color=_TEXT_LIGHT, size=11),
-        margin=dict(l=55, r=20, t=60, b=50),
+        margin=dict(l=55, r=20, t=70, b=55),
     )
     base.update(overrides)
     return base
@@ -66,8 +66,8 @@ def _dark_legend(**overrides) -> dict:
         bordercolor=_BORDER_GOLD,
         borderwidth=1,
         orientation='h',
-        yanchor='bottom',
-        y=-0.25,
+        yanchor='top',
+        y=-0.15,
         xanchor='center',
         x=0.5,
     )
@@ -107,7 +107,7 @@ def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
     fig.update_layout(
         **_dark_layout(
             height=max(380, top_n * 36),
-            margin=dict(l=140, r=80, t=60, b=45),
+            margin=dict(l=140, r=80, t=70, b=45),
             showlegend=False,
         ),
         title=dict(
@@ -174,7 +174,7 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
             values=values,
             hole=0.4,
             textinfo='label+percent',
-            textposition='outside',
+            textposition='auto',
             textfont=dict(color=_TEXT_LIGHT, size=10),
             hovertext=hover_text,
             hoverinfo='text',
@@ -184,7 +184,8 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
             ),
             pull=[0.03 if i == 0 else 0 for i in range(len(labels))],
             insidetextorientation='horizontal',
-            sort=False
+            sort=False,
+            automargin=True,
         )
     ])
 
@@ -196,7 +197,7 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
     )
 
     fig.update_layout(
-        **_dark_layout(height=400, margin=dict(l=40, r=40, t=50, b=40)),
+        **_dark_layout(height=420, margin=dict(l=50, r=50, t=70, b=50)),
         title=dict(
             text="Profit by Category",
             font=dict(color=_TEXT_YELLOW, size=16)
@@ -305,7 +306,7 @@ def create_profit_histogram(profits: List[float], per_item: bool = False) -> go.
         subtitle_parts.append(outlier_note)
 
     fig.update_layout(
-        **_dark_layout(height=350),
+        **_dark_layout(height=370, margin=dict(l=55, r=20, t=70, b=80)),
         title=dict(
             text="Profit Distribution",
             font=dict(color=_TEXT_YELLOW, size=16),
@@ -339,12 +340,19 @@ def create_roi_scatter(results: List[Dict]) -> Optional[go.Figure]:
             categories[cat] = []
         categories[cat].append(r)
 
+    # Compute global profit range for marker sizing
+    all_profits = [abs(r["_profit_raw"]) for r in valid_results if r["_profit_raw"] != 0]
+    max_abs_profit = max(all_profits) if all_profits else 1
+
     fig = go.Figure()
 
     for cat, cat_results in categories.items():
         profits = [r["_profit_raw"] for r in cat_results]
         rois = [r["ROI %"] for r in cat_results]
         items = [get_clean_item_name(r["Item"]) for r in cat_results]
+
+        # Scale marker sizes: 7–18 based on absolute profit magnitude
+        sizes = [max(7, min(18, 7 + 11 * (abs(p) / max_abs_profit))) for p in profits]
 
         color = CATEGORY_COLORS.get(cat, '#8e44ad')
 
@@ -355,8 +363,9 @@ def create_roi_scatter(results: List[Dict]) -> Optional[go.Figure]:
                 mode='markers',
                 name=cat,
                 marker=dict(
-                    size=10,
+                    size=sizes,
                     color=color,
+                    opacity=0.8,
                     line=dict(width=1, color=_BORDER_GOLD)
                 ),
                 text=items,
@@ -368,18 +377,18 @@ def create_roi_scatter(results: List[Dict]) -> Optional[go.Figure]:
     fig.add_vline(x=0, line_dash="dash", line_color="rgba(212,197,160,0.3)", line_width=1)
 
     fig.update_layout(
-        **_dark_layout(height=400, margin=dict(l=55, r=20, t=60, b=80)),
+        **_dark_layout(height=450, margin=dict(l=55, r=20, t=70, b=100)),
         title=dict(
             text="ROI vs Profit",
             font=dict(color=_TEXT_YELLOW, size=16),
             subtitle=dict(
-                text="Higher right = better value",
+                text="Bubble size = profit magnitude | Higher right = better value",
                 font=dict(color=_TEXT_GRAY, size=10)
             )
         ),
         xaxis=_dark_axis("Net Profit (GP)", tickformat=',.0f'),
         yaxis=_dark_axis("ROI (%)"),
-        legend=_dark_legend(),
+        legend=_dark_legend(y=-0.22),
     )
 
     return fig
@@ -482,8 +491,8 @@ def create_tier_category_heatmap(results: List[Dict]) -> Optional[go.Figure]:
 
     fig.update_layout(
         **_dark_layout(
-            height=max(350, len(tier_order) * 45 + 120),
-            margin=dict(l=100, r=30, t=60, b=80),
+            height=max(370, len(tier_order) * 45 + 140),
+            margin=dict(l=100, r=30, t=70, b=100),
         ),
         title=dict(
             text="Tier × Category Profitability",
@@ -493,7 +502,7 @@ def create_tier_category_heatmap(results: List[Dict]) -> Optional[go.Figure]:
                 font=dict(color=_TEXT_GRAY, size=10),
             ),
         ),
-        xaxis=_dark_axis("", tickangle=45, side='bottom'),
+        xaxis=_dark_axis("", tickangle=35, side='bottom'),
         yaxis=_dark_axis("", autorange='reversed'),
     )
 
@@ -550,7 +559,7 @@ def create_cost_waterfall(result: Dict, item_name: str) -> go.Figure:
     ))
 
     fig.update_layout(
-        **_dark_layout(height=400, margin=dict(l=60, r=30, t=70, b=60)),
+        **_dark_layout(height=400, margin=dict(l=60, r=30, t=80, b=70)),
         title=dict(
             text=f"Cost Breakdown: {get_clean_item_name(item_name)}",
             font=dict(color=_TEXT_YELLOW, size=16),
@@ -643,7 +652,7 @@ def create_multi_waterfall(results: List[Dict], top_n: int = 5) -> go.Figure:
         )
 
     fig.update_layout(
-        **_dark_layout(height=420, margin=dict(l=60, r=20, t=60, b=80)),
+        **_dark_layout(height=450, margin=dict(l=60, r=20, t=70, b=120)),
         title=dict(
             text="Cost Structure Comparison",
             font=dict(color=_TEXT_YELLOW, size=16),
@@ -656,7 +665,7 @@ def create_multi_waterfall(results: List[Dict], top_n: int = 5) -> go.Figure:
         yaxis=_dark_axis("GP", tickformat=',.0f',
                          zeroline=True, zerolinecolor='rgba(212,197,160,0.4)', zerolinewidth=1),
         barmode='relative',
-        legend=_dark_legend(y=-0.30),
+        legend=_dark_legend(y=-0.28),
     )
 
     return fig
@@ -730,7 +739,7 @@ def create_category_comparison(results: List[Dict]) -> go.Figure:
     )
 
     fig.update_layout(
-        **_dark_layout(height=400, margin=dict(l=55, r=20, t=60, b=100)),
+        **_dark_layout(height=430, margin=dict(l=55, r=20, t=70, b=130)),
         title=dict(
             text="Category Comparison",
             font=dict(color=_TEXT_YELLOW, size=16),
@@ -739,10 +748,10 @@ def create_category_comparison(results: List[Dict]) -> go.Figure:
                 font=dict(color=_TEXT_GRAY, size=10)
             )
         ),
-        xaxis=_dark_axis("", tickangle=45),
+        xaxis=_dark_axis("", tickangle=35),
         yaxis=_dark_axis("Profit (GP)", tickformat=',.0f'),
         barmode='group',
-        legend=_dark_legend(y=-0.35),
+        legend=_dark_legend(y=-0.32),
     )
 
     return fig

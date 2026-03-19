@@ -164,12 +164,14 @@ def main():
         with st.form("config_form"):
             st.subheader("Processing Options")
 
-            plank_method = st.selectbox(
+            plank_options = ["Sawmill", "Plank Make", "Plank Make (Earth Staff)"]
+            plank_method = st.radio(
                 "Plank Method",
-                ["Sawmill", "Plank Make", "Plank Make (Earth Staff)"],
-                index=["Sawmill", "Plank Make", "Plank Make (Earth Staff)"].index(
+                plank_options,
+                index=plank_options.index(
                     params.get("plank_method", "Sawmill")
-                ) if params.get("plank_method") in ["Sawmill", "Plank Make", "Plank Make (Earth Staff)"] else 0
+                ) if params.get("plank_method") in plank_options else 0,
+                horizontal=True,
             )
 
             self_collected = st.toggle(
@@ -705,21 +707,17 @@ def main():
             # === Row 3: Cost Breakdown Waterfall ===
             st.subheader("Cost Breakdown")
 
-            waterfall_col1, waterfall_col2 = st.columns([1, 2])
-            with waterfall_col1:
-                # Chain selector for individual waterfall
-                chain_names = sorted(all_raw_results.keys())
-                selected_chain = st.selectbox(
-                    "Select chain to inspect",
-                    chain_names,
-                    key="waterfall_chain",
-                )
+            chain_names = sorted(all_raw_results.keys())
+            selected_chain = st.selectbox(
+                "Select chain to inspect",
+                chain_names,
+                key="waterfall_chain",
+            )
 
-            with waterfall_col2:
-                if selected_chain and selected_chain in all_raw_results:
-                    wf_result = all_raw_results[selected_chain]
-                    fig = create_cost_waterfall(wf_result, selected_chain)
-                    st.plotly_chart(fig, use_container_width=True)
+            if selected_chain and selected_chain in all_raw_results:
+                wf_result = all_raw_results[selected_chain]
+                fig = create_cost_waterfall(wf_result, selected_chain)
+                st.plotly_chart(fig, use_container_width=True)
 
             # Multi-chain cost comparison
             st.markdown("##### Cost Structure Comparison")

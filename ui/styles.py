@@ -185,6 +185,16 @@ OSRS_CSS = """
     color: var(--text-light) !important;
 }
 
+/* ===== Radio buttons ===== */
+.stRadio label {
+    color: var(--text-light) !important;
+}
+
+.stRadio [data-baseweb="radio"] label {
+    color: var(--text-light) !important;
+    font-family: 'Crimson Text', serif !important;
+}
+
 /* ===== Expanders ===== */
 .streamlit-expanderHeader {
     font-family: 'RuneScape', 'Cinzel', serif !important;
@@ -272,6 +282,10 @@ hr {
     padding: 15px;
     text-align: center;
     box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+    min-height: 90px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .best-item-display img {
@@ -294,7 +308,9 @@ hr {
     font-family: 'RuneScape', 'Crimson Text', serif;
     font-size: 1rem;
     word-wrap: break-word;
+    overflow-wrap: break-word;
     text-shadow: 1px 1px 0 #000;
+    max-width: 100%;
 }
 
 /* ===== Live Stats Header ===== */
