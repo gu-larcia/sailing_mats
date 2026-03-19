@@ -37,6 +37,7 @@ CATEGORY_COLORS = {
     'Large Keel Parts': '#5F9EA0',
     'Nails': '#CD7F32',
     'Cannonballs': '#5C5C5C',
+    'Bar Smelting': '#B87333',
     'Other': '#7f8c8d',
 }
 
@@ -99,7 +100,7 @@ def get_tier_from_name(item_name: str) -> str:
     """Extract tier name from item name."""
     name_lower = item_name.lower()
     
-    for tier in ['dragon', 'rune', 'adamant', 'mithril', 'steel', 'iron', 'bronze']:
+    for tier in ['dragon', 'rune', 'adamant', 'mithril', 'steel', 'iron', 'bronze', 'gold', 'silver']:
         if tier in name_lower and not (tier == 'iron' and 'ironwood' in name_lower):
             return tier.capitalize()
     

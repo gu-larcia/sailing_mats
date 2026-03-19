@@ -163,4 +163,28 @@ ACTIVITY_TIMINGS = {
         is_smithing=False,
         notes="Earth staff reduces rune slots."
     ),
+
+    "Smelting_Regular": ActivityTiming(
+        ticks_per_action=4,
+        items_per_action=1,
+        materials_per_action=1,
+        needs_hammer=False,
+        needs_saw=False,
+        other_tool_slots=0,
+        activity_name="Furnace Smelting",
+        is_smithing=True,
+        notes="Ore + coal → bar. Standard furnace."
+    ),
+
+    "Smelting_BlastFurnace": ActivityTiming(
+        ticks_per_action=4,
+        items_per_action=1,
+        materials_per_action=1,
+        needs_hammer=False,
+        needs_saw=False,
+        other_tool_slots=1,  # Coal bag
+        activity_name="Blast Furnace Smelting",
+        is_smithing=True,
+        notes="Half coal. Coal bag + ice gloves recommended."
+    ),
 }

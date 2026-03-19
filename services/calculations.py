@@ -41,6 +41,7 @@ def calculate_gp_per_hour(
     has_amys_saw = config.get("has_amys_saw", False)
     has_smithing_outfit = config.get("has_smithing_outfit", False)
     has_plank_sack = config.get("has_plank_sack", False)
+    has_coal_bag = config.get("has_coal_bag", False)
     use_stamina = config.get("use_stamina", True)
     
     bank_location_name = config.get("bank_location", "Medium (Typical)")
@@ -119,7 +120,9 @@ def calculate_gp_per_hour(
         tool_notes.append(f"Saw: {'equipped' if has_amys_saw else 'inventory'}")
     if has_plank_sack and timing.uses_planks:
         tool_notes.append(f"Plank sack: +{plank_sack_bonus}")
-    
+    if has_coal_bag and timing_key == "Smelting_BlastFurnace":
+        tool_notes.append("Coal bag: inventory")
+
     bonus_notes = []
     if has_smithing_outfit and timing.is_smithing:
         bonus_notes.append("Smithing outfit: -15% avg ticks")
@@ -129,7 +132,9 @@ def calculate_gp_per_hour(
         bonus_notes.append("Double mould: 2 bars/action")
     if has_plank_sack and timing.uses_planks:
         bonus_notes.append(f"Plank sack: +{plank_sack_bonus} capacity")
-    
+    if has_coal_bag and timing_key == "Smelting_BlastFurnace":
+        bonus_notes.append("Coal bag: +27 coal capacity")
+
     return {
         "gp_per_hour": gp_per_hour,
         "items_per_hour": items_per_hour,
@@ -184,5 +189,10 @@ def _get_timing_key(category: str, chain_name: str, config: Dict) -> Optional[st
         if "Plank Make" in plank_method:
             return "Planks_PlankMake"
         return "Planks_Sawmill"
-    
+
+    elif category == "Bar Smelting":
+        if "Blast Furnace" in chain_name:
+            return "Smelting_BlastFurnace"
+        return "Smelting_Regular"
+
     return None

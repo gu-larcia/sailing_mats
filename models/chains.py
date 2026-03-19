@@ -15,6 +15,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         "Large Keel Parts": [],
         "Nails": [],
         "Cannonballs": [],
+        "Bar Smelting": [],
     }
     
     # Planks: log -> plank
@@ -211,4 +212,43 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Cannonballs"].append(chain_double)
     
+    # Bar Smelting: ore(s) -> bar at regular furnace or Blast Furnace
+    # Blast Furnace halves coal requirement; iron is 100% success (vs 50% at regular furnace)
+    # (bar_id, bar_name, primary_ores, regular_coal, bf_coal)
+    smelting_recipes = [
+        (2349, "Bronze bar", [(436, "Copper ore", 1), (438, "Tin ore", 1)], 0, 0),
+        (2351, "Iron bar", [(440, "Iron ore", 1)], 0, 0),
+        (2355, "Silver bar", [(442, "Silver ore", 1)], 0, 0),
+        (2357, "Gold bar", [(444, "Gold ore", 1)], 0, 0),
+        (2353, "Steel bar", [(440, "Iron ore", 1)], 2, 1),
+        (2359, "Mithril bar", [(447, "Mithril ore", 1)], 4, 2),
+        (2361, "Adamantite bar", [(449, "Adamantite ore", 1)], 6, 3),
+        (2363, "Runite bar", [(451, "Runite ore", 1)], 8, 4),
+    ]
+
+    for bar_id, bar_name, primary_ores, regular_coal, bf_coal in smelting_recipes:
+        # Regular furnace chain
+        chain_reg = ProcessingChain(
+            name=f"{bar_name} (Furnace)",
+            category="Bar Smelting"
+        )
+        reg_steps = [ChainStep(ore_id, ore_name, qty) for ore_id, ore_name, qty in primary_ores]
+        if regular_coal > 0:
+            reg_steps.append(ChainStep(453, "Coal", regular_coal))
+        reg_steps.append(ChainStep(bar_id, bar_name, 1, processing_method="Smelting"))
+        chain_reg.steps = reg_steps
+        chains["Bar Smelting"].append(chain_reg)
+
+        # Blast Furnace chain
+        chain_bf = ProcessingChain(
+            name=f"{bar_name} (Blast Furnace)",
+            category="Bar Smelting"
+        )
+        bf_steps = [ChainStep(ore_id, ore_name, qty) for ore_id, ore_name, qty in primary_ores]
+        if bf_coal > 0:
+            bf_steps.append(ChainStep(453, "Coal", bf_coal))
+        bf_steps.append(ChainStep(bar_id, bar_name, 1, processing_method="Blast Furnace"))
+        chain_bf.steps = bf_steps
+        chains["Bar Smelting"].append(chain_bf)
+
     return chains

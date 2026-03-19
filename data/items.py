@@ -143,7 +143,11 @@ AMMO_MOULDS = {
 MISC_ITEMS = {
     1941: "Swamp paste",
     25580: "Plank sack",
+    31431: "Sawmill voucher",
 }
+
+SAWMILL_VOUCHER_ID = 31431
+COAL_BAG_ID = 12019
 
 # For Plank Make spell
 RUNE_IDS = {
@@ -153,17 +157,18 @@ RUNE_IDS = {
 }
 
 ALL_ITEMS = {
-    **ALL_LOGS, 
-    **ALL_PLANKS, 
-    **HULL_PARTS, 
+    **ALL_LOGS,
+    **ALL_PLANKS,
+    **HULL_PARTS,
     **LARGE_HULL_PARTS,
-    **HULL_REPAIR_KITS, 
-    **ALL_ORES, 
-    **ALL_BARS, 
+    **HULL_REPAIR_KITS,
+    **ALL_ORES,
+    **ALL_BARS,
     **KEEL_PARTS,
-    **LARGE_KEEL_PARTS, 
-    **ALL_NAILS, 
-    **ALL_CANNONBALLS, 
+    **LARGE_KEEL_PARTS,
+    **ALL_NAILS,
+    **ALL_CANNONBALLS,
     **AMMO_MOULDS,
-    **MISC_ITEMS
+    **MISC_ITEMS,
+    COAL_BAG_ID: "Coal bag",
 }

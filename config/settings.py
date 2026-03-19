@@ -23,6 +23,8 @@ DEFAULT_CONFIG = {
     "has_plank_sack": False,
     "has_smithing_outfit": False,
     "use_earth_staff": False,
+    "use_sawmill_vouchers": False,
+    "has_coal_bag": False,
 }
 
 # Maps URL param names to config keys
@@ -38,6 +40,8 @@ URL_PARAMS = {
     "plank_sack": "has_plank_sack",
     "smithing_outfit": "has_smithing_outfit",
     "quantity": "quantity",
+    "sawmill_vouchers": "use_sawmill_vouchers",
+    "coal_bag": "has_coal_bag",
 }
 
 # Item groups that can be tracked (extensible)
@@ -54,4 +58,5 @@ ITEM_GROUPS = {
     "large_keel_parts": "Large Keel Parts",
     "nails": "Nails",
     "cannonballs": "Cannonballs",
+    "bar_smelting": "Bar Smelting",
 }

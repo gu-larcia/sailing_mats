@@ -49,12 +49,14 @@ class ProcessingChain:
         try:
             from ..data import (
                 SAWMILL_COSTS, PLANK_MAKE_COSTS, RUNE_IDS,
-                GE_TAX_RATE, GE_TAX_CAP, GE_TAX_THRESHOLD
+                GE_TAX_RATE, GE_TAX_CAP, GE_TAX_THRESHOLD,
+                SAWMILL_VOUCHER_ID,
             )
         except ImportError:
             from data import (
                 SAWMILL_COSTS, PLANK_MAKE_COSTS, RUNE_IDS,
-                GE_TAX_RATE, GE_TAX_CAP, GE_TAX_THRESHOLD
+                GE_TAX_RATE, GE_TAX_CAP, GE_TAX_THRESHOLD,
+                SAWMILL_VOUCHER_ID,
             )
         
         results = {
@@ -131,7 +133,8 @@ class ProcessingChain:
             if step.processing_method:
                 processing_cost, process_notes = self._calculate_processing_cost(
                     step, step_qty, prices, config, id_lookup,
-                    SAWMILL_COSTS, PLANK_MAKE_COSTS, RUNE_IDS
+                    SAWMILL_COSTS, PLANK_MAKE_COSTS, RUNE_IDS,
+                    SAWMILL_VOUCHER_ID
                 )
                 results["processing_costs"] += processing_cost
 
@@ -162,49 +165,84 @@ class ProcessingChain:
         return results
     
     def _calculate_processing_cost(
-        self, 
-        step: ChainStep, 
-        quantity: float, 
-        prices: Dict, 
-        config: Dict, 
+        self,
+        step: ChainStep,
+        quantity: float,
+        prices: Dict,
+        config: Dict,
         id_lookup: 'ItemIDLookup',
         sawmill_costs: Dict,
         plank_make_costs: Dict,
-        rune_ids: Dict
+        rune_ids: Dict,
+        sawmill_voucher_id: int = 31431
     ) -> Tuple[float, str]:
         """Calculate processing cost for a step."""
-        
+
         if step.custom_cost is not None:
             return step.custom_cost * quantity, f"Custom: {step.custom_cost} gp each"
-        
+
+        # Plank processing — respect plank_method config and voucher toggle
         if step.processing_method == "Sawmill":
-            if step.item_name in sawmill_costs:
+            plank_method = config.get("plank_method", "Sawmill")
+            use_vouchers = config.get("use_sawmill_vouchers", False)
+
+            if "Plank Make" in plank_method and step.item_name in plank_make_costs:
+                return self._calc_plank_make_cost(
+                    step, quantity, prices, config,
+                    plank_make_costs, rune_ids, sawmill_voucher_id, use_vouchers
+                )
+            elif step.item_name in sawmill_costs:
+                if use_vouchers:
+                    voucher_price = prices.get(str(sawmill_voucher_id), {}).get("high", 0)
+                    cost = voucher_price * quantity
+                    return cost, f"Sawmill (Voucher): {voucher_price} gp each"
                 cost = sawmill_costs[step.item_name] * quantity
                 return cost, f"Sawmill: {sawmill_costs[step.item_name]} gp each"
-        
-        elif step.processing_method == "Plank Make":
-            if step.item_name in plank_make_costs:
-                base_cost = plank_make_costs[step.item_name] * quantity
-                
-                # 2 Astral + 1 Nature + 15 Earth
-                astral_price = prices.get(str(rune_ids["Astral rune"]), {}).get("high", 0)
-                nature_price = prices.get(str(rune_ids["Nature rune"]), {}).get("high", 0)
-                
-                rune_cost = (astral_price * 2 + nature_price) * quantity
-                
-                if not config.get("use_earth_staff", False):
-                    earth_price = prices.get(str(rune_ids["Earth rune"]), {}).get("high", 0)
-                    rune_cost += earth_price * 15 * quantity
-                    notes = f"Plank Make: {plank_make_costs[step.item_name]} + runes"
-                else:
-                    notes = f"Plank Make (Earth staff): {plank_make_costs[step.item_name]} + runes"
-                
-                return base_cost + rune_cost, notes
-        
+
         elif step.processing_method == "Smithing":
             return 0, "Smithing"
-        
+
         elif step.processing_method == "Dragon Forge":
             return 0, "Dragon Forge (92 Smithing)"
-        
+
+        elif step.processing_method == "Smelting":
+            return 0, "Furnace smelting"
+
+        elif step.processing_method == "Blast Furnace":
+            return 0, "Blast Furnace (half coal)"
+
         return 0, ""
+
+    def _calc_plank_make_cost(
+        self,
+        step: ChainStep,
+        quantity: float,
+        prices: Dict,
+        config: Dict,
+        plank_make_costs: Dict,
+        rune_ids: Dict,
+        sawmill_voucher_id: int,
+        use_vouchers: bool,
+    ) -> Tuple[float, str]:
+        """Calculate Plank Make spell cost (GP/voucher component + runes)."""
+        if use_vouchers:
+            voucher_price = prices.get(str(sawmill_voucher_id), {}).get("high", 0)
+            base_cost = voucher_price * quantity
+            base_label = f"Plank Make (Voucher): {voucher_price}"
+        else:
+            base_cost = plank_make_costs[step.item_name] * quantity
+            base_label = f"Plank Make: {plank_make_costs[step.item_name]}"
+
+        # 2 Astral + 1 Nature + 15 Earth
+        astral_price = prices.get(str(rune_ids["Astral rune"]), {}).get("high", 0)
+        nature_price = prices.get(str(rune_ids["Nature rune"]), {}).get("high", 0)
+        rune_cost = (astral_price * 2 + nature_price) * quantity
+
+        if not config.get("use_earth_staff", False):
+            earth_price = prices.get(str(rune_ids["Earth rune"]), {}).get("high", 0)
+            rune_cost += earth_price * 15 * quantity
+            notes = f"{base_label} + runes"
+        else:
+            notes = f"{base_label} (Earth staff) + runes"
+
+        return base_cost + rune_cost, notes

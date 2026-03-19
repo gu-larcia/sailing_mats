@@ -186,6 +186,12 @@ def main():
                 help="Halves smithing time (87 Sailing)"
             )
 
+            use_sawmill_vouchers = st.toggle(
+                "Sawmill Vouchers",
+                value=params.get("sawmill_vouchers", "false") == "true",
+                help="Use GE-bought vouchers instead of GP for Sawmill/Plank Make"
+            )
+
             st.divider()
 
             st.subheader("GP/hr Calculation")
@@ -245,6 +251,12 @@ def main():
                     value=params.get("smithing_outfit", "false") == "true",
                     help="15% tick save (Giants' Foundry)"
                 )
+
+                has_coal_bag = st.toggle(
+                    "Coal Bag",
+                    value=params.get("coal_bag", "false") == "true",
+                    help="+27 coal capacity (Motherlode Mine)"
+                )
             else:
                 bank_location = params.get("bank_location", "Medium (Typical)")
                 use_stamina = params.get("use_stamina", "true") == "true"
@@ -252,6 +264,7 @@ def main():
                 has_amys_saw = params.get("amys_saw", "false") == "true"
                 has_plank_sack = params.get("plank_sack", "false") == "true"
                 has_smithing_outfit = params.get("smithing_outfit", "false") == "true"
+                has_coal_bag = params.get("coal_bag", "false") == "true"
 
             st.divider()
 
@@ -276,6 +289,8 @@ def main():
                 st.query_params["amys_saw"] = str(has_amys_saw).lower()
                 st.query_params["plank_sack"] = str(has_plank_sack).lower()
                 st.query_params["smithing_outfit"] = str(has_smithing_outfit).lower()
+                st.query_params["coal_bag"] = str(has_coal_bag).lower()
+                st.query_params["sawmill_vouchers"] = str(use_sawmill_vouchers).lower()
                 st.query_params["quantity"] = str(quantity)
                 st.toast("Settings applied!")
 
@@ -304,6 +319,8 @@ def main():
         "has_amys_saw": params.get("amys_saw", "false") == "true",
         "has_plank_sack": params.get("plank_sack", "false") == "true",
         "has_smithing_outfit": params.get("smithing_outfit", "false") == "true",
+        "has_coal_bag": params.get("coal_bag", "false") == "true",
+        "use_sawmill_vouchers": params.get("sawmill_vouchers", "false") == "true",
     }
 
     tabs = st.tabs([
