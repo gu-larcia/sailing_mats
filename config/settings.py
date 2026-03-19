@@ -59,4 +59,7 @@ ITEM_GROUPS = {
     "nails": "Nails",
     "cannonballs": "Cannonballs",
     "bar_smelting": "Bar Smelting",
+    "nails_from_ore": "Nails (from Ore)",
+    "keel_parts_from_ore": "Keel Parts (from Ore)",
+    "cannonballs_from_ore": "Cannonballs (from Ore)",
 }

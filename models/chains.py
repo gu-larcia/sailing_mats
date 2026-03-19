@@ -251,4 +251,77 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         chain_bf.steps = bf_steps
         chains["Bar Smelting"].append(chain_bf)
 
+    # ----------------------------------------------------------------
+    # Extended Chains: Ore → Bar (Furnace/BF) → Downstream Product
+    # The intermediate bar is is_self_obtained (produced, not purchased).
+    # Ore quantities are scaled by bars_needed so the backward ratio
+    # calculation produces correct absolute quantities at every step.
+    # ----------------------------------------------------------------
+    chains["Nails (from Ore)"] = []
+    chains["Keel Parts (from Ore)"] = []
+    chains["Cannonballs (from Ore)"] = []
+
+    # Only bars with downstream products (exclude silver, gold)
+    smeltable = [r for r in smelting_recipes if r[0] not in (2355, 2357)]
+
+    # (bar_id -> (product_id, product_name, bars_needed, output_qty, processing, category_key))
+    downstream = {
+        "Nails (from Ore)": [
+            (2349, 4819, "Bronze nails", 1, 15, "Smithing"),
+            (2351, 4820, "Iron nails", 1, 15, "Smithing"),
+            (2353, 1539, "Steel nails", 1, 15, "Smithing"),
+            (2359, 4822, "Mithril nails", 1, 15, "Smithing"),
+            (2361, 4823, "Adamantite nails", 1, 15, "Smithing"),
+            (2363, 4824, "Rune nails", 1, 15, "Smithing"),
+        ],
+        "Keel Parts (from Ore)": [
+            (2349, 31999, "Bronze keel parts", 5, 1, "Smithing"),
+            (2351, 32002, "Iron keel parts", 5, 1, "Smithing"),
+            (2353, 32005, "Steel keel parts", 5, 1, "Smithing"),
+            (2359, 32008, "Mithril keel parts", 5, 1, "Smithing"),
+            (2361, 32011, "Adamant keel parts", 5, 1, "Smithing"),
+            (2363, 32014, "Rune keel parts", 5, 1, "Smithing"),
+        ],
+        "Cannonballs (from Ore)": [
+            (2349, 31906, "Bronze cannonball", 1, 4, None),
+            (2351, 31908, "Iron cannonball", 1, 4, None),
+            (2353, 2, "Steel cannonball", 1, 4, None),
+            (2359, 31910, "Mithril cannonball", 1, 4, None),
+            (2361, 31912, "Adamant cannonball", 1, 4, None),
+            (2363, 31914, "Rune cannonball", 1, 4, None),
+        ],
+    }
+
+    for category_key, products in downstream.items():
+        for bar_id, prod_id, prod_name, bars_needed, output_qty, prod_processing in products:
+            # Find the matching smelting recipe for this bar
+            recipe = next((r for r in smeltable if r[0] == bar_id), None)
+            if not recipe:
+                continue
+            _, bar_name, primary_ores, regular_coal, bf_coal = recipe
+
+            for smelting_label, coal_qty, smelt_method in [
+                ("Furnace", regular_coal, "Smelting"),
+                ("BF", bf_coal, "Blast Furnace"),
+            ]:
+                chain = ProcessingChain(
+                    name=f"{prod_name} ({smelting_label})",
+                    category=category_key,
+                )
+                steps = []
+                # Ores scaled by bars_needed
+                for ore_id, ore_name, ore_per_bar in primary_ores:
+                    steps.append(ChainStep(ore_id, ore_name, ore_per_bar * bars_needed))
+                if coal_qty > 0:
+                    steps.append(ChainStep(453, "Coal", coal_qty * bars_needed))
+                # Intermediate bar (self-obtained — costed from ores, not GE)
+                steps.append(ChainStep(
+                    bar_id, bar_name, bars_needed,
+                    is_self_obtained=True, processing_method=smelt_method
+                ))
+                # Final product
+                steps.append(ChainStep(prod_id, prod_name, output_qty, processing_method=prod_processing))
+                chain.steps = steps
+                chains[category_key].append(chain)
+
     return chains

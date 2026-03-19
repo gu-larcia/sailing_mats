@@ -38,6 +38,9 @@ CATEGORY_COLORS = {
     'Nails': '#CD7F32',
     'Cannonballs': '#5C5C5C',
     'Bar Smelting': '#B87333',
+    'Nails (from Ore)': '#DAA520',
+    'Keel Parts (from Ore)': '#5F9EA0',
+    'Cannonballs (from Ore)': '#8B8682',
     'Other': '#7f8c8d',
 }
 
