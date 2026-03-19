@@ -81,6 +81,10 @@ def get_data_cache() -> OSRSDataCache:
 
 def sync_cache(cache: OSRSDataCache, item_mapping: Dict, prices: Dict):
     """Load API data into the SQLite cache and register tracked item groups."""
+    if cache.is_loaded:
+        cache.load_prices(prices)
+        return
+
     cache.load_item_mapping(item_mapping)
     cache.load_prices(prices)
 
@@ -103,6 +107,8 @@ def sync_cache(cache: OSRSDataCache, item_mapping: Dict, prices: Dict):
     for group_key, items in group_data.items():
         cache.load_tracked_items(items, group_key)
 
+    cache.is_loaded = True
+
 
 # ------------------------------------------------------------------
 # Main app
@@ -123,14 +129,19 @@ def main():
 
     conn = get_api_connection()
 
-    with st.spinner("Loading market data..."):
-        item_mapping = fetch_item_mapping(conn)
-        prices = fetch_latest_prices(conn)
-        mapping_hash = str(hash(frozenset(item_mapping.keys())))
-        id_lookup = get_id_lookup(mapping_hash, item_mapping)
-        all_chains = get_all_chains()
-        data_cache = get_data_cache()
-        sync_cache(data_cache, item_mapping, prices)
+    try:
+        with st.spinner("Loading market data..."):
+            item_mapping = fetch_item_mapping(conn)
+            prices = fetch_latest_prices(conn)
+            mapping_hash = str(hash(frozenset(item_mapping.keys())))
+            id_lookup = get_id_lookup(mapping_hash, item_mapping)
+            all_chains = get_all_chains()
+            data_cache = get_data_cache()
+            sync_cache(data_cache, item_mapping, prices)
+    except Exception as e:
+        st.error(f"Failed to load market data from OSRS Wiki API: {e}")
+        st.info("The API may be temporarily unavailable. Try refreshing in a few moments.")
+        st.stop()
 
     # Live stats bar
     stats = data_cache.get_stats()

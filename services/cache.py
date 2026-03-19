@@ -7,6 +7,7 @@ requiring a persistent local database.
 """
 
 import sqlite3
+import threading
 from typing import Dict, List, Optional, Tuple
 
 
@@ -16,7 +17,8 @@ class OSRSDataCache:
     def __init__(self):
         self.conn = sqlite3.connect(":memory:", check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
-        self.conn.execute("PRAGMA journal_mode=WAL")
+        self._lock = threading.Lock()
+        self._data_loaded = False
         self._create_tables()
 
     def _create_tables(self):
@@ -67,6 +69,10 @@ class OSRSDataCache:
 
     def load_item_mapping(self, mapping: Dict):
         """Load item mapping from Wiki API into items table."""
+        with self._lock:
+            self._load_item_mapping_locked(mapping)
+
+    def _load_item_mapping_locked(self, mapping: Dict):
         cur = self.conn.cursor()
         cur.execute("DELETE FROM items")
 
@@ -93,6 +99,10 @@ class OSRSDataCache:
 
     def load_prices(self, prices: Dict):
         """Load latest prices into prices table."""
+        with self._lock:
+            self._load_prices_locked(prices)
+
+    def _load_prices_locked(self, prices: Dict):
         cur = self.conn.cursor()
         cur.execute("DELETE FROM prices")
 
@@ -123,6 +133,10 @@ class OSRSDataCache:
             group: Group name (e.g. 'sailing', 'all_logs', 'keel_parts')
             clear_group: If True, remove existing items in this group first
         """
+        with self._lock:
+            self._load_tracked_items_locked(tracked, group, clear_group)
+
+    def _load_tracked_items_locked(self, tracked: Dict[int, str], group: str, clear_group: bool = True):
         cur = self.conn.cursor()
         if clear_group:
             cur.execute("DELETE FROM tracked_items WHERE item_group = ?", (group,))
@@ -277,6 +291,15 @@ class OSRSDataCache:
         """
         cur = self.conn.execute(sql, (limit,))
         return [dict(row) for row in cur.fetchall()]
+
+    @property
+    def is_loaded(self) -> bool:
+        """Whether initial data has been loaded."""
+        return self._data_loaded
+
+    @is_loaded.setter
+    def is_loaded(self, value: bool):
+        self._data_loaded = value
 
     def get_stats(self) -> Dict:
         """Get cache statistics."""
