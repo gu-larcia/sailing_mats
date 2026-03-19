@@ -87,6 +87,10 @@ def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
     tiers = [get_tier_from_name(name) for name in items]
     colors = [get_item_tier_color(items[i], profits[i]) for i in range(len(items))]
 
+    # Scale left margin to longest label
+    max_label_len = max((len(n) for n in display_names), default=10)
+    left_margin = max(140, min(220, max_label_len * 7))
+
     fig = go.Figure(data=[
         go.Bar(
             x=profits,
@@ -106,8 +110,8 @@ def create_profit_chart(results: List[Dict], top_n: int = 10) -> go.Figure:
 
     fig.update_layout(
         **_dark_layout(
-            height=max(380, top_n * 36),
-            margin=dict(l=140, r=80, t=70, b=45),
+            height=max(380, top_n * 38),
+            margin=dict(l=left_margin, r=80, t=70, b=45),
             showlegend=False,
         ),
         title=dict(
@@ -142,10 +146,12 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
     main_cats = []
     other_total = 0
     other_count = 0
-    threshold = total_profit * 0.02
+    # Cap visible slices at 12; merge the rest into "Other"
+    max_slices = 12
+    threshold = total_profit * 0.03
 
     for cat, profit in sorted_cats:
-        if profit >= threshold:
+        if profit >= threshold and len(main_cats) < max_slices:
             main_cats.append((cat, profit, category_counts[cat]))
         else:
             other_total += profit
@@ -168,14 +174,15 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
         for label, val, cnt in zip(labels, values, counts)
     ]
 
+    # Use percent-only on slice, full label in legend for readability
     fig = go.Figure(data=[
         go.Pie(
             labels=labels,
             values=values,
             hole=0.4,
-            textinfo='label+percent',
+            textinfo='percent',
             textposition='auto',
-            textfont=dict(color=_TEXT_LIGHT, size=10),
+            textfont=dict(color=_TEXT_LIGHT, size=9),
             hovertext=hover_text,
             hoverinfo='text',
             marker=dict(
@@ -196,14 +203,20 @@ def create_category_pie(results: List[Dict]) -> go.Figure:
         showarrow=False
     )
 
+    num_slices = len(labels)
+    legend_rows = (num_slices + 2) // 3  # 3 items per row
+    bottom_margin = max(50, legend_rows * 22 + 20)
+
     fig.update_layout(
-        **_dark_layout(height=420, margin=dict(l=50, r=50, t=70, b=50)),
+        **_dark_layout(height=420 + bottom_margin - 50,
+                       margin=dict(l=30, r=30, t=70, b=bottom_margin)),
         title=dict(
             text="Profit by Category",
             font=dict(color=_TEXT_YELLOW, size=16)
         ),
-        showlegend=False,
-        uniformtext=dict(minsize=8, mode='hide'),
+        showlegend=True,
+        legend=_dark_legend(y=-0.08),
+        uniformtext=dict(minsize=7, mode='hide'),
     )
 
     return fig
@@ -376,8 +389,28 @@ def create_roi_scatter(results: List[Dict]) -> Optional[go.Figure]:
     fig.add_hline(y=0, line_dash="dash", line_color="rgba(212,197,160,0.3)", line_width=1)
     fig.add_vline(x=0, line_dash="dash", line_color="rgba(212,197,160,0.3)", line_width=1)
 
+    num_categories = len(categories)
+    # Switch to vertical side legend when there are many categories
+    if num_categories > 10:
+        legend_cfg = dict(
+            font=dict(color=_TEXT_LIGHT, size=9),
+            bgcolor='rgba(43,43,43,0.9)',
+            bordercolor=_BORDER_GOLD,
+            borderwidth=1,
+            orientation='v',
+            yanchor='top',
+            y=1.0,
+            xanchor='left',
+            x=1.02,
+        )
+        right_margin = 180
+    else:
+        legend_cfg = _dark_legend(y=-0.22)
+        right_margin = 20
+
     fig.update_layout(
-        **_dark_layout(height=450, margin=dict(l=55, r=20, t=70, b=100)),
+        **_dark_layout(height=max(450, num_categories * 22 + 200),
+                       margin=dict(l=55, r=right_margin, t=70, b=60 if num_categories > 10 else 100)),
         title=dict(
             text="ROI vs Profit",
             font=dict(color=_TEXT_YELLOW, size=16),
@@ -388,7 +421,7 @@ def create_roi_scatter(results: List[Dict]) -> Optional[go.Figure]:
         ),
         xaxis=_dark_axis("Net Profit (GP)", tickformat=',.0f'),
         yaxis=_dark_axis("ROI (%)"),
-        legend=_dark_legend(y=-0.22),
+        legend=legend_cfg,
     )
 
     return fig
@@ -416,14 +449,17 @@ def create_tier_category_heatmap(results: List[Dict]) -> Optional[go.Figure]:
 
     # Ordered tier lists (low → high for both wood and metal)
     metal_order = ['Bronze', 'Iron', 'Steel', 'Black', 'Mithril', 'Adamant', 'Rune', 'Dragon']
-    wood_order = ['Wooden', 'Oak', 'Teak', 'Mahogany', 'Camphor', 'Ironwood', 'Rosewood']
+    wood_order = ['Wooden', 'Oak', 'Willow', 'Maple', 'Yew', 'Magic',
+                  'Teak', 'Mahogany', 'Camphor', 'Ironwood', 'Rosewood']
+    special_order = ['Amethyst']
 
     present_metals = [t for t in metal_order if t in grid]
     present_woods = [t for t in wood_order if t in grid]
-    other_tiers = [t for t in grid if t not in metal_order and t not in wood_order]
+    present_special = [t for t in special_order if t in grid]
+    other_tiers = [t for t in grid if t not in metal_order and t not in wood_order and t not in special_order]
 
-    # Rows: woods first, then metals (bottom to top in heatmap = reversed)
-    tier_order = present_woods + present_metals + other_tiers
+    # Rows: woods first, then metals, then special, then other
+    tier_order = present_woods + present_metals + present_special + other_tiers
 
     # Columns: all categories present in the data
     all_cats = sorted({cat for tier_data in grid.values() for cat in tier_data})
@@ -432,6 +468,8 @@ def create_tier_category_heatmap(results: List[Dict]) -> Optional[go.Figure]:
     z = []
     hover_text = []
     annot_text = []
+    # Only show cell annotations if the grid is small enough to read
+    show_annotations = len(tier_order) * len(all_cats) <= 200
     for tier in tier_order:
         row_z = []
         row_hover = []
@@ -441,7 +479,7 @@ def create_tier_category_heatmap(results: List[Dict]) -> Optional[go.Figure]:
             if val is not None:
                 row_z.append(val)
                 row_hover.append(f"<b>{tier} {cat}</b><br>Profit: {format_gp(val)}")
-                row_annot.append(format_gp(val))
+                row_annot.append(format_gp(val) if show_annotations else "")
             else:
                 row_z.append(None)
                 row_hover.append(f"<b>{tier} {cat}</b><br>N/A")
@@ -465,6 +503,11 @@ def create_tier_category_heatmap(results: List[Dict]) -> Optional[go.Figure]:
         return None
     abs_max = max(abs(v) for v in flat_vals) or 1
 
+    num_cols = len(all_cats)
+    num_rows = len(tier_order)
+    annot_size = 10 if num_cols <= 15 else (8 if num_cols <= 22 else 7)
+    cell_gap = 3 if num_cols <= 18 else 2
+
     fig = go.Figure(data=go.Heatmap(
         z=z,
         x=all_cats,
@@ -473,7 +516,7 @@ def create_tier_category_heatmap(results: List[Dict]) -> Optional[go.Figure]:
         hoverinfo='text',
         text=annot_text,
         texttemplate='%{text}',
-        textfont=dict(color=_TEXT_LIGHT, size=10),
+        textfont=dict(color=_TEXT_LIGHT, size=annot_size),
         colorscale=colorscale,
         zmid=0,
         zmin=-abs_max,
@@ -485,24 +528,31 @@ def create_tier_category_heatmap(results: List[Dict]) -> Optional[go.Figure]:
             outlinewidth=1,
             bgcolor='rgba(43,43,43,0.8)',
         ),
-        xgap=3,
-        ygap=3,
+        xgap=cell_gap,
+        ygap=cell_gap,
     ))
+
+    # Scale margins and height to data size
+    max_cat_len = max((len(c) for c in all_cats), default=10)
+    bottom_margin = max(100, min(200, max_cat_len * 5 + 40))
+    left_margin = max(100, min(150, max((len(t) for t in tier_order), default=8) * 8 + 20))
+    tick_angle = 45 if num_cols > 15 else 35
 
     fig.update_layout(
         **_dark_layout(
-            height=max(370, len(tier_order) * 45 + 140),
-            margin=dict(l=100, r=30, t=70, b=100),
+            height=max(420, num_rows * 40 + bottom_margin + 70),
+            margin=dict(l=left_margin, r=40, t=70, b=bottom_margin),
         ),
         title=dict(
             text="Tier × Category Profitability",
             font=dict(color=_TEXT_YELLOW, size=16),
             subtitle=dict(
-                text="Green = profit, Red = loss",
+                text="Green = profit, Red = loss | Hover for details",
                 font=dict(color=_TEXT_GRAY, size=10),
             ),
         ),
-        xaxis=_dark_axis("", tickangle=35, side='bottom'),
+        xaxis=_dark_axis("", tickangle=tick_angle, side='bottom',
+                         tickfont=dict(color=_TEXT_LIGHT, size=8 if num_cols > 18 else 9)),
         yaxis=_dark_axis("", autorange='reversed'),
     )
 
@@ -651,8 +701,12 @@ def create_multi_waterfall(results: List[Dict], top_n: int = 5) -> go.Figure:
             font=dict(color=color, size=10),
         )
 
+    max_label_len = max((len(name) for name in items), default=10)
+    bottom_margin = max(120, min(180, max_label_len * 4 + 40))
+
     fig.update_layout(
-        **_dark_layout(height=450, margin=dict(l=60, r=20, t=70, b=120)),
+        **_dark_layout(height=max(450, 320 + bottom_margin),
+                       margin=dict(l=60, r=20, t=70, b=bottom_margin)),
         title=dict(
             text="Cost Structure Comparison",
             font=dict(color=_TEXT_YELLOW, size=16),
@@ -661,14 +715,36 @@ def create_multi_waterfall(results: List[Dict], top_n: int = 5) -> go.Figure:
                 font=dict(color=_TEXT_GRAY, size=10),
             ),
         ),
-        xaxis=_dark_axis("", tickangle=30),
+        xaxis=_dark_axis("", tickangle=35,
+                         tickfont=dict(color=_TEXT_LIGHT, size=9)),
         yaxis=_dark_axis("GP", tickformat=',.0f',
                          zeroline=True, zerolinecolor='rgba(212,197,160,0.4)', zerolinewidth=1),
         barmode='relative',
-        legend=_dark_legend(y=-0.28),
+        legend=_dark_legend(y=-0.1 - (bottom_margin - 120) / 400),
     )
 
     return fig
+
+
+def _abbreviate_category(name: str) -> str:
+    """Shorten long category names for axis labels."""
+    replacements = [
+        ("(from Ore)", "(Ore)"),
+        ("(from Bar)", "(Bar)"),
+        ("(from Log)", "(Log)"),
+        ("Large Keel Parts", "Lg Keel"),
+        ("Large Hull Parts", "Lg Hull"),
+        ("Keel Parts", "Keel"),
+        ("Hull Parts", "Hull"),
+        ("Hull Repair Kits", "Repair Kits"),
+        ("Cannonballs", "CBalls"),
+        ("Unstrung Bows", "Bows (u)"),
+        ("Strung Bows", "Bows"),
+    ]
+    result = name
+    for old, new in replacements:
+        result = result.replace(old, new)
+    return result
 
 
 def create_category_comparison(results: List[Dict]) -> go.Figure:
@@ -684,62 +760,78 @@ def create_category_comparison(results: List[Dict]) -> go.Figure:
         category_data[cat].append(profit)
 
     categories = []
+    display_cats = []
     bests = []
     medians = []
     averages = []
 
     for cat, profits in sorted(category_data.items(), key=lambda x: max(x[1]), reverse=True):
         categories.append(cat)
+        display_cats.append(_abbreviate_category(cat))
         bests.append(max(profits))
         medians.append(np.median(profits))
         averages.append(np.mean(profits))
+
+    num_cats = len(categories)
+    show_text = num_cats <= 15  # Hide bar labels when cramped
 
     fig = go.Figure()
 
     fig.add_trace(
         go.Bar(
             name='Best',
-            x=categories,
+            x=display_cats,
             y=bests,
             marker_color=_TEXT_ORANGE,
             marker_line_color=_BORDER_GOLD,
             marker_line_width=1,
-            text=[format_gp(v) for v in bests],
-            textposition='outside',
-            textfont=dict(size=9, color=_TEXT_YELLOW)
+            text=[format_gp(v) for v in bests] if show_text else None,
+            textposition='outside' if show_text else 'none',
+            textfont=dict(size=8, color=_TEXT_YELLOW),
+            customdata=list(zip(categories, [format_gp(v) for v in bests])),
+            hovertemplate='<b>%{customdata[0]}</b><br>Best: %{customdata[1]}<extra></extra>',
         )
     )
 
     fig.add_trace(
         go.Bar(
             name='Median',
-            x=categories,
+            x=display_cats,
             y=medians,
             marker_color=CHART_COLORS['rune_blue'],
             marker_line_color=_BORDER_GOLD,
             marker_line_width=1,
-            text=[format_gp(v) for v in medians],
-            textposition='outside',
-            textfont=dict(size=9, color=_TEXT_LIGHT)
+            text=[format_gp(v) for v in medians] if show_text else None,
+            textposition='outside' if show_text else 'none',
+            textfont=dict(size=8, color=_TEXT_LIGHT),
+            customdata=list(zip(categories, [format_gp(v) for v in medians])),
+            hovertemplate='<b>%{customdata[0]}</b><br>Median: %{customdata[1]}<extra></extra>',
         )
     )
 
     fig.add_trace(
         go.Bar(
             name='Average',
-            x=categories,
+            x=display_cats,
             y=averages,
             marker_color='#8b7355',
             marker_line_color=_BORDER_GOLD,
             marker_line_width=1,
-            text=[format_gp(v) for v in averages],
-            textposition='outside',
-            textfont=dict(size=9, color=_TEXT_LIGHT)
+            text=[format_gp(v) for v in averages] if show_text else None,
+            textposition='outside' if show_text else 'none',
+            textfont=dict(size=8, color=_TEXT_LIGHT),
+            customdata=list(zip(categories, [format_gp(v) for v in averages])),
+            hovertemplate='<b>%{customdata[0]}</b><br>Average: %{customdata[1]}<extra></extra>',
         )
     )
 
+    tick_angle = 45 if num_cats > 12 else 35
+    bottom_margin = max(130, min(180, num_cats * 6 + 60))
+    tick_size = 8 if num_cats > 16 else 9
+
     fig.update_layout(
-        **_dark_layout(height=430, margin=dict(l=55, r=20, t=70, b=130)),
+        **_dark_layout(height=max(430, 300 + bottom_margin),
+                       margin=dict(l=55, r=20, t=70, b=bottom_margin)),
         title=dict(
             text="Category Comparison",
             font=dict(color=_TEXT_YELLOW, size=16),
@@ -748,10 +840,11 @@ def create_category_comparison(results: List[Dict]) -> go.Figure:
                 font=dict(color=_TEXT_GRAY, size=10)
             )
         ),
-        xaxis=_dark_axis("", tickangle=35),
+        xaxis=_dark_axis("", tickangle=tick_angle,
+                         tickfont=dict(color=_TEXT_LIGHT, size=tick_size)),
         yaxis=_dark_axis("Profit (GP)", tickformat=',.0f'),
         barmode='group',
-        legend=_dark_legend(y=-0.32),
+        legend=_dark_legend(y=-0.1 - (bottom_margin - 130) / 500),
     )
 
     return fig
