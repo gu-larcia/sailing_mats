@@ -13,7 +13,7 @@ class OSRSWikiConnection:
         self.base_url = base_url
         self._session = requests.Session()
         self._session.headers.update({
-            'User-Agent': user_agent or 'OSRS-Sailing-Tracker/4.6'
+            'User-Agent': user_agent or 'OSRS-Market-Tracker/5.0'
         })
     
     def fetch_mapping(self) -> Dict:
