@@ -1,4 +1,4 @@
-# OSRS Market Tracker v5.0
+# OSRS Market Tracker v5.1
 
 Streamlit dashboard for OSRS item tracking with live Grand Exchange prices. Currently focused on Sailing skill materials with architecture designed to expand to all tradable items.
 
@@ -16,12 +16,28 @@ Streamlit dashboard for OSRS item tracking with live Grand Exchange prices. Curr
 
 ### Supported Processing Chains
 
-- **Planks**: Normal through Rosewood (7 tiers)
+**Single-step chains** (buy input, process, sell output):
+
+- **Planks**: Normal through Rosewood (7 tiers). Sawmill, Plank Make, and Sawmill Voucher cost methods.
 - **Hull Parts**: All wood tiers, regular and large
 - **Hull Repair Kits**: All tiers
 - **Keel Parts**: All metal tiers including Dragon, regular and large
 - **Nails**: All metal tiers (15 per bar)
 - **Cannonballs**: All metal tiers, single and double mould
+- **Bar Smelting**: All standard bars via regular Furnace and Blast Furnace (half coal)
+
+**Extended chains** (buy raw materials, produce intermediates, sell final product):
+
+- **Hull Parts (from Log)**: Log -> Plank -> Hull Parts
+- **Large Hull Parts (from Log)**: Log -> Plank -> Hull Part -> Large Hull Part (25 logs per large part)
+- **Repair Kits (from Log)**: Log -> Plank + GE nails + paste -> Kit
+- **Nails (from Ore)**: Ore -> Bar (Furnace/BF) -> Nails
+- **Keel Parts (from Ore)**: Ore -> Bar (Furnace/BF) -> Keel Parts
+- **Cannonballs (from Ore)**: Ore -> Bar (Furnace/BF) -> Cannonballs
+- **Large Keel Parts (from Bar)**: 25 GE-bought bars -> 5 Keel Parts -> 1 Large Keel Part
+- **Large Keel Parts (from Ore)**: Ore -> Bar (Furnace/BF) -> Keel -> Large Keel (full pipeline)
+
+Extended chains mark intermediate products as self-obtained so they are costed from raw materials rather than GE buy price.
 
 ### Equipment Support
 
@@ -30,18 +46,18 @@ Streamlit dashboard for OSRS item tracking with live Grand Exchange prices. Curr
 - **Plank Sack**: +28 plank capacity
 - **Smiths' Uniform**: 15% tick save chance
 - **Ancient Furnace**: 2x smithing speed (87 Sailing)
+- **Coal Bag**: +27 coal capacity (Blast Furnace)
 
 ## Project Structure
 
 ```
-osrs_market_tracker/
+sailing_mats/
 ├── app.py                 # Main application
 ├── requirements.txt
 ├── config/                # App settings, item groups
 ├── data/                  # Item IDs, costs, timings, locations
-├── models/                # ProcessingChain, ChainStep
+├── models/                # ProcessingChain, ChainStep, chain generation
 ├── services/              # API client, lookups, calculations, SQLite cache
-│   └── cache.py           # In-memory SQLite data cache
 ├── ui/                    # Dark OSRS styles, components, charts
 └── utils/                 # Formatting, colors
 ```
@@ -49,7 +65,7 @@ osrs_market_tracker/
 ## Installation
 
 ```bash
-cd osrs_market_tracker
+cd sailing_mats
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
 pip install -r requirements.txt
@@ -93,6 +109,14 @@ This enables SQL-powered search, filtering, and aggregation without requiring a 
 
 Items are organized into extensible groups defined in `config/settings.py`. New groups can be added by registering them in `ITEM_GROUPS` and loading their items into the cache.
 
+### Processing Chain Model
+
+Chains are defined in `models/chains.py` using `ProcessingChain` and `ChainStep` dataclasses. Each chain is a list of steps where the last step is the output (sold at GE sell price) and all preceding steps are inputs (bought at GE buy price). Multi-input recipes (e.g. plank + nails + paste) are supported.
+
+**Extended chains** compose multiple processing stages by marking intermediate products with `is_self_obtained=True`. The backward quantity calculation propagates ratios through the step list to determine how many raw materials are needed for one unit of final output. Step quantities must be pre-scaled so these ratios resolve correctly (see `chains.py` for examples).
+
+The `plank_method` and `use_sawmill_vouchers` config options are evaluated at calculation time in `_calculate_processing_cost`, not at chain creation time. This means the same chain definition works regardless of which plank method the user selects.
+
 ## API
 
 ### OSRS Wiki Prices API
@@ -109,6 +133,15 @@ Items are organized into extensible groups defined in `config/settings.py`. New 
 - Chain definitions: 1hr
 
 ## Changelog
+
+### v5.1
+
+- Blast Furnace support (half coal smelting for all standard bars)
+- Sawmill Voucher support (replaces GP cost for Sawmill and Plank Make)
+- Extended processing chains composing multiple steps (ore to final product, log to final product)
+- Coal Bag equipment toggle for Blast Furnace GP/hr
+- Fixed plank_method config not affecting processing cost calculation
+- Comment formatting cleanup
 
 ### v5.0
 

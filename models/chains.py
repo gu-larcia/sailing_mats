@@ -251,19 +251,15 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         chain_bf.steps = bf_steps
         chains["Bar Smelting"].append(chain_bf)
 
-    # ================================================================
-    # Extended Chains
-    #
-    # Compose existing recipes into full pipelines (ore/log → final
-    # product).  Intermediate items are is_self_obtained so they are
-    # costed from raw materials, not the GE.  Step quantities are
-    # pre-scaled so the backward ratio calculation resolves correctly.
-    # ================================================================
+    # Extended Chains: compose existing recipes into full pipelines
+    # (ore/log to final product). Intermediate items use is_self_obtained
+    # so they are costed from raw materials, not the GE. Step quantities
+    # are pre-scaled so the backward ratio calculation resolves correctly.
 
     # Only bars with downstream products (exclude silver, gold)
     smeltable = [r for r in smelting_recipes if r[0] not in (2355, 2357)]
 
-    # --- Metal: Ore → Bar → Product --------------------------------
+    # Metal: Ore -> Bar -> Product
     chains["Nails (from Ore)"] = []
     chains["Keel Parts (from Ore)"] = []
     chains["Cannonballs (from Ore)"] = []
@@ -324,7 +320,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
                 chain.steps = steps
                 chains[category_key].append(chain)
 
-    # --- Metal: Bar → Keel → Large Keel (from GE-bought bars) ------
+    # Metal: Bar -> Keel -> Large Keel (from GE-bought bars)
     chains["Large Keel Parts (from Bar)"] = []
     # (bar_id, bar_name, keel_id, keel_name, large_id, large_name, bars_per_keel, keels_per_large)
     large_keel_bar_mappings = [
@@ -350,7 +346,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Large Keel Parts (from Bar)"].append(chain)
 
-    # --- Metal: Ore → Bar → Keel → Large Keel (full pipeline) ------
+    # Metal: Ore -> Bar -> Keel -> Large Keel (full pipeline)
     chains["Large Keel Parts (from Ore)"] = []
     for bar_id, bar_name, keel_id, keel_name, large_id, large_name, bars_per_keel, keels_per_large in large_keel_bar_mappings:
         if bar_id == 31996:  # Dragon sheets aren't smelted
@@ -383,7 +379,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
             chain.steps = steps
             chains["Large Keel Parts (from Ore)"].append(chain)
 
-    # --- Wood: Log → Plank → Hull Parts ----------------------------
+    # Wood: Log -> Plank -> Hull Parts
     chains["Hull Parts (from Log)"] = []
     for log_id, log_name, plank_id, plank_name in plank_mappings:
         hull = next((h for h in hull_mappings if h[0] == plank_id), None)
@@ -402,7 +398,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Hull Parts (from Log)"].append(chain)
 
-    # --- Wood: Log → Plank → Hull Part → Large Hull Part ------------
+    # Wood: Log -> Plank -> Hull Part -> Large Hull Part
     chains["Large Hull Parts (from Log)"] = []
     for log_id, log_name, plank_id, plank_name in plank_mappings:
         hull = next((h for h in hull_mappings if h[0] == plank_id), None)
@@ -427,7 +423,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Large Hull Parts (from Log)"].append(chain)
 
-    # --- Wood: Log → Plank → Hull Repair Kit (+ GE nails & paste) --
+    # Wood: Log -> Plank -> Hull Repair Kit (+ GE nails and paste)
     chains["Repair Kits (from Log)"] = []
     for plank_id, plank_name, nail_id, nail_name, paste_qty, plank_qty, nail_qty, output_qty, kit_id, kit_name in repair_kit_mappings:
         log = next((p for p in plank_mappings if p[2] == plank_id), None)

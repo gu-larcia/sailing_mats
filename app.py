@@ -1,4 +1,4 @@
-"""OSRS Market Tracker v5.0 — Sailing Materials & Beyond"""
+"""OSRS Market Tracker v5.1 — Sailing Materials & Beyond"""
 
 import streamlit as st
 import pandas as pd
@@ -44,9 +44,7 @@ st.set_page_config(
 st.markdown(OSRS_CSS, unsafe_allow_html=True)
 
 
-# ------------------------------------------------------------------
 # Caching layer
-# ------------------------------------------------------------------
 
 @st.cache_resource
 def get_api_connection() -> OSRSWikiConnection:
@@ -109,10 +107,6 @@ def sync_cache(cache: OSRSDataCache, item_mapping: Dict, prices: Dict):
 
     cache.is_loaded = True
 
-
-# ------------------------------------------------------------------
-# Main app
-# ------------------------------------------------------------------
 
 def main():
     # Header
@@ -701,7 +695,7 @@ def main():
         if all_results_for_charts:
             profitable_results = [r for r in all_results_for_charts if r["_profit_raw"] > 0]
 
-            # === Row 1: Top Profits + Category Comparison ===
+            # Top Profits + Category Comparison
             col1, col2 = st.columns(2)
 
             with col1:
@@ -713,7 +707,7 @@ def main():
                 fig = create_category_comparison(all_results_for_charts)
                 st.plotly_chart(fig, use_container_width=True)
 
-            # === Row 2: Tier × Category Heatmap (full width) ===
+            # Tier x Category Heatmap
             st.subheader("Tier × Category Analysis")
             heatmap_fig = create_tier_category_heatmap(all_results_for_charts)
             if heatmap_fig:
@@ -721,7 +715,7 @@ def main():
             else:
                 st.info("Not enough tier data for heatmap")
 
-            # === Row 3: Cost Breakdown Waterfall ===
+            # Cost Breakdown Waterfall
             st.subheader("Cost Breakdown")
 
             chain_names = sorted(all_raw_results.keys())
@@ -742,7 +736,7 @@ def main():
             fig = create_multi_waterfall(all_results_for_charts, top_n=comparison_n)
             st.plotly_chart(fig, use_container_width=True)
 
-            # === Row 4: ROI + Category Pie ===
+            # ROI + Category Pie
             col1, col2 = st.columns(2)
 
             with col1:
@@ -757,14 +751,14 @@ def main():
                     fig = create_category_pie(profitable_results)
                     st.plotly_chart(fig, use_container_width=True)
 
-            # === Row 5: Histogram ===
+            # Histogram
             profit_label = "Per-Item Profit" if use_per_item else f"Batch Profit (qty: {quantity_val})"
             st.subheader(f"Distribution: {profit_label}")
             profits = [r["_profit_raw"] for r in all_results_for_charts]
             fig = create_profit_histogram(profits, per_item=use_per_item)
             st.plotly_chart(fig, use_container_width=True)
 
-            # === Summary Metrics ===
+            # Summary Metrics
             st.subheader("Summary")
             col1, col2, col3, col4 = st.columns(4)
 

@@ -63,9 +63,7 @@ class OSRSDataCache:
 
         self.conn.commit()
 
-    # ------------------------------------------------------------------
     # Bulk loading
-    # ------------------------------------------------------------------
 
     def load_item_mapping(self, mapping: Dict):
         """Load item mapping from Wiki API into items table."""
@@ -149,9 +147,7 @@ class OSRSDataCache:
         )
         self.conn.commit()
 
-    # ------------------------------------------------------------------
     # Queries
-    # ------------------------------------------------------------------
 
     def search_items(
         self,
