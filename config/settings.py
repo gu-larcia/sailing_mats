@@ -1,6 +1,6 @@
 """Application settings."""
 
-APP_VERSION = "5.0"
+APP_VERSION = "5.1"
 APP_TITLE = "OSRS Market Tracker"
 APP_SUBTITLE = "Sailing Materials & Beyond"
 APP_ICON = "https://oldschool.runescape.wiki/images/Sailing_icon.png"
@@ -62,4 +62,9 @@ ITEM_GROUPS = {
     "nails_from_ore": "Nails (from Ore)",
     "keel_parts_from_ore": "Keel Parts (from Ore)",
     "cannonballs_from_ore": "Cannonballs (from Ore)",
+    "large_keel_from_bar": "Large Keel Parts (from Bar)",
+    "large_keel_from_ore": "Large Keel Parts (from Ore)",
+    "hull_parts_from_log": "Hull Parts (from Log)",
+    "large_hull_from_log": "Large Hull Parts (from Log)",
+    "repair_kits_from_log": "Repair Kits (from Log)",
 }

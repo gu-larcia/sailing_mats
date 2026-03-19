@@ -41,6 +41,11 @@ CATEGORY_COLORS = {
     'Nails (from Ore)': '#DAA520',
     'Keel Parts (from Ore)': '#5F9EA0',
     'Cannonballs (from Ore)': '#8B8682',
+    'Large Keel Parts (from Bar)': '#4682B4',
+    'Large Keel Parts (from Ore)': '#2F4F4F',
+    'Hull Parts (from Log)': '#A0522D',
+    'Large Hull Parts (from Log)': '#8B4513',
+    'Repair Kits (from Log)': '#B8860B',
     'Other': '#7f8c8d',
 }
 
