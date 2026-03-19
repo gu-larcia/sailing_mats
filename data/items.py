@@ -146,6 +146,89 @@ MISC_ITEMS = {
     31431: "Sawmill voucher",
 }
 
+# --- Fletching ---
+
+FLETCHING_BOWS_U = {
+    50: "Shortbow (u)",
+    48: "Longbow (u)",
+    54: "Oak shortbow (u)",
+    56: "Oak longbow (u)",
+    60: "Willow shortbow (u)",
+    58: "Willow longbow (u)",
+    64: "Maple shortbow (u)",
+    62: "Maple longbow (u)",
+    68: "Yew shortbow (u)",
+    66: "Yew longbow (u)",
+    72: "Magic shortbow (u)",
+    70: "Magic longbow (u)",
+}
+
+FLETCHING_BOWS = {
+    841: "Shortbow",
+    839: "Longbow",
+    843: "Oak shortbow",
+    845: "Oak longbow",
+    849: "Willow shortbow",
+    847: "Willow longbow",
+    853: "Maple shortbow",
+    851: "Maple longbow",
+    857: "Yew shortbow",
+    855: "Yew longbow",
+    861: "Magic shortbow",
+    859: "Magic longbow",
+}
+
+FLETCHING_ARROW_TIPS = {
+    39: "Bronze arrowtips",
+    40: "Iron arrowtips",
+    41: "Steel arrowtips",
+    42: "Mithril arrowtips",
+    43: "Adamant arrowtips",
+    44: "Rune arrowtips",
+    11237: "Dragon arrowtips",
+    21350: "Amethyst arrowtips",
+}
+
+FLETCHING_ARROWS = {
+    882: "Bronze arrow",
+    884: "Iron arrow",
+    886: "Steel arrow",
+    888: "Mithril arrow",
+    890: "Adamant arrow",
+    892: "Rune arrow",
+    11212: "Dragon arrow",
+    21326: "Amethyst arrow",
+}
+
+FLETCHING_DART_TIPS = {
+    819: "Bronze dart tip",
+    820: "Iron dart tip",
+    821: "Steel dart tip",
+    822: "Mithril dart tip",
+    823: "Adamant dart tip",
+    824: "Rune dart tip",
+    11232: "Dragon dart tip",
+    21352: "Amethyst dart tip",
+}
+
+FLETCHING_DARTS = {
+    806: "Bronze dart",
+    807: "Iron dart",
+    808: "Steel dart",
+    809: "Mithril dart",
+    810: "Adamant dart",
+    811: "Rune dart",
+    11230: "Dragon dart",
+    21332: "Amethyst dart",
+}
+
+FLETCHING_MISC = {
+    1777: "Bow string",
+    314: "Feather",
+    53: "Headless arrow",
+    52: "Arrow shaft",
+}
+
 SAWMILL_VOUCHER_ID = 31431
 COAL_BAG_ID = 12019
 
@@ -170,5 +253,12 @@ ALL_ITEMS = {
     **ALL_CANNONBALLS,
     **AMMO_MOULDS,
     **MISC_ITEMS,
+    **FLETCHING_BOWS_U,
+    **FLETCHING_BOWS,
+    **FLETCHING_ARROW_TIPS,
+    **FLETCHING_ARROWS,
+    **FLETCHING_DART_TIPS,
+    **FLETCHING_DARTS,
+    **FLETCHING_MISC,
     COAL_BAG_ID: "Coal bag",
 }

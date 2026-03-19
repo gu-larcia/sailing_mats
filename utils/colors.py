@@ -46,6 +46,11 @@ CATEGORY_COLORS = {
     'Hull Parts (from Log)': '#A0522D',
     'Large Hull Parts (from Log)': '#8B4513',
     'Repair Kits (from Log)': '#B8860B',
+    'Unstrung Bows': '#8B7355',
+    'Strung Bows': '#6B8E23',
+    'Arrows': '#228B22',
+    'Darts': '#2E8B57',
+    'Bows (from Log)': '#556B2F',
     'Other': '#7f8c8d',
 }
 
@@ -84,6 +89,10 @@ def get_item_tier_color(item_name: str, profit: float = 0) -> str:
     elif 'bronze' in name_lower:
         return METAL_COLORS['bronze']
     
+    # Amethyst tier
+    if 'amethyst' in name_lower:
+        return '#9966CC'
+
     # Wood tiers
     if 'rosewood' in name_lower:
         return WOOD_COLORS['rosewood']
@@ -95,6 +104,14 @@ def get_item_tier_color(item_name: str, profit: float = 0) -> str:
         return WOOD_COLORS['mahogany']
     elif 'teak' in name_lower:
         return WOOD_COLORS['teak']
+    elif 'magic' in name_lower:
+        return WOOD_COLORS['magic']
+    elif 'yew' in name_lower:
+        return WOOD_COLORS['yew']
+    elif 'maple' in name_lower:
+        return WOOD_COLORS['maple']
+    elif 'willow' in name_lower:
+        return WOOD_COLORS['willow']
     elif 'oak' in name_lower:
         return WOOD_COLORS['oak']
     elif 'wooden' in name_lower or name_lower == 'plank' or name_lower.endswith(' plank'):
@@ -112,7 +129,7 @@ def get_tier_from_name(item_name: str) -> str:
         if tier in name_lower and not (tier == 'iron' and 'ironwood' in name_lower):
             return tier.capitalize()
     
-    for tier in ['rosewood', 'ironwood', 'camphor', 'mahogany', 'teak', 'oak', 'wooden']:
+    for tier in ['rosewood', 'ironwood', 'camphor', 'mahogany', 'magic', 'yew', 'maple', 'willow', 'teak', 'oak', 'wooden']:
         if tier in name_lower:
             return tier.capitalize()
     

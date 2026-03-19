@@ -67,4 +67,9 @@ ITEM_GROUPS = {
     "hull_parts_from_log": "Hull Parts (from Log)",
     "large_hull_from_log": "Large Hull Parts (from Log)",
     "repair_kits_from_log": "Repair Kits (from Log)",
+    "unstrung_bows": "Unstrung Bows",
+    "strung_bows": "Strung Bows",
+    "arrows": "Arrows",
+    "darts": "Darts",
+    "bows_from_log": "Bows (from Log)",
 }

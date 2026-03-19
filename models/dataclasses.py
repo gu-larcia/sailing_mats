@@ -211,6 +211,9 @@ class ProcessingChain:
         elif step.processing_method == "Blast Furnace":
             return 0, "Blast Furnace (half coal)"
 
+        elif step.processing_method == "Fletching":
+            return 0, "Fletching (knife)"
+
         return 0, ""
 
     def _calc_plank_make_cost(

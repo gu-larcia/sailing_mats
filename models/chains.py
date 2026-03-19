@@ -16,6 +16,10 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         "Nails": [],
         "Cannonballs": [],
         "Bar Smelting": [],
+        "Unstrung Bows": [],
+        "Strung Bows": [],
+        "Arrows": [],
+        "Darts": [],
     }
     
     # Planks: log -> plank
@@ -251,6 +255,111 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         chain_bf.steps = bf_steps
         chains["Bar Smelting"].append(chain_bf)
 
+    # Fletching: Unstrung Bows (log -> bow (u))
+    # 1 log -> 1 unstrung bow, no GP cost (just a knife)
+    bow_u_mappings = [
+        (1511, "Logs", 50, "Shortbow (u)"),
+        (1511, "Logs", 48, "Longbow (u)"),
+        (1521, "Oak logs", 54, "Oak shortbow (u)"),
+        (1521, "Oak logs", 56, "Oak longbow (u)"),
+        (1519, "Willow logs", 60, "Willow shortbow (u)"),
+        (1519, "Willow logs", 58, "Willow longbow (u)"),
+        (1517, "Maple logs", 64, "Maple shortbow (u)"),
+        (1517, "Maple logs", 62, "Maple longbow (u)"),
+        (1515, "Yew logs", 68, "Yew shortbow (u)"),
+        (1515, "Yew logs", 66, "Yew longbow (u)"),
+        (1513, "Magic logs", 72, "Magic shortbow (u)"),
+        (1513, "Magic logs", 70, "Magic longbow (u)"),
+    ]
+
+    for log_id, log_name, bow_u_id, bow_u_name in bow_u_mappings:
+        chain = ProcessingChain(
+            name=f"{bow_u_name} fletching",
+            category="Unstrung Bows"
+        )
+        chain.steps = [
+            ChainStep(log_id, log_name, 1),
+            ChainStep(bow_u_id, bow_u_name, 1, processing_method="Fletching")
+        ]
+        chains["Unstrung Bows"].append(chain)
+
+    # Fletching: Strung Bows (bow (u) + bow string -> bow)
+    strung_bow_mappings = [
+        (50, "Shortbow (u)", 841, "Shortbow"),
+        (48, "Longbow (u)", 839, "Longbow"),
+        (54, "Oak shortbow (u)", 843, "Oak shortbow"),
+        (56, "Oak longbow (u)", 845, "Oak longbow"),
+        (60, "Willow shortbow (u)", 849, "Willow shortbow"),
+        (58, "Willow longbow (u)", 847, "Willow longbow"),
+        (64, "Maple shortbow (u)", 853, "Maple shortbow"),
+        (62, "Maple longbow (u)", 851, "Maple longbow"),
+        (68, "Yew shortbow (u)", 857, "Yew shortbow"),
+        (66, "Yew longbow (u)", 855, "Yew longbow"),
+        (72, "Magic shortbow (u)", 861, "Magic shortbow"),
+        (70, "Magic longbow (u)", 859, "Magic longbow"),
+    ]
+
+    for bow_u_id, bow_u_name, bow_id, bow_name in strung_bow_mappings:
+        chain = ProcessingChain(
+            name=f"{bow_name} stringing",
+            category="Strung Bows"
+        )
+        chain.steps = [
+            ChainStep(bow_u_id, bow_u_name, 1),
+            ChainStep(1777, "Bow string", 1),
+            ChainStep(bow_id, bow_name, 1, processing_method="Fletching")
+        ]
+        chains["Strung Bows"].append(chain)
+
+    # Fletching: Arrows (headless arrow + arrowtips -> arrows)
+    # Ratio is 1:1:1 per arrow; user sets quantity for batch size
+    arrow_mappings = [
+        (39, "Bronze arrowtips", 882, "Bronze arrow"),
+        (40, "Iron arrowtips", 884, "Iron arrow"),
+        (41, "Steel arrowtips", 886, "Steel arrow"),
+        (42, "Mithril arrowtips", 888, "Mithril arrow"),
+        (43, "Adamant arrowtips", 890, "Adamant arrow"),
+        (44, "Rune arrowtips", 892, "Rune arrow"),
+        (11237, "Dragon arrowtips", 11212, "Dragon arrow"),
+        (21350, "Amethyst arrowtips", 21326, "Amethyst arrow"),
+    ]
+
+    for tip_id, tip_name, arrow_id, arrow_name in arrow_mappings:
+        chain = ProcessingChain(
+            name=f"{arrow_name} fletching",
+            category="Arrows"
+        )
+        chain.steps = [
+            ChainStep(53, "Headless arrow", 1),
+            ChainStep(tip_id, tip_name, 1),
+            ChainStep(arrow_id, arrow_name, 1, processing_method="Fletching")
+        ]
+        chains["Arrows"].append(chain)
+
+    # Fletching: Darts (dart tip + feather -> dart)
+    dart_mappings = [
+        (819, "Bronze dart tip", 806, "Bronze dart"),
+        (820, "Iron dart tip", 807, "Iron dart"),
+        (821, "Steel dart tip", 808, "Steel dart"),
+        (822, "Mithril dart tip", 809, "Mithril dart"),
+        (823, "Adamant dart tip", 810, "Adamant dart"),
+        (824, "Rune dart tip", 811, "Rune dart"),
+        (11232, "Dragon dart tip", 11230, "Dragon dart"),
+        (21352, "Amethyst dart tip", 21332, "Amethyst dart"),
+    ]
+
+    for tip_id, tip_name, dart_id, dart_name in dart_mappings:
+        chain = ProcessingChain(
+            name=f"{dart_name} fletching",
+            category="Darts"
+        )
+        chain.steps = [
+            ChainStep(tip_id, tip_name, 1),
+            ChainStep(314, "Feather", 1),
+            ChainStep(dart_id, dart_name, 1, processing_method="Fletching")
+        ]
+        chains["Darts"].append(chain)
+
     # Extended Chains: compose existing recipes into full pipelines
     # (ore/log to final product). Intermediate items use is_self_obtained
     # so they are costed from raw materials, not the GE. Step quantities
@@ -442,5 +551,24 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
             ChainStep(kit_id, kit_name, output_qty),
         ]
         chains["Repair Kits (from Log)"].append(chain)
+
+    # Fletching Extended: Log -> Bow (u) -> Strung Bow (self-obtain the (u))
+    chains["Bows (from Log)"] = []
+    for bow_u_log_id, bow_u_log_name, bow_u_id, bow_u_name in bow_u_mappings:
+        strung = next((s for s in strung_bow_mappings if s[0] == bow_u_id), None)
+        if not strung:
+            continue
+        _, _, bow_id, bow_name = strung
+        chain = ProcessingChain(
+            name=f"{bow_name} (from log)",
+            category="Bows (from Log)",
+        )
+        chain.steps = [
+            ChainStep(bow_u_log_id, bow_u_log_name, 1),
+            ChainStep(bow_u_id, bow_u_name, 1, is_self_obtained=True, processing_method="Fletching"),
+            ChainStep(1777, "Bow string", 1),
+            ChainStep(bow_id, bow_name, 1),
+        ]
+        chains["Bows (from Log)"].append(chain)
 
     return chains
