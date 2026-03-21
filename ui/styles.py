@@ -346,9 +346,29 @@ hr {
 }
 
 /* ===== Responsive ===== */
+
+/* Tablet: 2-column grid for st.columns */
+@media screen and (max-width: 1024px) {
+    [data-testid="stHorizontalBlock"] {
+        flex-wrap: wrap !important;
+    }
+    [data-testid="stHorizontalBlock"] > div {
+        flex: 0 0 50% !important;
+        max-width: 50% !important;
+    }
+}
+
+/* Mobile */
 @media screen and (max-width: 768px) {
     .stApp {
         padding: 0.5rem;
+    }
+
+    /* Force single-column stacking */
+    [data-testid="stHorizontalBlock"] > div {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+        min-width: 100% !important;
     }
 
     [data-testid="stSidebar"] {
@@ -366,6 +386,17 @@ hr {
     .js-plotly-plot, .plotly {
         max-width: 100% !important;
         overflow-x: auto;
+    }
+
+    /* Hide Plotly toolbar on mobile */
+    .js-plotly-plot .modebar-container {
+        display: none !important;
+    }
+
+    /* Touch-friendly scrolling for charts */
+    .js-plotly-plot {
+        touch-action: pan-x pan-y;
+        -webkit-overflow-scrolling: touch;
     }
 
     .stButton > button {
@@ -410,6 +441,11 @@ hr {
 
     [data-testid="stMetric"] [data-testid="stMetricValue"] {
         font-size: 1rem !important;
+    }
+
+    /* Prevent charts from collapsing too small */
+    .js-plotly-plot {
+        min-height: 300px;
     }
 }
 

@@ -44,6 +44,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+PLOTLY_CONFIG = {
+    'responsive': True,
+    'displayModeBar': False,
+    'scrollZoom': False,
+}
+
 st.markdown(OSRS_CSS, unsafe_allow_html=True)
 
 
@@ -712,17 +718,17 @@ def main():
             with col1:
                 if profitable_results:
                     fig = create_profit_chart(profitable_results, top_n=10)
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
 
             with col2:
                 fig = create_category_comparison(all_results_for_charts)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
 
             # Tier x Category Heatmap
             st.subheader("Tier × Category Analysis")
             heatmap_fig = create_tier_category_heatmap(all_results_for_charts)
             if heatmap_fig:
-                st.plotly_chart(heatmap_fig, use_container_width=True)
+                st.plotly_chart(heatmap_fig, use_container_width=True, config=PLOTLY_CONFIG)
             else:
                 st.info("Not enough tier data for heatmap")
 
@@ -739,13 +745,13 @@ def main():
             if selected_chain and selected_chain in all_raw_results:
                 wf_result = all_raw_results[selected_chain]
                 fig = create_cost_waterfall(wf_result, selected_chain)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
 
             # Multi-chain cost comparison
             st.markdown("##### Cost Structure Comparison")
             comparison_n = st.slider("Compare top N chains", 3, 10, 5, key="comparison_n")
             fig = create_multi_waterfall(all_results_for_charts, top_n=comparison_n)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
 
             # ROI + Category Pie
             col1, col2 = st.columns(2)
@@ -753,21 +759,21 @@ def main():
             with col1:
                 fig = create_roi_scatter(all_results_for_charts)
                 if fig:
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
                 else:
                     st.info("Not enough ROI data")
 
             with col2:
                 if profitable_results:
                     fig = create_category_pie(profitable_results)
-                    st.plotly_chart(fig, use_container_width=True)
+                    st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
 
             # Histogram
             profit_label = "Per-Item Profit" if use_per_item else f"Batch Profit (qty: {quantity_val})"
             st.subheader(f"Distribution: {profit_label}")
             profits = [r["_profit_raw"] for r in all_results_for_charts]
             fig = create_profit_histogram(profits, per_item=use_per_item)
-            st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True, config=PLOTLY_CONFIG)
 
             # Summary Metrics
             st.subheader("Summary")
