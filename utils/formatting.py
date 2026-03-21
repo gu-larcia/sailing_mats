@@ -23,6 +23,7 @@ def get_clean_item_name(chain_name: str) -> str:
     """Remove processing suffixes from chain name."""
     clean = chain_name.replace(" processing", "").replace(" smithing", "")
     clean = clean.replace(" (Regular)", "").replace(" (Double)", "")
+    clean = clean.replace(" fletching", "").replace(" stringing", "")
     return clean
 
 

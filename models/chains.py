@@ -360,6 +360,197 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Darts"].append(chain)
 
+    # Fletching: Crossbow Stocks (log -> stock)
+    # 1 log -> 1 stock, no GP cost (just a knife)
+    chains["Crossbow Stocks"] = []
+    stock_mappings = [
+        (1511, "Logs", 9440, "Wooden stock"),
+        (1521, "Oak logs", 9442, "Oak stock"),
+        (1519, "Willow logs", 9444, "Willow stock"),
+        (6333, "Teak logs", 9446, "Teak stock"),
+        (1517, "Maple logs", 9448, "Maple stock"),
+        (6332, "Mahogany logs", 9450, "Mahogany stock"),
+        (1515, "Yew logs", 9452, "Yew stock"),
+        (1513, "Magic logs", 21952, "Magic stock"),
+    ]
+
+    for log_id, log_name, stock_id, stock_name in stock_mappings:
+        chain = ProcessingChain(
+            name=f"{stock_name} fletching",
+            category="Crossbow Stocks"
+        )
+        chain.steps = [
+            ChainStep(log_id, log_name, 1),
+            ChainStep(stock_id, stock_name, 1, processing_method="Fletching")
+        ]
+        chains["Crossbow Stocks"].append(chain)
+
+    # Fletching: Crossbow Limbs (bar -> limbs via Smithing, 1 bar -> 1 limb)
+    # Dragon limbs are drop-only, not included
+    chains["Crossbow Limbs"] = []
+    limb_mappings = [
+        (2349, "Bronze bar", 9420, "Bronze limbs"),
+        (2351, "Iron bar", 9423, "Iron limbs"),
+        (2353, "Steel bar", 9425, "Steel limbs"),
+        (2359, "Mithril bar", 9427, "Mithril limbs"),
+        (2361, "Adamantite bar", 9429, "Adamantite limbs"),
+        (2363, "Runite bar", 9431, "Runite limbs"),
+    ]
+
+    for bar_id, bar_name, limb_id, limb_name in limb_mappings:
+        chain = ProcessingChain(
+            name=f"{limb_name} smithing",
+            category="Crossbow Limbs"
+        )
+        chain.steps = [
+            ChainStep(bar_id, bar_name, 1),
+            ChainStep(limb_id, limb_name, 1, processing_method="Smithing")
+        ]
+        chains["Crossbow Limbs"].append(chain)
+
+    # Fletching: Unstrung Crossbows (stock + limbs -> crossbow (u))
+    chains["Crossbows (u)"] = []
+    crossbow_u_mappings = [
+        # (stock_id, stock_name, limb_id, limb_name, xbow_u_id, xbow_u_name)
+        (9440, "Wooden stock", 9420, "Bronze limbs", 9454, "Bronze crossbow (u)"),
+        (9444, "Willow stock", 9423, "Iron limbs", 9457, "Iron crossbow (u)"),
+        (9446, "Teak stock", 9425, "Steel limbs", 9459, "Steel crossbow (u)"),
+        (9448, "Maple stock", 9427, "Mithril limbs", 9461, "Mithril crossbow (u)"),
+        (9450, "Mahogany stock", 9429, "Adamantite limbs", 9463, "Adamant crossbow (u)"),
+        (9452, "Yew stock", 9431, "Runite limbs", 9465, "Runite crossbow (u)"),
+        (21952, "Magic stock", 21918, "Dragon limbs", 21921, "Dragon crossbow (u)"),
+    ]
+
+    for stock_id, stock_name, limb_id, limb_name, xbow_u_id, xbow_u_name in crossbow_u_mappings:
+        chain = ProcessingChain(
+            name=f"{xbow_u_name} fletching",
+            category="Crossbows (u)"
+        )
+        chain.steps = [
+            ChainStep(stock_id, stock_name, 1),
+            ChainStep(limb_id, limb_name, 1),
+            ChainStep(xbow_u_id, xbow_u_name, 1, processing_method="Fletching")
+        ]
+        chains["Crossbows (u)"].append(chain)
+
+    # Fletching: Strung Crossbows (crossbow (u) + crossbow string -> crossbow)
+    chains["Crossbows"] = []
+    crossbow_strung_mappings = [
+        (9454, "Bronze crossbow (u)", 9174, "Bronze crossbow"),
+        (9457, "Iron crossbow (u)", 9177, "Iron crossbow"),
+        (9459, "Steel crossbow (u)", 9179, "Steel crossbow"),
+        (9461, "Mithril crossbow (u)", 9181, "Mithril crossbow"),
+        (9463, "Adamant crossbow (u)", 9183, "Adamant crossbow"),
+        (9465, "Runite crossbow (u)", 9185, "Rune crossbow"),
+        (21921, "Dragon crossbow (u)", 21902, "Dragon crossbow"),
+    ]
+
+    for xbow_u_id, xbow_u_name, xbow_id, xbow_name in crossbow_strung_mappings:
+        chain = ProcessingChain(
+            name=f"{xbow_name} stringing",
+            category="Crossbows"
+        )
+        chain.steps = [
+            ChainStep(xbow_u_id, xbow_u_name, 1),
+            ChainStep(9438, "Crossbow string", 1),
+            ChainStep(xbow_id, xbow_name, 1, processing_method="Fletching")
+        ]
+        chains["Crossbows"].append(chain)
+
+    # Fletching: Bolts (unf) (bar -> unfinished bolts via Smithing, 1 bar -> 10 bolts)
+    # Dragon bolts (unf) are not smithed, excluded here
+    chains["Bolts (unf)"] = []
+    bolt_unf_mappings = [
+        (2349, "Bronze bar", 9375, "Bronze bolts (unf)"),
+        (2351, "Iron bar", 9377, "Iron bolts (unf)"),
+        (2353, "Steel bar", 9378, "Steel bolts (unf)"),
+        (2359, "Mithril bar", 9379, "Mithril bolts (unf)"),
+        (2361, "Adamantite bar", 9380, "Adamant bolts (unf)"),
+        (2363, "Runite bar", 9381, "Runite bolts (unf)"),
+    ]
+
+    for bar_id, bar_name, bolt_unf_id, bolt_unf_name in bolt_unf_mappings:
+        chain = ProcessingChain(
+            name=f"{bolt_unf_name} smithing",
+            category="Bolts (unf)"
+        )
+        chain.steps = [
+            ChainStep(bar_id, bar_name, 1),
+            ChainStep(bolt_unf_id, bolt_unf_name, 10, processing_method="Smithing")
+        ]
+        chains["Bolts (unf)"].append(chain)
+
+    # Fletching: Bolts (unf bolts + feathers -> finished bolts, 1:1:1)
+    chains["Bolts"] = []
+    bolt_mappings = [
+        (9375, "Bronze bolts (unf)", 877, "Bronze bolts"),
+        (9377, "Iron bolts (unf)", 9140, "Iron bolts"),
+        (9378, "Steel bolts (unf)", 9141, "Steel bolts"),
+        (9379, "Mithril bolts (unf)", 9142, "Mithril bolts"),
+        (9380, "Adamant bolts (unf)", 9143, "Adamant bolts"),
+        (9381, "Runite bolts (unf)", 9144, "Runite bolts"),
+        (21930, "Dragon bolts (unf)", 21905, "Dragon bolts"),
+    ]
+
+    for bolt_unf_id, bolt_unf_name, bolt_id, bolt_name in bolt_mappings:
+        chain = ProcessingChain(
+            name=f"{bolt_name} fletching",
+            category="Bolts"
+        )
+        chain.steps = [
+            ChainStep(bolt_unf_id, bolt_unf_name, 1),
+            ChainStep(314, "Feather", 1),
+            ChainStep(bolt_id, bolt_name, 1, processing_method="Fletching")
+        ]
+        chains["Bolts"].append(chain)
+
+    # Fletching: Javelin Heads (bar -> javelin heads via Smithing, 1 bar -> 5 heads)
+    # Dragon javelin heads are not smithed, excluded here
+    chains["Javelin Heads"] = []
+    jav_head_mappings = [
+        (2349, "Bronze bar", 19570, "Bronze javelin heads"),
+        (2351, "Iron bar", 19572, "Iron javelin heads"),
+        (2353, "Steel bar", 19574, "Steel javelin heads"),
+        (2359, "Mithril bar", 19576, "Mithril javelin heads"),
+        (2361, "Adamantite bar", 19578, "Adamant javelin heads"),
+        (2363, "Runite bar", 19580, "Rune javelin heads"),
+    ]
+
+    for bar_id, bar_name, head_id, head_name in jav_head_mappings:
+        chain = ProcessingChain(
+            name=f"{head_name} smithing",
+            category="Javelin Heads"
+        )
+        chain.steps = [
+            ChainStep(bar_id, bar_name, 1),
+            ChainStep(head_id, head_name, 5, processing_method="Smithing")
+        ]
+        chains["Javelin Heads"].append(chain)
+
+    # Fletching: Javelins (javelin heads + javelin shafts -> javelins, 1:1:1)
+    chains["Javelins"] = []
+    javelin_mappings = [
+        (19570, "Bronze javelin heads", 825, "Bronze javelin"),
+        (19572, "Iron javelin heads", 826, "Iron javelin"),
+        (19574, "Steel javelin heads", 827, "Steel javelin"),
+        (19576, "Mithril javelin heads", 828, "Mithril javelin"),
+        (19578, "Adamant javelin heads", 829, "Adamant javelin"),
+        (19580, "Rune javelin heads", 830, "Rune javelin"),
+        (19582, "Dragon javelin heads", 19484, "Dragon javelin"),
+    ]
+
+    for head_id, head_name, jav_id, jav_name in javelin_mappings:
+        chain = ProcessingChain(
+            name=f"{jav_name} fletching",
+            category="Javelins"
+        )
+        chain.steps = [
+            ChainStep(head_id, head_name, 1),
+            ChainStep(19584, "Javelin shaft", 1),
+            ChainStep(jav_id, jav_name, 1, processing_method="Fletching")
+        ]
+        chains["Javelins"].append(chain)
+
     # Extended Chains: compose existing recipes into full pipelines
     # (ore/log to final product). Intermediate items use is_self_obtained
     # so they are costed from raw materials, not the GE. Step quantities
@@ -570,5 +761,160 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
             ChainStep(bow_id, bow_name, 1),
         ]
         chains["Bows (from Log)"].append(chain)
+
+    # Fletching Extended: Log -> Stock -> Crossbow (u) -> Crossbow (self-obtain stock)
+    chains["Crossbows (from Log)"] = []
+    for stock_log_id, stock_log_name, stock_id, stock_name in stock_mappings:
+        xbow_u = next((x for x in crossbow_u_mappings if x[0] == stock_id), None)
+        if not xbow_u:
+            continue
+        _, _, limb_id, limb_name, xbow_u_id, xbow_u_name = xbow_u
+        strung_xbow = next((s for s in crossbow_strung_mappings if s[0] == xbow_u_id), None)
+        if not strung_xbow:
+            continue
+        _, _, xbow_id, xbow_name = strung_xbow
+        chain = ProcessingChain(
+            name=f"{xbow_name} (from log)",
+            category="Crossbows (from Log)",
+        )
+        chain.steps = [
+            ChainStep(stock_log_id, stock_log_name, 1),
+            ChainStep(stock_id, stock_name, 1, is_self_obtained=True, processing_method="Fletching"),
+            ChainStep(limb_id, limb_name, 1),
+            ChainStep(xbow_u_id, xbow_u_name, 1, is_self_obtained=True, processing_method="Fletching"),
+            ChainStep(9438, "Crossbow string", 1),
+            ChainStep(xbow_id, xbow_name, 1),
+        ]
+        chains["Crossbows (from Log)"].append(chain)
+
+    # Fletching Extended: Ore -> Bar -> Bolts (unf) -> Bolts (full pipeline)
+    chains["Bolts (from Ore)"] = []
+    # Map bar_id -> (bolt_unf_id, bolt_unf_name, bolt_id, bolt_name)
+    bolt_bar_to_product = {}
+    for bolt_unf_bar_id, _, bolt_unf_id, bolt_unf_name in bolt_unf_mappings:
+        finished = next((b for b in bolt_mappings if b[0] == bolt_unf_id), None)
+        if finished:
+            _, _, bolt_id, bolt_name = finished
+            bolt_bar_to_product[bolt_unf_bar_id] = (bolt_unf_id, bolt_unf_name, bolt_id, bolt_name)
+
+    for bar_id, bolt_info in bolt_bar_to_product.items():
+        bolt_unf_id, bolt_unf_name, bolt_id, bolt_name = bolt_info
+        recipe = next((r for r in smeltable if r[0] == bar_id), None)
+        if not recipe:
+            continue
+        _, bar_name, primary_ores, regular_coal, bf_coal = recipe
+
+        for smelting_label, coal_qty, smelt_method in [
+            ("Furnace", regular_coal, "Smelting"),
+            ("BF", bf_coal, "Blast Furnace"),
+        ]:
+            chain = ProcessingChain(
+                name=f"{bolt_name} ({smelting_label})",
+                category="Bolts (from Ore)",
+            )
+            steps = []
+            for ore_id, ore_name, ore_per_bar in primary_ores:
+                steps.append(ChainStep(ore_id, ore_name, ore_per_bar))
+            if coal_qty > 0:
+                steps.append(ChainStep(453, "Coal", coal_qty))
+            steps.append(ChainStep(
+                bar_id, bar_name, 1,
+                is_self_obtained=True, processing_method=smelt_method,
+            ))
+            steps.append(ChainStep(bolt_unf_id, bolt_unf_name, 10, is_self_obtained=True, processing_method="Smithing"))
+            steps.append(ChainStep(314, "Feather", 10))
+            steps.append(ChainStep(bolt_id, bolt_name, 10))
+            chain.steps = steps
+            chains["Bolts (from Ore)"].append(chain)
+
+    # Fletching Extended: Ore -> Bar -> Javelin Heads -> Javelins (full pipeline)
+    chains["Javelins (from Ore)"] = []
+    # Map bar_id -> (head_id, head_name, jav_id, jav_name)
+    jav_bar_to_product = {}
+    for jav_bar_id, _, jav_head_id, jav_head_name in jav_head_mappings:
+        finished_jav = next((j for j in javelin_mappings if j[0] == jav_head_id), None)
+        if finished_jav:
+            _, _, jav_id, jav_name = finished_jav
+            jav_bar_to_product[jav_bar_id] = (jav_head_id, jav_head_name, jav_id, jav_name)
+
+    for bar_id, jav_info in jav_bar_to_product.items():
+        jav_head_id, jav_head_name, jav_id, jav_name = jav_info
+        recipe = next((r for r in smeltable if r[0] == bar_id), None)
+        if not recipe:
+            continue
+        _, bar_name, primary_ores, regular_coal, bf_coal = recipe
+
+        for smelting_label, coal_qty, smelt_method in [
+            ("Furnace", regular_coal, "Smelting"),
+            ("BF", bf_coal, "Blast Furnace"),
+        ]:
+            chain = ProcessingChain(
+                name=f"{jav_name} ({smelting_label})",
+                category="Javelins (from Ore)",
+            )
+            steps = []
+            for ore_id, ore_name, ore_per_bar in primary_ores:
+                steps.append(ChainStep(ore_id, ore_name, ore_per_bar))
+            if coal_qty > 0:
+                steps.append(ChainStep(453, "Coal", coal_qty))
+            steps.append(ChainStep(
+                bar_id, bar_name, 1,
+                is_self_obtained=True, processing_method=smelt_method,
+            ))
+            steps.append(ChainStep(jav_head_id, jav_head_name, 5, is_self_obtained=True, processing_method="Smithing"))
+            steps.append(ChainStep(19584, "Javelin shaft", 5))
+            steps.append(ChainStep(jav_id, jav_name, 5))
+            chain.steps = steps
+            chains["Javelins (from Ore)"].append(chain)
+
+    # Fletching Extended: Ore -> Bar -> Arrowtips -> Arrows (bar smithing + fletching)
+    # Bar -> 15 arrowtips via Smithing, then tips + headless arrows -> arrows
+    chains["Arrows (from Bar)"] = []
+    arrow_bar_mappings = [
+        (2349, "Bronze bar", 39, "Bronze arrowtips", 882, "Bronze arrow", 15),
+        (2351, "Iron bar", 40, "Iron arrowtips", 884, "Iron arrow", 15),
+        (2353, "Steel bar", 41, "Steel arrowtips", 886, "Steel arrow", 15),
+        (2359, "Mithril bar", 42, "Mithril arrowtips", 888, "Mithril arrow", 15),
+        (2361, "Adamantite bar", 43, "Adamant arrowtips", 890, "Adamant arrow", 15),
+        (2363, "Runite bar", 44, "Rune arrowtips", 892, "Rune arrow", 15),
+    ]
+
+    for bar_id, bar_name, tip_id, tip_name, arrow_id, arrow_name, tips_per_bar in arrow_bar_mappings:
+        chain = ProcessingChain(
+            name=f"{arrow_name} (from bar)",
+            category="Arrows (from Bar)",
+        )
+        chain.steps = [
+            ChainStep(bar_id, bar_name, 1),
+            ChainStep(tip_id, tip_name, tips_per_bar, is_self_obtained=True, processing_method="Smithing"),
+            ChainStep(53, "Headless arrow", tips_per_bar),
+            ChainStep(arrow_id, arrow_name, tips_per_bar),
+        ]
+        chains["Arrows (from Bar)"].append(chain)
+
+    # Fletching Extended: Ore -> Bar -> Dart Tips -> Darts (bar smithing + fletching)
+    # Bar -> 10 dart tips via Smithing, then tips + feathers -> darts
+    chains["Darts (from Bar)"] = []
+    dart_bar_mappings = [
+        (2349, "Bronze bar", 819, "Bronze dart tip", 806, "Bronze dart", 10),
+        (2351, "Iron bar", 820, "Iron dart tip", 807, "Iron dart", 10),
+        (2353, "Steel bar", 821, "Steel dart tip", 808, "Steel dart", 10),
+        (2359, "Mithril bar", 822, "Mithril dart tip", 809, "Mithril dart", 10),
+        (2361, "Adamantite bar", 823, "Adamant dart tip", 810, "Adamant dart", 10),
+        (2363, "Runite bar", 824, "Rune dart tip", 811, "Rune dart", 10),
+    ]
+
+    for bar_id, bar_name, tip_id, tip_name, dart_id, dart_name, tips_per_bar in dart_bar_mappings:
+        chain = ProcessingChain(
+            name=f"{dart_name} (from bar)",
+            category="Darts (from Bar)",
+        )
+        chain.steps = [
+            ChainStep(bar_id, bar_name, 1),
+            ChainStep(tip_id, tip_name, tips_per_bar, is_self_obtained=True, processing_method="Smithing"),
+            ChainStep(314, "Feather", tips_per_bar),
+            ChainStep(dart_id, dart_name, tips_per_bar),
+        ]
+        chains["Darts (from Bar)"].append(chain)
 
     return chains

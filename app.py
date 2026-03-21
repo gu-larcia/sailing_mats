@@ -16,6 +16,9 @@ from data.items import (
     ALL_LOGS, ALL_PLANKS, HULL_PARTS, LARGE_HULL_PARTS,
     HULL_REPAIR_KITS, ALL_ORES, ALL_BARS, KEEL_PARTS,
     LARGE_KEEL_PARTS, ALL_NAILS, ALL_CANNONBALLS,
+    CROSSBOW_STOCKS, CROSSBOW_LIMBS, CROSSBOWS_U, CROSSBOWS,
+    FLETCHING_BOLTS_UNF, FLETCHING_BOLTS,
+    FLETCHING_JAVELIN_HEADS, FLETCHING_JAVELINS,
 )
 from models import generate_all_chains
 from services import OSRSWikiConnection, ItemIDLookup, calculate_gp_per_hour, OSRSDataCache
@@ -99,6 +102,14 @@ def sync_cache(cache: OSRSDataCache, item_mapping: Dict, prices: Dict):
         "large_keel_parts": LARGE_KEEL_PARTS,
         "nails": ALL_NAILS,
         "cannonballs": ALL_CANNONBALLS,
+        "crossbow_stocks": CROSSBOW_STOCKS,
+        "crossbow_limbs": CROSSBOW_LIMBS,
+        "crossbows_u": CROSSBOWS_U,
+        "crossbows": CROSSBOWS,
+        "bolts_unf": FLETCHING_BOLTS_UNF,
+        "bolts": FLETCHING_BOLTS,
+        "javelin_heads": FLETCHING_JAVELIN_HEADS,
+        "javelins": FLETCHING_JAVELINS,
         "sailing": ALL_ITEMS,
     }
 

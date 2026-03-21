@@ -227,6 +227,96 @@ FLETCHING_MISC = {
     314: "Feather",
     53: "Headless arrow",
     52: "Arrow shaft",
+    9438: "Crossbow string",
+    19584: "Javelin shaft",
+}
+
+# --- Crossbows ---
+
+CROSSBOW_STOCKS = {
+    9440: "Wooden stock",
+    9442: "Oak stock",
+    9444: "Willow stock",
+    9446: "Teak stock",
+    9448: "Maple stock",
+    9450: "Mahogany stock",
+    9452: "Yew stock",
+    21952: "Magic stock",
+}
+
+CROSSBOW_LIMBS = {
+    9420: "Bronze limbs",
+    9423: "Iron limbs",
+    9425: "Steel limbs",
+    9427: "Mithril limbs",
+    9429: "Adamantite limbs",
+    9431: "Runite limbs",
+    21918: "Dragon limbs",  # Drop only, not smithed
+}
+
+CROSSBOWS_U = {
+    9454: "Bronze crossbow (u)",
+    9457: "Iron crossbow (u)",
+    9459: "Steel crossbow (u)",
+    9461: "Mithril crossbow (u)",
+    9463: "Adamant crossbow (u)",
+    9465: "Runite crossbow (u)",
+    21921: "Dragon crossbow (u)",
+}
+
+CROSSBOWS = {
+    9174: "Bronze crossbow",
+    9177: "Iron crossbow",
+    9179: "Steel crossbow",
+    9181: "Mithril crossbow",
+    9183: "Adamant crossbow",
+    9185: "Rune crossbow",
+    21902: "Dragon crossbow",
+}
+
+# --- Bolts ---
+
+FLETCHING_BOLTS_UNF = {
+    9375: "Bronze bolts (unf)",
+    9377: "Iron bolts (unf)",
+    9378: "Steel bolts (unf)",
+    9379: "Mithril bolts (unf)",
+    9380: "Adamant bolts (unf)",
+    9381: "Runite bolts (unf)",
+    21930: "Dragon bolts (unf)",  # Not smithed; drop/purchase only
+}
+
+FLETCHING_BOLTS = {
+    877: "Bronze bolts",
+    9140: "Iron bolts",
+    9141: "Steel bolts",
+    9142: "Mithril bolts",
+    9143: "Adamant bolts",
+    9144: "Runite bolts",
+    21905: "Dragon bolts",
+}
+
+# --- Javelins ---
+
+FLETCHING_JAVELIN_HEADS = {
+    19570: "Bronze javelin heads",
+    19572: "Iron javelin heads",
+    19574: "Steel javelin heads",
+    19576: "Mithril javelin heads",
+    19578: "Adamant javelin heads",
+    19580: "Rune javelin heads",
+    19582: "Dragon javelin heads",
+}
+
+FLETCHING_JAVELINS = {
+    825: "Bronze javelin",
+    826: "Iron javelin",
+    827: "Steel javelin",
+    828: "Mithril javelin",
+    829: "Adamant javelin",
+    830: "Rune javelin",
+    19484: "Dragon javelin",
+    21318: "Amethyst javelin",
 }
 
 SAWMILL_VOUCHER_ID = 31431
@@ -260,5 +350,13 @@ ALL_ITEMS = {
     **FLETCHING_DART_TIPS,
     **FLETCHING_DARTS,
     **FLETCHING_MISC,
+    **CROSSBOW_STOCKS,
+    **CROSSBOW_LIMBS,
+    **CROSSBOWS_U,
+    **CROSSBOWS,
+    **FLETCHING_BOLTS_UNF,
+    **FLETCHING_BOLTS,
+    **FLETCHING_JAVELIN_HEADS,
+    **FLETCHING_JAVELINS,
     COAL_BAG_ID: "Coal bag",
 }

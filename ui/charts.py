@@ -739,7 +739,14 @@ def _abbreviate_category(name: str) -> str:
         ("Hull Repair Kits", "Repair Kits"),
         ("Cannonballs", "CBalls"),
         ("Unstrung Bows", "Bows (u)"),
-        ("Strung Bows", "Bows"),
+        ("Strung Bows", "S. Bows"),
+        ("Crossbow Stocks", "X Stocks"),
+        ("Crossbow Limbs", "X Limbs"),
+        ("Crossbows (u)", "XBow (u)"),
+        ("Crossbows", "XBow"),
+        ("Bolts (unf)", "Bolts (u)"),
+        ("Javelin Heads", "Jav Heads"),
+        ("Javelins", "Javs"),
     ]
     result = name
     for old, new in replacements:
