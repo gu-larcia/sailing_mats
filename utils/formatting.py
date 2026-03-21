@@ -24,6 +24,10 @@ def get_clean_item_name(chain_name: str) -> str:
     clean = chain_name.replace(" processing", "").replace(" smithing", "")
     clean = clean.replace(" (Regular)", "").replace(" (Double)", "")
     clean = clean.replace(" fletching", "").replace(" stringing", "")
+    # Strip smelting / pipeline variant tags
+    for tag in (" (Furnace)", " (BF)", " (Blast Furnace)",
+                " (from log)", " (from bar)", " (from ore)"):
+        clean = clean.replace(tag, "")
     return clean
 
 

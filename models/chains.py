@@ -867,7 +867,7 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
             chain.steps = steps
             chains["Javelins (from Ore)"].append(chain)
 
-    # Fletching Extended: Ore -> Bar -> Arrowtips -> Arrows (bar smithing + fletching)
+    # Fletching Extended: Bar -> Arrowtips -> Arrows (bar smithing + fletching)
     # Bar -> 15 arrowtips via Smithing, then tips + headless arrows -> arrows
     chains["Arrows (from Bar)"] = []
     arrow_bar_mappings = [
@@ -892,7 +892,38 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
         ]
         chains["Arrows (from Bar)"].append(chain)
 
-    # Fletching Extended: Ore -> Bar -> Dart Tips -> Darts (bar smithing + fletching)
+    # Fletching Extended: Ore -> Bar -> Arrowtips -> Arrows (full pipeline)
+    chains["Arrows (from Ore)"] = []
+    for bar_id, bar_name, tip_id, tip_name, arrow_id, arrow_name, tips_per_bar in arrow_bar_mappings:
+        recipe = next((r for r in smeltable if r[0] == bar_id), None)
+        if not recipe:
+            continue
+        _, _, primary_ores, regular_coal, bf_coal = recipe
+
+        for smelting_label, coal_qty, smelt_method in [
+            ("Furnace", regular_coal, "Smelting"),
+            ("BF", bf_coal, "Blast Furnace"),
+        ]:
+            chain = ProcessingChain(
+                name=f"{arrow_name} ({smelting_label})",
+                category="Arrows (from Ore)",
+            )
+            steps = []
+            for ore_id, ore_name, ore_per_bar in primary_ores:
+                steps.append(ChainStep(ore_id, ore_name, ore_per_bar))
+            if coal_qty > 0:
+                steps.append(ChainStep(453, "Coal", coal_qty))
+            steps.append(ChainStep(
+                bar_id, bar_name, 1,
+                is_self_obtained=True, processing_method=smelt_method,
+            ))
+            steps.append(ChainStep(tip_id, tip_name, tips_per_bar, is_self_obtained=True, processing_method="Smithing"))
+            steps.append(ChainStep(53, "Headless arrow", tips_per_bar))
+            steps.append(ChainStep(arrow_id, arrow_name, tips_per_bar))
+            chain.steps = steps
+            chains["Arrows (from Ore)"].append(chain)
+
+    # Fletching Extended: Bar -> Dart Tips -> Darts (bar smithing + fletching)
     # Bar -> 10 dart tips via Smithing, then tips + feathers -> darts
     chains["Darts (from Bar)"] = []
     dart_bar_mappings = [
@@ -916,5 +947,105 @@ def generate_all_chains() -> Dict[str, List[ProcessingChain]]:
             ChainStep(dart_id, dart_name, tips_per_bar),
         ]
         chains["Darts (from Bar)"].append(chain)
+
+    # Fletching Extended: Ore -> Bar -> Dart Tips -> Darts (full pipeline)
+    chains["Darts (from Ore)"] = []
+    for bar_id, bar_name, tip_id, tip_name, dart_id, dart_name, tips_per_bar in dart_bar_mappings:
+        recipe = next((r for r in smeltable if r[0] == bar_id), None)
+        if not recipe:
+            continue
+        _, _, primary_ores, regular_coal, bf_coal = recipe
+
+        for smelting_label, coal_qty, smelt_method in [
+            ("Furnace", regular_coal, "Smelting"),
+            ("BF", bf_coal, "Blast Furnace"),
+        ]:
+            chain = ProcessingChain(
+                name=f"{dart_name} ({smelting_label})",
+                category="Darts (from Ore)",
+            )
+            steps = []
+            for ore_id, ore_name, ore_per_bar in primary_ores:
+                steps.append(ChainStep(ore_id, ore_name, ore_per_bar))
+            if coal_qty > 0:
+                steps.append(ChainStep(453, "Coal", coal_qty))
+            steps.append(ChainStep(
+                bar_id, bar_name, 1,
+                is_self_obtained=True, processing_method=smelt_method,
+            ))
+            steps.append(ChainStep(tip_id, tip_name, tips_per_bar, is_self_obtained=True, processing_method="Smithing"))
+            steps.append(ChainStep(314, "Feather", tips_per_bar))
+            steps.append(ChainStep(dart_id, dart_name, tips_per_bar))
+            chain.steps = steps
+            chains["Darts (from Ore)"].append(chain)
+
+    # Fletching Extended: Bar -> Bolts (unf) -> Bolts (bar to finished bolts)
+    chains["Bolts (from Bar)"] = []
+    for bar_id, bolt_info in bolt_bar_to_product.items():
+        bolt_unf_id, bolt_unf_name, bolt_id, bolt_name = bolt_info
+        recipe = next((r for r in smeltable if r[0] == bar_id), None)
+        if not recipe:
+            continue
+        _, bar_name, _, _, _ = recipe
+        chain = ProcessingChain(
+            name=f"{bolt_name} (from bar)",
+            category="Bolts (from Bar)",
+        )
+        chain.steps = [
+            ChainStep(bar_id, bar_name, 1),
+            ChainStep(bolt_unf_id, bolt_unf_name, 10, is_self_obtained=True, processing_method="Smithing"),
+            ChainStep(314, "Feather", 10),
+            ChainStep(bolt_id, bolt_name, 10),
+        ]
+        chains["Bolts (from Bar)"].append(chain)
+
+    # Fletching Extended: Bar -> Javelin Heads -> Javelins (bar to finished javelins)
+    chains["Javelins (from Bar)"] = []
+    for bar_id, jav_info in jav_bar_to_product.items():
+        jav_head_id, jav_head_name, jav_id, jav_name = jav_info
+        recipe = next((r for r in smeltable if r[0] == bar_id), None)
+        if not recipe:
+            continue
+        _, bar_name, _, _, _ = recipe
+        chain = ProcessingChain(
+            name=f"{jav_name} (from bar)",
+            category="Javelins (from Bar)",
+        )
+        chain.steps = [
+            ChainStep(bar_id, bar_name, 1),
+            ChainStep(jav_head_id, jav_head_name, 5, is_self_obtained=True, processing_method="Smithing"),
+            ChainStep(19584, "Javelin shaft", 5),
+            ChainStep(jav_id, jav_name, 5),
+        ]
+        chains["Javelins (from Bar)"].append(chain)
+
+    # Fletching Extended: Ore -> Bar -> Crossbow Limbs (full pipeline)
+    chains["Crossbow Limbs (from Ore)"] = []
+    for bar_id, bar_name, limb_id, limb_name in limb_mappings:
+        recipe = next((r for r in smeltable if r[0] == bar_id), None)
+        if not recipe:
+            continue
+        _, _, primary_ores, regular_coal, bf_coal = recipe
+
+        for smelting_label, coal_qty, smelt_method in [
+            ("Furnace", regular_coal, "Smelting"),
+            ("BF", bf_coal, "Blast Furnace"),
+        ]:
+            chain = ProcessingChain(
+                name=f"{limb_name} ({smelting_label})",
+                category="Crossbow Limbs (from Ore)",
+            )
+            steps = []
+            for ore_id, ore_name, ore_per_bar in primary_ores:
+                steps.append(ChainStep(ore_id, ore_name, ore_per_bar))
+            if coal_qty > 0:
+                steps.append(ChainStep(453, "Coal", coal_qty))
+            steps.append(ChainStep(
+                bar_id, bar_name, 1,
+                is_self_obtained=True, processing_method=smelt_method,
+            ))
+            steps.append(ChainStep(limb_id, limb_name, 1, processing_method="Smithing"))
+            chain.steps = steps
+            chains["Crossbow Limbs (from Ore)"].append(chain)
 
     return chains

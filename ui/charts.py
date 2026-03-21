@@ -319,7 +319,7 @@ def create_profit_histogram(profits: List[float], per_item: bool = False) -> go.
         subtitle_parts.append(outlier_note)
 
     fig.update_layout(
-        **_dark_layout(height=370, margin=dict(l=55, r=20, t=70, b=80)),
+        **_dark_layout(height=400, margin=dict(l=55, r=20, t=70, b=100)),
         title=dict(
             text="Profit Distribution",
             font=dict(color=_TEXT_YELLOW, size=16),
@@ -333,7 +333,7 @@ def create_profit_histogram(profits: List[float], per_item: bool = False) -> go.
         yaxis=_dark_axis("Count"),
         bargap=0.05,
         barmode='overlay',
-        legend=_dark_legend(),
+        legend=_dark_legend(y=-0.18),
     )
 
     return fig
@@ -368,13 +368,14 @@ def create_roi_scatter(results: List[Dict]) -> Optional[go.Figure]:
         sizes = [max(7, min(18, 7 + 11 * (abs(p) / max_abs_profit))) for p in profits]
 
         color = CATEGORY_COLORS.get(cat, '#8e44ad')
+        legend_label = _abbreviate_category(cat)
 
         fig.add_trace(
             go.Scatter(
                 x=profits,
                 y=rois,
                 mode='markers',
-                name=cat,
+                name=legend_label,
                 marker=dict(
                     size=sizes,
                     color=color,
@@ -392,8 +393,11 @@ def create_roi_scatter(results: List[Dict]) -> Optional[go.Figure]:
     num_categories = len(categories)
     # Switch to vertical side legend when there are many categories
     if num_categories > 10:
+        # Scale height so legend entries fit (~18px each + padding)
+        legend_height = num_categories * 18 + 40
+        chart_height = max(500, legend_height + 100)
         legend_cfg = dict(
-            font=dict(color=_TEXT_LIGHT, size=9),
+            font=dict(color=_TEXT_LIGHT, size=8),
             bgcolor='rgba(43,43,43,0.9)',
             bordercolor=_BORDER_GOLD,
             borderwidth=1,
@@ -402,14 +406,17 @@ def create_roi_scatter(results: List[Dict]) -> Optional[go.Figure]:
             y=1.0,
             xanchor='left',
             x=1.02,
+            itemsizing='constant',
+            tracegroupgap=2,
         )
-        right_margin = 180
+        right_margin = 150
     else:
         legend_cfg = _dark_legend(y=-0.22)
         right_margin = 20
+        chart_height = 450
 
     fig.update_layout(
-        **_dark_layout(height=max(450, num_categories * 22 + 200),
+        **_dark_layout(height=chart_height,
                        margin=dict(l=55, r=right_margin, t=70, b=60 if num_categories > 10 else 100)),
         title=dict(
             text="ROI vs Profit",
@@ -609,7 +616,7 @@ def create_cost_waterfall(result: Dict, item_name: str) -> go.Figure:
     ))
 
     fig.update_layout(
-        **_dark_layout(height=400, margin=dict(l=60, r=30, t=80, b=70)),
+        **_dark_layout(height=400, margin=dict(l=60, r=50, t=80, b=70)),
         title=dict(
             text=f"Cost Breakdown: {get_clean_item_name(item_name)}",
             font=dict(color=_TEXT_YELLOW, size=16),
@@ -638,7 +645,15 @@ def create_multi_waterfall(results: List[Dict], top_n: int = 5) -> go.Figure:
 
     fig = go.Figure()
 
-    items = [get_clean_item_name(r["Item"]) for r in sorted_results]
+    # Shorten names so x-axis labels don't overlap
+    def _short_name(name: str, max_len: int = 22) -> str:
+        clean = get_clean_item_name(name)
+        clean = clean.replace("Large ", "Lg ").replace(" hull parts", " hull").replace(" keel parts", " keel")
+        if len(clean) > max_len:
+            clean = clean[:max_len - 1] + "…"
+        return clean
+
+    items = [_short_name(r["Item"]) for r in sorted_results]
     raw_costs = [r.get("_raw_cost", 0) for r in sorted_results]
     proc_costs = [r.get("_proc_cost", 0) for r in sorted_results]
     taxes = [r.get("_tax", 0) for r in sorted_results]
@@ -702,11 +717,11 @@ def create_multi_waterfall(results: List[Dict], top_n: int = 5) -> go.Figure:
         )
 
     max_label_len = max((len(name) for name in items), default=10)
-    bottom_margin = max(120, min(180, max_label_len * 4 + 40))
+    bottom_margin = max(130, min(190, max_label_len * 5 + 40))
 
     fig.update_layout(
-        **_dark_layout(height=max(450, 320 + bottom_margin),
-                       margin=dict(l=60, r=20, t=70, b=bottom_margin)),
+        **_dark_layout(height=max(480, 330 + bottom_margin),
+                       margin=dict(l=60, r=60, t=70, b=bottom_margin)),
         title=dict(
             text="Cost Structure Comparison",
             font=dict(color=_TEXT_YELLOW, size=16),
@@ -720,7 +735,7 @@ def create_multi_waterfall(results: List[Dict], top_n: int = 5) -> go.Figure:
         yaxis=_dark_axis("GP", tickformat=',.0f',
                          zeroline=True, zerolinecolor='rgba(212,197,160,0.4)', zerolinewidth=1),
         barmode='relative',
-        legend=_dark_legend(y=-0.1 - (bottom_margin - 120) / 400),
+        legend=_dark_legend(y=-0.12 - (bottom_margin - 130) / 400),
     )
 
     return fig

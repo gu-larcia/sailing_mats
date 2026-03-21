@@ -63,7 +63,12 @@ CATEGORY_COLORS = {
     'Javelins': '#9ACD32',
     'Javelins (from Ore)': '#6B8E23',
     'Arrows (from Bar)': '#3CB371',
+    'Arrows (from Ore)': '#2E8B57',
     'Darts (from Bar)': '#20B2AA',
+    'Darts (from Ore)': '#008B8B',
+    'Bolts (from Bar)': '#5F9EA0',
+    'Javelins (from Bar)': '#6B8E23',
+    'Crossbow Limbs (from Ore)': '#8B6914',
     'Other': '#7f8c8d',
 }
 

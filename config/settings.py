@@ -84,5 +84,10 @@ ITEM_GROUPS = {
     "javelins": "Javelins",
     "javelins_from_ore": "Javelins (from Ore)",
     "arrows_from_bar": "Arrows (from Bar)",
+    "arrows_from_ore": "Arrows (from Ore)",
     "darts_from_bar": "Darts (from Bar)",
+    "darts_from_ore": "Darts (from Ore)",
+    "bolts_from_bar": "Bolts (from Bar)",
+    "javelins_from_bar": "Javelins (from Bar)",
+    "crossbow_limbs_from_ore": "Crossbow Limbs (from Ore)",
 }
