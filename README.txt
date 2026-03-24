@@ -10,7 +10,7 @@ Streamlit dashboard for OSRS item tracking with live Grand Exchange prices. Curr
 - In-memory SQLite cache for fast item search and filtering
 - Profit/loss calculations for all processing chains
 - GP/hr estimates with equipment modifiers
-- Dark OSRS-themed UI inspired by osrsplayercount.com
+- Dark OSRS-themed UI
 - Extensible item group tracking system
 - Plotly charts with dark theme
 
@@ -71,12 +71,6 @@ source venv/bin/activate  # Linux/Mac
 pip install -r requirements.txt
 streamlit run app.py
 ```
-
-## Usage
-
-1. Open http://localhost:8501
-2. Configure processing options in sidebar
-3. Browse tabs for different views
 
 ### Tabs
 
@@ -145,7 +139,7 @@ The `plank_method` and `use_sawmill_vouchers` config options are evaluated at ca
 
 ### v5.0
 
-- Dark OSRS theme (inspired by osrsplayercount.com)
+- Dark OSRS theme
 - RuneScape font from RuneLite
 - In-memory SQLite cache for item data
 - Extensible item group tracking
