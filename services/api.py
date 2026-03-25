@@ -9,8 +9,9 @@ API_BASE = "https://prices.runescape.wiki/api/v1/osrs"
 class OSRSWikiConnection:
     """Client for prices.runescape.wiki API. No API key required."""
     
-    def __init__(self, base_url: str = API_BASE, user_agent: str = None):
+    def __init__(self, base_url: str = API_BASE, user_agent: str = None, timeout: int = 10):
         self.base_url = base_url
+        self.timeout = timeout
         self._session = requests.Session()
         self._session.headers.update({
             'User-Agent': user_agent or 'OSRS-Market-Tracker/5.0'
@@ -18,31 +19,31 @@ class OSRSWikiConnection:
     
     def fetch_mapping(self) -> Dict:
         """Fetch item metadata. Returns {item_id: {name, examine, members, ...}}."""
-        response = self._session.get(f"{self.base_url}/mapping")
+        response = self._session.get(f"{self.base_url}/mapping", timeout=self.timeout)
         response.raise_for_status()
         items = response.json()
         return {item['id']: item for item in items}
-    
+
     def fetch_prices(self) -> Dict:
         """Fetch current prices. Returns {item_id: {high, low, highTime, lowTime}}."""
-        response = self._session.get(f"{self.base_url}/latest")
+        response = self._session.get(f"{self.base_url}/latest", timeout=self.timeout)
         response.raise_for_status()
         return response.json().get('data', {})
-    
+
     def fetch_5m_prices(self, timestamp: int = None) -> Dict:
         """Fetch 5-minute averages. Optional timestamp for historical data."""
         url = f"{self.base_url}/5m"
         if timestamp:
             url += f"?timestamp={timestamp}"
-        response = self._session.get(url)
+        response = self._session.get(url, timeout=self.timeout)
         response.raise_for_status()
         return response.json().get('data', {})
-    
+
     def fetch_1h_prices(self, timestamp: int = None) -> Dict:
         """Fetch 1-hour averages. Optional timestamp for historical data."""
         url = f"{self.base_url}/1h"
         if timestamp:
             url += f"?timestamp={timestamp}"
-        response = self._session.get(url)
+        response = self._session.get(url, timeout=self.timeout)
         response.raise_for_status()
         return response.json().get('data', {})

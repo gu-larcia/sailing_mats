@@ -334,6 +334,15 @@ def main():
         "use_sawmill_vouchers": params.get("sawmill_vouchers", "false") == "true",
     }
 
+    # Pre-compute all chain results once (shared across tabs)
+    computed_results = {}  # category -> list of (chain, result) pairs
+    for cat, cat_chains in all_chains.items():
+        computed_results[cat] = []
+        for chain in cat_chains:
+            result = chain.calculate(prices, config, id_lookup)
+            if "error" not in result:
+                computed_results[cat].append((chain, result))
+
     tabs = st.tabs([
         "All Chains",
         "Search Items",
@@ -352,48 +361,46 @@ def main():
             key="chain_category"
         )
 
-        chains = all_chains[category]
+        cat_results = computed_results.get(category, [])
         show_gp_hr_display = config.get("show_gp_hr", False)
 
-        if chains:
+        if cat_results:
             results = []
-            for chain in chains:
-                result = chain.calculate(prices, config, id_lookup)
-                if "error" not in result:
-                    profit = result["net_profit"]
-                    profit_per_item = result["profit_per_item"]
-                    output_name = result.get("output_item_name", chain.name)
+            for chain, result in cat_results:
+                profit = result["net_profit"]
+                profit_per_item = result["profit_per_item"]
+                output_name = result.get("output_item_name", chain.name)
 
-                    row = {
-                        "Icon": get_item_icon_url(output_name),
-                        "Item": chain.name,
-                        "Input Cost": result["raw_material_cost"],
-                        "Process Cost": result["processing_costs"],
-                        "Total Cost": result["total_input_cost"],
-                        "Output": result["output_value"],
-                        "Tax": result["ge_tax"],
-                        "Net Profit": profit,
-                        "Per Item": profit_per_item,
-                        "ROI %": result['roi'] if result['roi'] != float('inf') else None,
-                        "_profit_raw": profit,
-                        "_profitable": profit > 0,
-                        "_output_name": output_name
-                    }
+                row = {
+                    "Icon": get_item_icon_url(output_name),
+                    "Item": chain.name,
+                    "Input Cost": result["raw_material_cost"],
+                    "Process Cost": result["processing_costs"],
+                    "Total Cost": result["total_input_cost"],
+                    "Output": result["output_value"],
+                    "Tax": result["ge_tax"],
+                    "Net Profit": profit,
+                    "Per Item": profit_per_item,
+                    "ROI %": result['roi'] if result['roi'] != float('inf') else None,
+                    "_profit_raw": profit,
+                    "_profitable": profit > 0,
+                    "_output_name": output_name
+                }
 
-                    if show_gp_hr_display:
-                        gp_hr_data = calculate_gp_per_hour(
-                            profit_per_item, category, chain.name, config
-                        )
-                        if gp_hr_data:
-                            row["GP/hr"] = gp_hr_data["gp_per_hour"]
-                            row["Items/hr"] = gp_hr_data["items_per_hour"]
-                            row["_gp_hr_raw"] = gp_hr_data["gp_per_hour"]
-                        else:
-                            row["GP/hr"] = None
-                            row["Items/hr"] = None
-                            row["_gp_hr_raw"] = 0
+                if show_gp_hr_display:
+                    gp_hr_data = calculate_gp_per_hour(
+                        profit_per_item, category, chain.name, config
+                    )
+                    if gp_hr_data:
+                        row["GP/hr"] = gp_hr_data["gp_per_hour"]
+                        row["Items/hr"] = gp_hr_data["items_per_hour"]
+                        row["_gp_hr_raw"] = gp_hr_data["gp_per_hour"]
+                    else:
+                        row["GP/hr"] = None
+                        row["Items/hr"] = None
+                        row["_gp_hr_raw"] = 0
 
-                    results.append(row)
+                results.append(row)
 
             if results:
                 df = pd.DataFrame(results)
@@ -602,22 +609,19 @@ def main():
 
         all_results = []
 
-        with st.spinner("Calculating..."):
-            for cat, cat_chains in all_chains.items():
-                for chain in cat_chains:
-                    result = chain.calculate(prices, config, id_lookup)
-                    if "error" not in result:
-                        output_name = result.get("output_item_name", chain.name)
-                        all_results.append({
-                            "Icon": get_item_icon_url(output_name),
-                            "Category": cat,
-                            "Item": chain.name,
-                            "Profit": result["net_profit"],
-                            "Per Item": result["profit_per_item"],
-                            "ROI %": result['roi'] if result['roi'] != float('inf') else None,
-                            "_profit_raw": result["net_profit"],
-                            "_output_name": output_name
-                        })
+        for cat, cat_pairs in computed_results.items():
+            for chain, result in cat_pairs:
+                output_name = result.get("output_item_name", chain.name)
+                all_results.append({
+                    "Icon": get_item_icon_url(output_name),
+                    "Category": cat,
+                    "Item": chain.name,
+                    "Profit": result["net_profit"],
+                    "Per Item": result["profit_per_item"],
+                    "ROI %": result['roi'] if result['roi'] != float('inf') else None,
+                    "_profit_raw": result["net_profit"],
+                    "_output_name": output_name
+                })
 
         if all_results:
             col1, col2 = st.columns(2)
@@ -672,28 +676,26 @@ def main():
         all_raw_results = {}  # chain name -> full calculate() result for waterfall
         quantity_val = config.get("quantity", 1)
 
-        for cat, cat_chains in all_chains.items():
-            for chain in cat_chains:
+        for cat, cat_pairs in computed_results.items():
+            for chain, result in cat_pairs:
                 if exclude_dragon and "dragon" in chain.name.lower():
                     continue
 
-                result = chain.calculate(prices, config, id_lookup)
-                if "error" not in result:
-                    profit = result["net_profit"]
-                    display_profit = profit / quantity_val if (use_per_item and quantity_val > 0) else profit
+                profit = result["net_profit"]
+                display_profit = profit / quantity_val if (use_per_item and quantity_val > 0) else profit
 
-                    all_results_for_charts.append({
-                        "Category": cat,
-                        "Item": chain.name,
-                        "ROI %": result['roi'] if result['roi'] != float('inf') else None,
-                        "_profit_raw": display_profit,
-                        "_raw_cost": result["raw_material_cost"],
-                        "_proc_cost": result["processing_costs"],
-                        "_tax": result["ge_tax"],
-                        "_output": result["output_value"],
-                    })
+                all_results_for_charts.append({
+                    "Category": cat,
+                    "Item": chain.name,
+                    "ROI %": result['roi'] if result['roi'] != float('inf') else None,
+                    "_profit_raw": display_profit,
+                    "_raw_cost": result["raw_material_cost"],
+                    "_proc_cost": result["processing_costs"],
+                    "_tax": result["ge_tax"],
+                    "_output": result["output_value"],
+                })
 
-                    all_raw_results[chain.name] = result
+                all_raw_results[chain.name] = result
 
         if filter_outliers and len(all_results_for_charts) > 4:
             profits_list = [r["_profit_raw"] for r in all_results_for_charts]

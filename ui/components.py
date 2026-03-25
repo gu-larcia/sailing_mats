@@ -1,5 +1,6 @@
 """UI components for items and cards — dark OSRS theme."""
 
+import html
 from typing import Optional
 
 try:
@@ -10,6 +11,7 @@ except ImportError:
 
 def render_item_with_icon(item_name: str, profit: Optional[float] = None, show_profit: bool = True) -> str:
     """Render item with icon and optional profit. Returns HTML."""
+    safe_name = html.escape(item_name)
     icon_url = get_item_icon_url(item_name)
     profit_html = ""
 
@@ -25,7 +27,7 @@ def render_item_with_icon(item_name: str, profit: Optional[float] = None, show_p
         <img src="{icon_url}" style="width: 32px; height: 32px; image-rendering: pixelated;"
              onerror="this.style.display='none'">
         <div style="flex: 1;">
-            <div style="color: #ffff00; font-family: 'RuneScape', 'Cinzel', serif; font-size: 0.9rem; text-shadow: 1px 1px 0 #000;">{item_name}</div>
+            <div style="color: #ffff00; font-family: 'RuneScape', 'Cinzel', serif; font-size: 0.9rem; text-shadow: 1px 1px 0 #000;">{safe_name}</div>
             {profit_html}
         </div>
     </div>
@@ -34,6 +36,9 @@ def render_item_with_icon(item_name: str, profit: Optional[float] = None, show_p
 
 def render_best_item_card(label: str, item_name: str, value: str) -> str:
     """Render highlight card. Returns HTML."""
+    safe_label = html.escape(label)
+    safe_name = html.escape(item_name)
+    safe_value = html.escape(value)
     icon_url = get_item_icon_url(get_clean_item_name(item_name))
 
     return f"""
@@ -42,17 +47,17 @@ def render_best_item_card(label: str, item_name: str, value: str) -> str:
                 text-align: center; height: 100%;
                 box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);">
         <div style="color: #ff981f; font-family: 'RuneScape', 'Cinzel', serif; font-size: 0.85rem; margin-bottom: 8px; text-shadow: 1px 1px 0 #000;">
-            {label}
+            {safe_label}
         </div>
         <img src="{icon_url}" style="width: 40px; height: 40px; image-rendering: pixelated; margin-bottom: 8px;"
              onerror="this.style.display='none'">
         <div style="color: #ffff00; font-family: 'RuneScape', 'Crimson Text', serif; font-size: 0.95rem;
                     word-wrap: break-word; line-height: 1.3; text-shadow: 1px 1px 0 #000;">
-            {item_name}
+            {safe_name}
         </div>
         <div style="color: #00ff00; font-family: 'RuneScape', 'Crimson Text', serif; font-size: 1rem;
                     font-weight: 600; margin-top: 4px; text-shadow: 1px 1px 0 #000;">
-            {value}
+            {safe_value}
         </div>
     </div>
     """
@@ -60,11 +65,13 @@ def render_best_item_card(label: str, item_name: str, value: str) -> str:
 
 def render_live_stat(label: str, value: str, sub: str = "") -> str:
     """Render a live stat card (new component for header stats)."""
-    sub_html = f'<div class="stat-sub">{sub}</div>' if sub else ""
+    safe_label = html.escape(label)
+    safe_value = html.escape(value)
+    sub_html = f'<div class="stat-sub">{html.escape(sub)}</div>' if sub else ""
     return f"""
     <div class="live-stat">
-        <div class="stat-label">{label}</div>
-        <div class="stat-value">{value}</div>
+        <div class="stat-label">{safe_label}</div>
+        <div class="stat-value">{safe_value}</div>
         {sub_html}
     </div>
     """
